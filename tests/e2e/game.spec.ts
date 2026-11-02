@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 const WIN_ORDER = ['v1', 'v2', 'v3', 'v4', 'v5', 'v8', 'v7', 'v9', 'v10', 'v11', 'v6'];
-const LOSE_ORDER = ['v1', 'v2', 'v4', 'v5', 'v6', 'v8', 'v7'];
+const LOSE_ORDER = ['v11', 'v8', 'v7', 'v6', 'v3'];
 
 async function tapAll(page: Page, ids: string[]): Promise<void> {
   for (const id of ids) {

@@ -1,5 +1,4 @@
-// PLATZHALTER: minimale Nachbildung der M1-Regeln (docs/INTERFACES.md), solange src/engine fehlt.
-// Wird in main.ts durch die echte Engine ersetzt. Kein Anspruch auf Vollstaendigkeit.
+// Nur fuer Unit-Tests: minimale Nachbildung der M1-Regeln. Die App nutzt die echte Engine (main.ts).
 import type { ColorId, Dir, Level, ResolvedRules } from '../schema';
 import type {
   Action,

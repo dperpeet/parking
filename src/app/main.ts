@@ -5,13 +5,11 @@ import { BoardView, EventPlayer, createPixiApp } from '../render';
 import { THEME } from '../render/theme';
 import { applyThemeVars, bindKeyboard, createHud, mountShell } from '../ui';
 import type { EngineApi } from './engine-port';
-import { fakeEngine } from './fake-engine';
+import { createGame, step } from '../engine';
 import { GameController } from './game-controller';
 
-// ENGINE-WEICHE: einzige Stelle, an der die Engine gewaehlt wird.
-// Sobald src/engine fertig ist: `import { createGame, step } from '../engine';`
-// und `const engine: EngineApi = { createGame, step };` statt der Fake-Engine.
-const engine: EngineApi = fakeEngine;
+// ENGINE-WEICHE: einzige Stelle, an der die Engine gewaehlt wird (Tests nutzen app/fake-engine.ts).
+const engine: EngineApi = { createGame, step };
 
 async function loadFont(): Promise<void> {
   try {

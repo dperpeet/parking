@@ -6,5 +6,6 @@ export default defineConfig({
   build: { target: 'es2022' },
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/content/**/*.test.ts', 'src/**/*.test.ts'],
+    coverage: { provider: 'v8', include: ['src/engine/**'], reporter: ['text', 'json-summary'] },
   },
 });
