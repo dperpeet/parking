@@ -56,3 +56,12 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Der Renderer bekommt `GameState` zum Aufbau und spielt danach nur `GameEvent[]` ab (Animationen in Event-Reihenfolge).
 - Er berechnet keine Spiellogik; Eingaben werden als `Action` an den Game-Controller (`src/app`) gegeben.
 - Farben/Symbole/Tokens nur aus `src/render/theme.ts`.
+
+## Präzisierungen (nach M1-Umsetzung)
+
+- `vehicleExited.path`: Zellen **vor** der Kopfzelle bis zur letzten Zelle im Raster (ohne Kopfzelle; leer, wenn der Kopf schon am Rand steht).
+- `passengersShuffled.to` ist exklusiv.
+- `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `notImplemented`.
+- Undo nimmt nur Züge/Shuffles zurück: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
+- `createGame` bewertet sofort das Ergebnis; ein Level ohne möglichen ersten Zug startet als `lost`/`noMoves`.
+- Offen: `starMode` `moves`/`time` brauchen Par bzw. Zeit; die Engine kennt beides nicht. Bis zur Klärung bewertet `moves` die rohe Zugzahl und `time` immer mit 3 Sternen (App muss Zeit selbst bewerten). Default bleibt `powerupsUsed`.
