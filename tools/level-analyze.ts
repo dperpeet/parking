@@ -1,0 +1,53 @@
+// CLI: pnpm level:analyze <file.json> [...]
+import { readFileSync } from 'node:fs';
+import { analyze } from '../src/solver/analyze';
+import { Level, Ruleset, resolveRules } from '../src/schema';
+import classic from '../src/content/rulesets/classic.json';
+
+const PERCENT = 100;
+
+function pct(x: number): string {
+  return `${(x * PERCENT).toFixed(2)} %`;
+}
+
+const files = process.argv.slice(2);
+if (files.length === 0) {
+  console.error('usage: pnpm level:analyze <file.json> [...]');
+  process.exit(1);
+}
+
+for (const file of files) {
+  const level = Level.parse(JSON.parse(readFileSync(file, 'utf8')));
+  const rules = resolveRules(Ruleset.parse(classic), level.overrides);
+  const t0 = performance.now();
+  const a = analyze(level, rules);
+  const ms = performance.now() - t0;
+  const rows: Array<[string, string]> = [
+    ['level', `${level.id} (${file})`],
+    ['solvable', String(a.solvable) + (a.truncated ? ' (truncated)' : '')],
+    ['minMoves', String(a.minMoves)],
+    ['solution', a.solution?.join(' ') ?? '-'],
+    ['winningPaths', a.winningPaths],
+    ['totalPaths', a.totalPaths],
+    ['winRate', pct(a.winRate)],
+    ['randomPlayWin', pct(a.randomPlayWinProbability)],
+    ['statesExplored', String(a.statesExplored)],
+    ['deadStates', String(a.deadStates)],
+    ['avgDeadEndDepth', a.avgDeadEndDepth === null ? '-' : a.avgDeadEndDepth.toFixed(2)],
+    ['maxQueueUsed', String(a.maxQueueUsedOnBestPath)],
+    ['difficulty', a.difficulty.toFixed(1)],
+    ['time', `${ms.toFixed(0)} ms`],
+  ];
+  for (const [k, v] of rows) console.log(`${k.padEnd(16)} ${v}`);
+  console.log('first moves:');
+  console.log(
+    `  ${'vehicle'.padEnd(8)} ${'winning'.padStart(14)} ${'total'.padStart(14)}  share   dead`,
+  );
+  for (const m of a.firstMoves) {
+    const share = Number(m.winningPaths) / Number(m.totalPaths);
+    console.log(
+      `  ${m.vehicleId.padEnd(8)} ${m.winningPaths.padStart(14)} ${m.totalPaths.padStart(14)}  ${pct(share).padStart(8)}  ${m.deadEnd ? 'yes' : ''}`,
+    );
+  }
+  console.log('');
+}

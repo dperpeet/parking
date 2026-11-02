@@ -1,0 +1,159 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-30",
+  "title": {
+    "de": "Level 30",
+    "en": "Level 30"
+  },
+  "seed": 1922906204,
+  "ruleset": "classic",
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [2, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [5, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 1],
+      "dir": "E",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 1],
+      "dir": "N",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v8",
+      "pos": [5, 0],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v9",
+      "pos": [5, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v10",
+      "pos": [5, 4],
+      "dir": "N",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v11",
+      "pos": [4, 4],
+      "dir": "N",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v12",
+      "pos": [2, 4],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v13",
+      "pos": [3, 5],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v14",
+      "pos": [1, 2],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "pink",
+    "pink",
+    "blue",
+    "blue",
+    "yellow",
+    "yellow",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "yellow",
+    "pink",
+    "pink",
+    "yellow",
+    "pink",
+    "orange",
+    "orange",
+    "orange",
+    "blue",
+    "pink",
+    "pink",
+    "pink",
+    "blue",
+    "blue",
+    "blue",
+    "blue",
+    "blue",
+    "blue",
+    "blue"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 14
+    },
+    "difficulty": 4.4,
+    "solverVersion": "1.0"
+  }
+}

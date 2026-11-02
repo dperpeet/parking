@@ -1,0 +1,134 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-20",
+  "title": {
+    "de": "Level 20",
+    "en": "Level 20"
+  },
+  "seed": 2403206717,
+  "ruleset": "classic",
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [1, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v2",
+      "pos": [3, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [5, 5],
+      "dir": "S",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [4, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 2],
+      "dir": "S",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v9",
+      "pos": [4, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v10",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "l",
+      "color": "green"
+    },
+    {
+      "id": "v11",
+      "pos": [4, 4],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "green",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "yellow",
+    "yellow",
+    "green",
+    "orange",
+    "yellow",
+    "blue",
+    "yellow",
+    "blue",
+    "yellow",
+    "blue",
+    "blue",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 11
+    },
+    "difficulty": 4.1,
+    "solverVersion": "1.0"
+  }
+}
