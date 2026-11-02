@@ -5,6 +5,29 @@ import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
 import type { GenerateResult, GeneratorParams, LevelAnalysis } from './types';
 
+/**
+ * Zusaetzliche, optionale Parameter (additiv zu GeneratorParams, Defaults aendern nichts).
+ * Hinweis: `visiblePassengers` wirkt nur auf die Darstellung; Solver und Schwierigkeit kennen
+ * volle Information und ignorieren es.
+ */
+export interface GeneratorTuning {
+  /** Halteplaetze; wird als overrides.queue.slots ins Level geschrieben und fuer Analyse/Fenster genutzt. */
+  slots?: number;
+  /** Sichtbare Fahrgaeste; wird als overrides.passengers.visible ins Level geschrieben. */
+  visiblePassengers?: number;
+  /**
+   * Bevorzugt Kandidaten mit toten Zustaenden (Fehler zeigen sich spaeter): Kandidaten ohne tote
+   * Zustaende bekommen SOFT_PENALTY auf die Zielabstands-Metrik und zaehlen nicht als Treffer.
+   */
+  preferDeadEnds?: boolean;
+  /** Mindest-Tiefe (avgDeadEndDepth) fuer preferDeadEnds; Default 0 (nur deadStates > 0). */
+  minDeadEndDepth?: number;
+  /** Kandidaten mit hoeherer Zufallsspiel-Siegchance bekommen SOFT_PENALTY (Default: aus). */
+  maxRandomPlayWin?: number;
+}
+
+export type GeneratorOptions = GeneratorParams & GeneratorTuning;
+
 const DEFAULT_MAX_ATTEMPTS = 40;
 /** Zustandslimit pro Versuch: groessere Level gelten als zu teuer zu pruefen und werden verworfen. */
 const DEFAULT_MAX_STATES = 20_000;
@@ -14,6 +37,8 @@ const TRIVIAL_WIN_PROBABILITY = 0.9;
 const TRIVIAL_ALLOWED_BELOW = 1.5;
 /** Trivial wirkende Level gewinnen nur, wenn nichts anderes uebrig bleibt. */
 const TRIVIAL_PENALTY = 100;
+/** Aufschlag auf den Zielabstand, wenn preferDeadEnds nicht erfuellt ist (groesser als jede Toleranz). */
+const SOFT_PENALTY = 50;
 const SEED_MIX = 0x9e3779b1;
 const UINT32_RANGE = 0x100000000;
 const MIN_SHUFFLE = 1;
@@ -101,7 +126,7 @@ function pathOf(head: [number, number], dir: Dir, w: number, h: number): Array<[
 
 /** Platziert Fahrzeuge in umgekehrter Ausfahr-Reihenfolge; null, wenn das Raster nicht reicht. */
 function placeVehicles(
-  p: GeneratorParams,
+  p: GeneratorOptions,
   rules: ResolvedRules,
   r: Rng,
   types: string[],
@@ -182,13 +207,37 @@ function buildPassengers(
   }
 }
 
+function hasDeadEnds(a: LevelAnalysis, p: GeneratorTuning): boolean {
+  return a.deadStates > 0 && (a.avgDeadEndDepth ?? 0) >= (p.minDeadEndDepth ?? 0);
+}
+
 function isTrivial(a: LevelAnalysis, target?: [number, number]): boolean {
   if (a.randomPlayWinProbability <= TRIVIAL_WIN_PROBABILITY) return false;
   return target === undefined || target[0] >= TRIVIAL_ALLOWED_BELOW;
 }
 
+/** `overrides` fuers Level aus slots/visiblePassengers (leer, wenn nichts gesetzt ist). */
+function overridesFor(p: GeneratorTuning): Pick<Level, 'overrides'> {
+  const overrides: NonNullable<Level['overrides']> = {};
+  if (p.slots !== undefined) overrides.queue = { slots: p.slots };
+  if (p.visiblePassengers !== undefined) overrides.passengers = { visible: p.visiblePassengers };
+  return Object.keys(overrides).length > 0 ? { overrides } : {};
+}
+
+/** Regeln mit den Tuning-Overrides (entspricht resolveRules(ruleset, level.overrides)). */
+function effectiveRules(rules: ResolvedRules, p: GeneratorTuning): ResolvedRules {
+  return {
+    ...rules,
+    queue: { ...rules.queue, ...(p.slots !== undefined ? { slots: p.slots } : {}) },
+    passengers: {
+      ...rules.passengers,
+      ...(p.visiblePassengers !== undefined ? { visible: p.visiblePassengers } : {}),
+    },
+  };
+}
+
 function buildAttempt(
-  p: GeneratorParams,
+  p: GeneratorOptions,
   rules: ResolvedRules,
   attemptSeed: number,
   attempt: number,
@@ -228,6 +277,7 @@ function buildAttempt(
     title: p.title ?? `Generated ${p.seed}`,
     seed: attemptSeed,
     ruleset: p.ruleset ?? 'classic',
+    ...overridesFor(p),
     grid: { width: p.width, height: p.height, cells: [] },
     vehicles: placed.map((v) => ({
       id: v.id,
@@ -246,7 +296,8 @@ function buildAttempt(
  * Erzeugt ein Level. Deterministisch pro Parameter-Satz. Liefert das passende Level oder, wenn nach
  * maxAttempts keins im Zielbereich liegt, das naechstliegende (matched = false).
  */
-export function generate(p: GeneratorParams, rules: ResolvedRules): GenerateResult {
+export function generate(p: GeneratorOptions, baseRules: ResolvedRules): GenerateResult {
+  const rules = effectiveRules(baseRules, p);
   const maxAttempts = p.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   let best: { level: Level; analysis: LevelAnalysis; dist: number } | null = null;
   let attempts = 0;
@@ -261,7 +312,13 @@ export function generate(p: GeneratorParams, rules: ResolvedRules): GenerateResu
     const [lo, hi] = p.targetDifficulty ?? [0, 10];
     const d = analysis.difficulty;
     const trivialPenalty = isTrivial(analysis, p.targetDifficulty) ? TRIVIAL_PENALTY : 0;
-    const dist = (d < lo ? lo - d : d > hi ? d - hi : 0) + trivialPenalty;
+    const deadPenalty = p.preferDeadEnds && !hasDeadEnds(analysis, p) ? SOFT_PENALTY : 0;
+    const luckPenalty =
+      p.maxRandomPlayWin !== undefined && analysis.randomPlayWinProbability > p.maxRandomPlayWin
+        ? SOFT_PENALTY
+        : 0;
+    const dist =
+      (d < lo ? lo - d : d > hi ? d - hi : 0) + trivialPenalty + deadPenalty + luckPenalty;
     if (!best || dist < best.dist) best = { level, analysis, dist };
     if (dist === 0) break;
   }
