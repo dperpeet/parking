@@ -187,6 +187,23 @@ describe('extraSlot', () => {
     expect(r.state.status).toBe('won');
   });
 
+  it('keeps an added slot when a later undo restores an older snapshot', () => {
+    const { state, rules } = setup(BASIC);
+    const r = run(state, rules, [tap('a'), power('extraSlot'), power('undo')]);
+    expect(r.state.moves).toBe(0);
+    expect(r.state.slots).toHaveLength(6);
+    expect(r.state.slots.every((sl) => sl.kind === 'empty')).toBe(true);
+  });
+
+  it('keeps an unlocked slot when a later undo restores an older snapshot', () => {
+    const { state, rules } = setup({
+      ...BASIC,
+      overrides: { queue: { slots: 4, lockedSlots: [3] } },
+    });
+    const r = run(state, rules, [tap('a'), power('extraSlot'), power('undo')]);
+    expect(r.state.slots.map((sl) => sl.kind)).toEqual(['empty', 'empty', 'empty', 'empty']);
+  });
+
   it('is invalid without uses', () => {
     const { state, rules } = setup({
       ...BASIC,
