@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { h } from './dom';
 
 export const DESIGN_WIDTH = 390;
@@ -20,6 +21,8 @@ export interface Shell {
   live: HTMLElement;
   /** Skaliert die Buehne auf das Fenster und ruft danach die Listener. */
   onFit(cb: () => void): void;
+  /** Entfernt globale Listener (Resize). */
+  dispose(): void;
 }
 
 export function mountShell(root: HTMLElement): Shell {
@@ -30,20 +33,26 @@ export function mountShell(root: HTMLElement): Shell {
   const vehicleLayer = h('div', {
     class: 'vehicle-layer',
     role: 'group',
-    'aria-label': 'Fahrzeuge',
+    'aria-label': t('vehicles'),
   });
   const boardWrap = h(
     'section',
-    { class: 'board-wrap', 'aria-label': 'Spielfeld' },
+    { class: 'board-wrap', 'aria-label': t('board') },
     boardHost,
     vehicleLayer,
   );
   const powerUps = h('div', { class: 'slot-powerups' });
   const game = h('main', { class: 'game' }, header, passengers, queue, boardWrap, powerUps);
   const dialogLayer = h('div', { class: 'dialog-layer' });
-  const live = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite' });
-  const stage = h('div', { class: 'stage' }, game, dialogLayer, live);
-  const wrap = h('div', { class: 'stage-wrap' }, stage);
+  const live = h('div', {
+    class: 'sr-only',
+    role: 'status',
+    'aria-live': 'polite',
+    'data-testid': 'live',
+  });
+  const stage = h('div', { class: 'stage' }, game, live);
+  // Die Dialogebene liegt ausserhalb der skalierten Buehne und deckt so das ganze Fenster ab (auch den Letterbox-Rand).
+  const wrap = h('div', { class: 'stage-wrap' }, stage, dialogLayer);
   root.replaceChildren(wrap);
 
   const listeners: Array<() => void> = [];
@@ -74,5 +83,6 @@ export function mountShell(root: HTMLElement): Shell {
     dialogLayer,
     live,
     onFit: (cb) => listeners.push(cb),
+    dispose: () => window.removeEventListener('resize', fit),
   };
 }

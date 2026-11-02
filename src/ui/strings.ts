@@ -1,103 +1,111 @@
-// Deutsche UI-Texte und Ansagen fuer Screenreader (i18n folgt spaeter).
+// Texte fuer das Spielfeld-HUD und Screenreader-Ansagen. Woerter kommen aus src/i18n.
 import type { Dir } from '../schema';
 import type { GameEvent, GameState, LoseReason, PowerUpId } from '../engine/types';
+import { getLanguage, t, tn } from '../i18n';
+import type { StringKey } from '../i18n';
 import { PALETTE } from '../render/theme';
 
-export const de = {
-  back: 'Zurück zum Menü (noch nicht verfügbar)',
-  moves: 'Züge',
-  movesAria: (n: number): string => `${n} Züge`,
-  waiting: (n: number): string => `${n} warten`,
-  nextPassengers: 'Nächste Fahrgäste',
-  passengers: 'Fahrgäste',
-  slotsTitle: (used: number, total: number): string => `Halteplätze ${used} / ${total} belegt`,
-  slotEmpty: 'frei',
-  slotLocked: 'gesperrt',
-  board: 'Spielfeld',
-  powerUps: 'Hilfen',
-  powerUpLabel: {
-    undo: 'Zurück',
-    shuffle: 'Mischen',
-    extraSlot: '+1 Platz',
-    honk: 'Hupe',
-  } satisfies Record<PowerUpId, string>,
-  restart: 'Neustart',
-  winTitle: 'Geschafft!',
-  winSub: (moves: number): string => `In ${moves} Zügen`,
-  next: 'Weiter',
-  again: 'Nochmal',
-  similar: 'Ähnliches Level',
-  loseTitle: {
-    queueFull: 'Kein Platz mehr',
-    noMoves: 'Keine Züge mehr',
-    movesLimit: 'Keine Züge übrig',
-    timeUp: 'Zeit abgelaufen',
-  } satisfies Record<LoseReason, string>,
-  loseUndo: 'Zurück',
-  stars: (n: number): string => `${n} von 3 Sternen`,
+const POWER_UP_KEYS: Record<PowerUpId, StringKey> = {
+  undo: 'puUndo',
+  shuffle: 'puShuffle',
+  extraSlot: 'puExtraSlot',
+  honk: 'puHonk',
 };
 
-export function worldLabel(levelId: string): { world: string; level: string } {
-  const m = /^w(\d+)-(\d+)/.exec(levelId);
-  if (!m) return { world: 'ParKing', level: levelId };
-  const worlds: Record<string, string> = { '1': 'Werkstatt' };
-  const w = m[1] ?? '1';
-  return {
-    world: `Welt ${w} · ${worlds[w] ?? ''}`.replace(/ · $/, ''),
-    level: `Level ${Number(m[2])}`,
-  };
-}
+const LOSE_KEYS: Record<LoseReason, StringKey> = {
+  queueFull: 'loseQueueFull',
+  noMoves: 'loseNoMoves',
+  movesLimit: 'loseMovesLimit',
+  timeUp: 'loseTimeUp',
+};
 
-const DIR_DE: Record<Dir, string> = { N: 'oben', S: 'unten', E: 'rechts', W: 'links' };
+const DIR_KEYS: Record<Dir, StringKey> = { N: 'dirN', S: 'dirS', E: 'dirE', W: 'dirW' };
+
+export const powerUpLabel = (id: PowerUpId): string => t(POWER_UP_KEYS[id]);
+export const loseTitle = (reason: LoseReason): string => t(LOSE_KEYS[reason]);
 
 export function colorName(colorId: string): string {
-  return PALETTE[colorId]?.nameDe ?? colorId;
+  const c = PALETTE[colorId];
+  if (!c) return colorId;
+  return getLanguage() === 'de' ? c.nameDe : c.nameEn;
 }
 
-/** Deklination: "Blau" -> "Blaues"/"Blauer"; "Lila" bleibt, "Orange" -> "Oranges"/"Oranger". */
+/** Deklination (de): "Blau" -> "Blaues"/"Blauer"; "Lila" bleibt, "Orange" -> "Oranges"/"Oranger". */
 export function colorAdjective(colorId: string, suffix: 'es' | 'er'): string {
-  const n = colorName(colorId);
+  const n = PALETTE[colorId]?.nameDe ?? colorId;
   if (n.endsWith('a')) return n;
   if (n.endsWith('e')) return n + suffix.slice(1);
   return n + suffix;
 }
 
+/** Bestimmter Artikel + Adjektiv, kleingeschrieben (de): "das blaue Fahrzeug". Lila und Orange bleiben. */
+export function colorDefinite(colorId: string): string {
+  if (getLanguage() !== 'de') return colorName(colorId).toLowerCase();
+  const n = (PALETTE[colorId]?.nameDe ?? colorId).toLowerCase();
+  return n.endsWith('a') || n.endsWith('e') ? n : `${n}e`;
+}
+
+const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
+
+function vehicleNoun(colorId: string): string {
+  if (getLanguage() === 'de') return `${colorAdjective(colorId, 'es')} ${t('annVehicleGeneric')}`;
+  return `${capitalize(colorName(colorId))} ${t('annVehicleGeneric').toLowerCase()}`;
+}
+
+function passengerNoun(colorId: string): string {
+  if (getLanguage() === 'de') return `${colorAdjective(colorId, 'er')} Fahrgast`;
+  return `${capitalize(colorName(colorId))} passenger`;
+}
+
 export function vehicleLabel(v: { color: string; x: number; y: number; dir: Dir }): string {
-  return `${colorAdjective(v.color, 'es')} Fahrzeug, Reihe ${v.y + 1}, Spalte ${v.x + 1}, fährt nach ${DIR_DE[v.dir]}`;
+  return t('vehicleLabel', {
+    vehicle: vehicleNoun(v.color),
+    row: v.y + 1,
+    col: v.x + 1,
+    dir: t(DIR_KEYS[v.dir]),
+  });
+}
+
+/** Ansage fuer den Tipp. */
+export function hintAnnouncement(color: string): string {
+  return t('hintVehicle', { color: colorDefinite(color) });
 }
 
 /** Ansagetext fuer ein Event (oder null, wenn es nichts anzusagen gibt). */
 export function announce(event: GameEvent, state: GameState): string | null {
   const veh = (id: string): string => {
     const v = state.vehicles.find((o) => o.id === id);
-    return v ? `${colorAdjective(v.color, 'es')} Fahrzeug` : 'Fahrzeug';
+    return v ? vehicleNoun(v.color) : t('annVehicleGeneric');
   };
   switch (event.type) {
     case 'vehicleBlocked':
-      if (event.reason === 'queueFull') return 'Keine freie Halteposition';
-      if (event.reason === 'locked') return `${veh(event.vehicleId)} ist gesperrt`;
-      return `${veh(event.vehicleId)} ist blockiert`;
+      if (event.reason === 'queueFull') return t('annBlockedQueue');
+      if (event.reason === 'locked')
+        return t('annBlockedLocked', { vehicle: veh(event.vehicleId) });
+      return t('annBlockedPath', { vehicle: veh(event.vehicleId) });
     case 'vehicleExited':
-      return `${veh(event.vehicleId)} fährt zur Halteposition ${event.slotIndex + 1}`;
+      return t('annExited', { vehicle: veh(event.vehicleId), n: event.slotIndex + 1 });
     case 'passengerBoarded':
-      return `${colorAdjective(event.color, 'er')} Fahrgast steigt in Halteposition ${event.slotIndex + 1} ein`;
+      return t('annBoarded', { passenger: passengerNoun(event.color), n: event.slotIndex + 1 });
     case 'vehicleDeparted':
-      return `${veh(event.vehicleId)} ist voll und fährt ab`;
+      return t('annDeparted', { vehicle: veh(event.vehicleId) });
     case 'vehicleUnlocked':
-      return `${veh(event.vehicleId)} ist entsperrt`;
+      return t('annUnlocked', { vehicle: veh(event.vehicleId) });
     case 'stateRestored':
-      return 'Zug zurückgenommen';
+      return t('annRestored');
     case 'passengersShuffled':
-      return 'Fahrgäste gemischt';
+      return t('annShuffled');
     case 'slotAdded':
-      return 'Zusätzlicher Halteplatz';
+      return t('annSlotAdded');
     case 'won':
-      return `Geschafft! ${event.stars} von 3 Sternen in ${event.moves} Zügen`;
+      return t('annWon', { stars: event.stars, moves: event.moves });
     case 'lost':
-      return de.loseTitle[event.reason];
+      return loseTitle(event.reason);
     case 'invalidAction':
     case 'powerUpUsed':
     case 'slotShifted':
       return null;
   }
 }
+
+export const starsLabel = (n: number): string => tn('stars', n);

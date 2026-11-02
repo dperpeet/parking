@@ -20,12 +20,16 @@ const SHAKE_AMPLITUDE = 5;
 const SHAKE_CYCLES = 3;
 const EXIT_MS_PER_CELL = 70;
 const EXIT_MIN_MS = 260;
+const HINT_PULSES = 3;
+const HINT_ALPHA_MIN = 0.55;
 
 export class BoardView implements BoardAnimator {
   private readonly root = new Container();
   private readonly vehicles = new Map<string, VehicleView>();
   private layout: BoardLayout | null = null;
   private state: GameState | null = null;
+  private highlighted: string | null = null;
+  private highlightToken = 0;
 
   constructor(private readonly host: BoardHost) {
     host.stage.addChild(this.root);
@@ -70,6 +74,43 @@ export class BoardView implements BoardAnimator {
       if (parked.has(v.id) && !this.vehicles.has(v.id)) this.addVehicle(v);
     }
     this.host.requestRender();
+  }
+
+  /** Hebt ein Fahrzeug fuer `durationMs` mit pulsierendem Rahmen hervor (null: sofort entfernen). */
+  highlight(vehicleId: string | null, durationMs = 0): void {
+    this.highlightToken += 1;
+    const token = this.highlightToken;
+    if (this.highlighted) {
+      this.vehicles.get(this.highlighted)?.setGlow(0);
+      this.highlighted = null;
+    }
+    const view = vehicleId ? this.vehicles.get(vehicleId) : undefined;
+    if (!vehicleId || !view) {
+      this.host.requestRender();
+      return;
+    }
+    this.highlighted = vehicleId;
+    view.setGlow(1);
+    this.host.requestRender();
+    const stop = (): void => {
+      if (token !== this.highlightToken) return;
+      this.highlightToken += 1;
+      view.setGlow(0);
+      this.highlighted = null;
+      this.host.requestRender();
+    };
+    // Das Pulsieren ist reine Animation (bei reduzierter Bewegung steht der Rahmen still);
+    // die Dauer des Hinweises bestimmt der Timer.
+    void this.host.tweener.run({
+      durationMs,
+      onUpdate: (p) => {
+        if (token !== this.highlightToken) return;
+        const wave = 0.5 + 0.5 * Math.cos(p * HINT_PULSES * 2 * Math.PI);
+        view.setGlow(HINT_ALPHA_MIN + (1 - HINT_ALPHA_MIN) * wave);
+        this.host.requestRender();
+      },
+    });
+    setTimeout(stop, durationMs);
   }
 
   shake(vehicleId: string): Promise<void> {

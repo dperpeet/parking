@@ -297,3 +297,31 @@
 .pu-btn[data-testid='restart'] .badge {
   display: none;
 }
+
+/* Tipp: pulsierender Rahmen um das empfohlene Fahrzeug (Pixi zeichnet zusaetzlich einen Leuchtrahmen). */
+.vehicle-btn[data-hint] {
+  box-shadow:
+    0 0 0 4px var(--t-accent),
+    0 0 0 7px var(--t-outline);
+  animation: hint-pulse 650ms ease-in-out infinite alternate;
+}
+
+@keyframes hint-pulse {
+  from {
+    opacity: 0.55;
+  }
+}
+
+/* Kurzmeldung (Tipp) in der Luecke zwischen Halteplaetzen und Brett */
+.toast {
+  position: absolute;
+  top: 306px;
+  right: 16px;
+  left: 16px;
+  z-index: 5;
+  padding: 10px 14px 6px;
+  font-size: 18px;
+  text-align: center;
+  pointer-events: none;
+  animation: fade-in 180ms ease-out;
+}

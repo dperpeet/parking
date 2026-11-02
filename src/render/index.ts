@@ -7,3 +7,5 @@ export type { BoardAnimator, HudSink } from './event-player';
 export { computeBoardLayout, vehicleRect } from './layout';
 export type { BoardLayout, Rect } from './layout';
 export { PALETTE, THEME } from './theme';
+export { setMotionSetting } from './tween';
+export type { MotionSetting } from './tween';

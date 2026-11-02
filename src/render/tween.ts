@@ -50,6 +50,15 @@ export class Tweener {
   }
 }
 
+export type MotionSetting = 'system' | 'on' | 'off';
+let motionSetting: MotionSetting = 'system';
+
+/** Einstellung "Bewegung reduzieren": 'on'/'off' ueberschreibt die Systemvorgabe. */
+export function setMotionSetting(setting: MotionSetting): void {
+  motionSetting = setting;
+}
+
 export function prefersReducedMotion(): boolean {
+  if (motionSetting !== 'system') return motionSetting === 'on';
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

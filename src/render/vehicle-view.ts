@@ -8,11 +8,16 @@ const WINDSHIELD_THICKNESS = 0.16;
 const WINDSHIELD_MARGIN = 0.14;
 const WINDSHIELD_SIDE_INSET = 0.2;
 const GLYPH_SIZE = 0.42;
+/** Leuchtrahmen des Tipps: Abstand zum Fahrzeug und Strichstaerke in px. */
+const HINT_GLOW_GROW = 5;
+const HINT_GLOW_WIDTH = 7;
 
 export class VehicleView extends Container {
   /** Ruheposition (obere linke Ecke des Rechtecks), Basis fuer Animationen. */
   readonly restX: number;
   readonly restY: number;
+  private glow: Graphics | null = null;
+  private readonly size: { w: number; h: number; radius: number };
 
   constructor(
     readonly vehicleId: string,
@@ -27,6 +32,7 @@ export class VehicleView extends Container {
     this.restX = rect.x;
     this.restY = rect.y;
     this.position.set(rect.x, rect.y);
+    this.size = { w: rect.w, h: rect.h, radius };
 
     const g = new Graphics();
     g.roundRect(THEME.shadowOffset, THEME.shadowOffset, rect.w, rect.h, radius).fill(THEME.outline);
@@ -52,6 +58,27 @@ export class VehicleView extends Container {
     glyph.anchor.set(0.5);
     glyph.position.set(rect.w / 2, rect.h / 2);
     this.addChild(glyph);
+  }
+
+  /** Leuchtrahmen fuer den Tipp. alpha 0 blendet ihn aus. */
+  setGlow(alpha: number): void {
+    if (alpha <= 0) {
+      this.glow?.destroy();
+      this.glow = null;
+      return;
+    }
+    if (!this.glow) {
+      const { w, h, radius } = this.size;
+      const grow = HINT_GLOW_GROW;
+      const g = new Graphics();
+      g.roundRect(-grow, -grow, w + 2 * grow, h + 2 * grow, radius + grow).stroke({
+        width: HINT_GLOW_WIDTH,
+        color: THEME.accent,
+      });
+      this.glow = g;
+      this.addChildAt(g, 0);
+    }
+    this.glow.alpha = alpha;
   }
 }
 

@@ -25,6 +25,8 @@ const ICONS = {
   plus: 'M12 5v14M5 12h14',
   restart: 'M20 5v6h-6M19 11a8 8 0 1 0-1.5 5',
   lock: 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z',
+  bulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
+  gear: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6',
 } as const;
 
 export type IconName = keyof typeof ICONS;
