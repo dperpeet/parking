@@ -9,6 +9,7 @@ export const de = {
   movesAria: (n: number): string => `${n} Züge`,
   waiting: (n: number): string => `${n} warten`,
   nextPassengers: 'Nächste Fahrgäste',
+  passengers: 'Fahrgäste',
   slotsTitle: (used: number, total: number): string => `Halteplätze ${used} / ${total} belegt`,
   slotEmpty: 'frei',
   slotLocked: 'gesperrt',

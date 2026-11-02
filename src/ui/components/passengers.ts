@@ -4,7 +4,7 @@ import { h } from '../dom';
 import { colorName, de } from '../strings';
 
 /** Darstellungsgrenze der Fahrgast-Kreise (Layoutbreite), unabhaengig von passengers.visible. */
-const MAX_CHIPS = 6;
+const MAX_CHIPS = 8;
 
 export interface PassengerView {
   update(state: GameState, visible: number): void;
@@ -12,12 +12,13 @@ export interface PassengerView {
 
 export function createPassengers(parent: HTMLElement): PassengerView {
   const row = h('div', { class: 'pax-row' });
-  const count = h('div', { class: 'pax-count' });
+  const count = h('span', { class: 'pax-count' });
+  const head = h('div', { class: 'pax-head' }, h('span', {}, de.passengers), count);
   const panel = h(
     'section',
     { class: 'panel pax-panel', 'aria-label': de.nextPassengers },
+    head,
     row,
-    count,
   );
   parent.append(panel);
 

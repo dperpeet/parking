@@ -89,11 +89,17 @@
 /* Fahrgaeste */
 .pax-panel {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 8px;
-  height: 84px;
-  padding: 0 14px;
+  padding: 10px 14px 12px;
+}
+
+.pax-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--t-sub);
 }
 
 .pax-row {
@@ -101,41 +107,40 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  height: 48px;
 }
 
 .pax {
   flex: none;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  font-size: 17px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
   font-weight: 800;
   border: var(--t-outline-w) solid var(--t-outline);
   border-radius: 50%;
 }
 
 .pax-first {
-  width: 52px;
-  height: 52px;
-  font-size: 26px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
   box-shadow:
     0 0 0 3px var(--t-panel),
     0 0 0 6px var(--t-accent);
-  margin-right: 6px;
+  margin: 0 6px 0 4px;
 }
 
 .pax-more {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--t-sub);
   padding-left: 2px;
+  white-space: nowrap;
 }
 
 .pax-count {
-  flex: none;
-  font-size: 15px;
-  color: var(--t-sub);
   white-space: nowrap;
 }
 
