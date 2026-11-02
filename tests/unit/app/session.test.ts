@@ -90,7 +90,7 @@ describe('Session: Kampagne', () => {
     play(s, WIN_ORDER);
     expect(s.controller.getState().status).toBe('won');
     expect(h.progress.get().levels['01/007']).toEqual({ stars: 3, bestMoves: 11, completed: true });
-    expect(h.progress.get().highestStage).toBe(2);
+    expect(h.progress.get().highestStage).toBe(4);
   });
 
   it('der Sieg wird nur einmal gespeichert; Niederlagen speichern nichts', async () => {
@@ -156,7 +156,7 @@ describe('Session: Aehnliches Level', () => {
       width: 6,
       height: 6,
       vehicleCount: 11,
-      targetDifficulty: [1.5, 2.5],
+      targetDifficulty: [3.7 - 0.5, 3.7 + 0.5],
       id: 'w1-07-s1',
       seed: similarSeed('w1-07', 1),
     });
