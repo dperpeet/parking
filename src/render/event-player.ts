@@ -1,0 +1,62 @@
+import type { GameEvent, GameState } from '../engine/types';
+
+/** Was der Event-Player vom Pixi-Brett braucht (in Tests ersetzbar). */
+export interface BoardAnimator {
+  shake(vehicleId: string): Promise<void>;
+  /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
+  exit(vehicleId: string, path: Array<[number, number]>): Promise<void>;
+  /** Gleicht die sichtbaren Fahrzeuge mit dem Zustand ab (z. B. nach Undo). */
+  sync(state: GameState): void;
+}
+
+/** Was der Event-Player vom DOM-HUD braucht. */
+export interface HudSink {
+  onEvent(event: GameEvent, state: GameState): void;
+  render(state: GameState): void;
+}
+
+/**
+ * Spielt GameEvent[] nacheinander ab. Brett-Events werden animiert, alle anderen gehen ans HUD.
+ * Mehrere play()-Aufrufe werden hintereinander gereiht.
+ */
+export class EventPlayer {
+  private chain: Promise<void> = Promise.resolve();
+
+  constructor(
+    private readonly board: BoardAnimator,
+    private readonly hud: HudSink,
+  ) {}
+
+  play(events: GameEvent[], state: GameState): Promise<void> {
+    this.chain = this.chain.then(() => this.run(events, state));
+    return this.chain;
+  }
+
+  /** Setzt Brett und HUD ohne Animation auf den Zustand (Start, Neustart). */
+  reset(state: GameState): Promise<void> {
+    this.chain = this.chain.then(() => {
+      this.board.sync(state);
+      this.hud.render(state);
+    });
+    return this.chain;
+  }
+
+  private async run(events: GameEvent[], state: GameState): Promise<void> {
+    for (const event of events) {
+      switch (event.type) {
+        case 'vehicleBlocked':
+          this.hud.onEvent(event, state);
+          await this.board.shake(event.vehicleId);
+          break;
+        case 'vehicleExited':
+          await this.board.exit(event.vehicleId, event.path);
+          this.hud.onEvent(event, state);
+          break;
+        default:
+          this.hud.onEvent(event, state);
+      }
+    }
+    this.board.sync(state);
+    this.hud.render(state);
+  }
+}
