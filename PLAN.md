@@ -1,6 +1,6 @@
-# Projektplan: „Stauwerk" – regelbasiertes Parkplatz-Puzzle im Browser
+# Projektplan: „ParKing" – regelbasiertes Parkplatz-Puzzle im Browser
 
-> Arbeitstitel **Stauwerk**. Kostenlos, ohne Werbung, ohne Payments, ohne Accounts, ohne Tracking. Es geht nur um den Spielspaß.
+> Name: **ParKing**. Kostenlos, ohne Werbung, ohne Payments, ohne Accounts, ohne Tracking. Es geht nur um den Spielspaß.
 > Genre: Parkplatz-/Stau-Puzzle mit Farb-Matching. Das Spiel ist ein **eigenes** Spiel in diesem Genre, mit eigenem Namen, eigener Grafik und eigenen Mechaniken, und kein Nachbau eines bestimmten Titels.
 > Kernidee: **Alle Regeln sind datengetrieben** (JSON-Rulesets + JSON-Levels) und damit von uns frei konfigurierbar.
 
@@ -15,14 +15,15 @@
 | Architektur | Headless, deterministische Engine (`step(state, action) → {state, events}`) ↔ Renderer spielt nur Events ab |
 | Regeln | Ruleset-JSON + Level-JSON mit `overrides`, validiert per zod |
 | Content | Solver + Generator (Web Worker), Level-Editor, Teilen per URL-Fragment (kein Server nötig) |
-| Hosting | Default **GitHub Pages** (statisch, per Actions). Alternativ der eigene Server per Docker + Caddy |
+| Hosting | **Eigener Server** (Docker + Caddy, statische Dateien). GitHub Pages wäre nur mit öffentlichem Repo oder kostenpflichtigem GitHub-Plan gratis |
 | Umsetzung | Claude Code als Orchestrator, Arbeitspakete parallel an **Sonnet-Subagents**, CI als hartes Gate |
 
-**Offene Entscheidungen für dich** (vor M0):
-1. Name: *Stauwerk* (Spielzeug-Werkstatt-Optik). Alternativen: *Kurvenkönig*, *Hupen & Hopsen*, *Rushhour Rhapsodie*, *Fahrgast Fix*.
-2. Hosting: GitHub Pages (empfohlen, null Wartung) oder dein Server (Domain?).
-3. Tageslevel-Zeitzone: lokal (empfohlen) oder UTC.
-4. Lizenz des Codes (z. B. MIT) und der Levels (z. B. CC BY 4.0).
+**Getroffene Entscheidungen:**
+1. Name: **ParKing**. Setting: Spielzeug-Werkstatt-Optik.
+2. Hosting: **eigener Server** (Docker + Caddy). GitHub Pages für private Repos setzt einen kostenpflichtigen Plan voraus (GitHub Pro/Team). Auf GitHub Free gibt es Pages nur für öffentliche Repos.
+3. Tageslevel: **lokale Zeit** (Wechsel um Mitternacht des Spielers).
+4. Lizenzen: Code **MIT**, Level/Inhalte **CC BY 4.0**.
+5. Fortschritt: Freigespielte Level werden lokal im Browser gespeichert. Man kann jederzeit **auf der aktuellen Schwierigkeitsstufe bleiben** (siehe 1.8).
 
 ---
 
@@ -60,7 +61,7 @@ Ein Level referenziert ein Ruleset und kann einzelne Werte per `overrides` ände
 **Ruleset** (`src/content/rulesets/classic.json`):
 ```json
 {
-  "schema": "stauwerk.ruleset/1",
+  "schema": "parking.ruleset/1",
   "id": "classic",
   "name": { "de": "Klassik", "en": "Classic" },
   "queue": { "slots": 5, "fillPolicy": "firstFree", "lockedSlots": [], "loseOnFull": true },
@@ -82,7 +83,7 @@ Ein Level referenziert ein Ruleset und kann einzelne Werte per `overrides` ände
 **Level** (`x` nach rechts, `y` nach unten; `pos` ist die Kopfzelle, `dir` die Blickrichtung N/E/S/W, die Länge erstreckt sich nach hinten):
 ```json
 {
-  "schema": "stauwerk.level/1",
+  "schema": "parking.level/1",
   "id": "w1-07",
   "title": { "de": "Enge Gasse", "en": "Narrow Lane" },
   "ruleset": "classic",
@@ -120,8 +121,8 @@ Ein Level referenziert ein Ruleset und kann einzelne Werte per `overrides` ände
 
 ### 1.6 Spielmodi
 - **Kampagne:** Welten à 20 Level, jede Welt führt ein Regelpaket ein. Die Level werden generiert, dann kuratiert und als statische JSON-Dateien ausgeliefert. Sterne schalten Bonuslevel frei.
-- **Tageslevel:** `seed = hash("stauwerk" + Datum)`. Das Level wird offline im Browser generiert und ist für alle gleich, ohne Server. Ergebnis als teilbarer Text („Stauwerk 2026-11-02: ★★★ in 9 Zügen"), Streak lokal.
-- **Endlos:** Ein Run-Seed liefert Level mit steigender Schwierigkeit. Ein verlorenes Level beendet den Run, der Bestwert bleibt lokal.
+- **Tageslevel:** `seed = hash("parking" + lokales Datum YYYY-MM-DD)`, Wechsel um Mitternacht Ortszeit. Das Level wird offline im Browser generiert und ist für alle gleich, ohne Server. Ergebnis als teilbarer Text („ParKing 2026-11-02: ★★★ in 9 Zügen"), Streak lokal.
+- **Endlos:** Ein Run-Seed liefert Level mit steigender Schwierigkeit. Mit „Stufe halten“ bleibt die Schwierigkeit konstant (siehe 1.8). Ein verlorenes Level beendet den Run, der Bestwert bleibt lokal.
 - **Level-Editor:** Fahrzeuge platzieren und drehen, Passagiere automatisch erzeugen, Ruleset und Overrides wählen. Ein Live-Solver zeigt „lösbar, Par = N" an. Teilen geht nur mit bestandenem Check oder mit dem Vermerk „ungeprüft".
 - **Teilen per URL (ohne Server):** Level minimiert → deflate (`fflate`) → base64url im Fragment: `https://…/#/play?l=1.<payload>`. Das Fragment geht nie an einen Server. Weitere Eckpunkte:
   - Versionspräfix im Payload, Längenlimit ca. 2 kB.
@@ -129,10 +130,22 @@ Ein Level referenziert ein Ruleset und kann einzelne Werte per `overrides` ände
   - Inhalte werden nie als HTML eingefügt.
 
 ### 1.7 Fortschritt ohne Accounts
-- `localStorage`-Key `stauwerk.save.v1` (versioniert, mit Migrationen) für Kampagne, Tageslevel, Endlos, Power-Ups, eigene Level und Einstellungen.
+- `localStorage`-Key `parking.save.v1` (versioniert, mit Migrationen) für Kampagne, Tageslevel, Endlos, Power-Ups, eigene Level und Einstellungen.
 - Alle Zugriffe laufen in try/catch. Fällt der Speicher aus (z. B. im privaten Tab), läuft das Spiel im Arbeitsspeicher weiter.
 - Export/Import als `.json` oder Textcode (mit Prüfsumme). Beim Import mit vorhandenem Stand: zusammenführen oder ersetzen.
 - Keine Cookies, keine externen Requests, keine Telemetrie.
+
+### 1.8 Freischalten und „Stufe halten“
+Spielerwunsch: Freigespieltes bleibt erhalten, und niemand wird gezwungen, schwieriger zu spielen.
+
+- **Freischalten:** Ein Level gilt als geschafft ab 1 Stern und schaltet das nächste frei. Fertige Welten schalten die nächste Welt frei. Der Stand (`unlocked`, Sterne, beste Zugzahl) liegt in `parking.save.v1` im `localStorage`.
+- **Freie Wahl:** Jedes freigespielte Level und jede freigespielte Welt ist jederzeit wieder spielbar. Nach einem Sieg gibt es drei Knöpfe: „Weiter“, „Nochmal“ und **„Ähnliches Level“**.
+- **„Ähnliches Level“:** Der Generator erzeugt ein neues Level mit gleichem Regelsatz und gleicher Schwierigkeit (±0,5 auf der 1–10-Skala, gleiche Welt-Mechaniken). Damit lässt sich eine Stufe beliebig lange üben, ohne dass sie schwerer wird.
+- **„Stufe halten“ (Schalter):**
+  - Im **Endlos-Modus** fixiert der Schalter die Schwierigkeit auf die aktuelle (oder eine gewählte) Stufe, statt sie zu steigern.
+  - In der Kampagne kann man stattdessen eine **Übungsstufe** wählen: Jede bereits erreichte Schwierigkeitsstufe ist als Endlos-Quelle spielbar.
+- **Gespeichert wird:** höchste erreichte Stufe pro Regelsatz, gewählte Halte-Stufe, Bestwerte pro Stufe. Export/Import wie in 1.7.
+- **Ohne localStorage** (z. B. privater Tab) gilt alles nur für die laufende Sitzung. Ein Hinweis erklärt, dass der Fortschritt nicht gespeichert wird.
 
 ---
 
@@ -164,7 +177,7 @@ ui/ + render/  ──►  app/ (Orchestrierung, Routing, Persistenz)  ──► 
 **Repo-Struktur**
 ```
 parking/
-├─ .github/workflows/ (ci.yml, deploy-pages.yml, release.yml), CODEOWNERS, pull_request_template.md
+├─ .github/workflows/ (ci.yml, deploy.yml, release.yml), CODEOWNERS, pull_request_template.md
 ├─ docs/ (ARCHITECTURE.md, INTERFACES.md, RULESETS.md, LEVEL-FORMAT.md, adr/)
 ├─ deploy/docker/ (Dockerfile, Caddyfile, nginx.conf, compose.yml)
 ├─ public/ (icons/, audio/, og-image.png)
@@ -200,9 +213,7 @@ parking/
 - **i18n:** de/en mit typisierten Keys (der Build bricht bei fehlenden Keys), `Intl.PluralRules`.
 
 ### 2.4 Hosting & Deployment
-**A) GitHub Pages (Default):** Deploy per Actions bei Push auf `main` nach grüner CI. Vite-`base` ist `/parking/`, mit eigener Domain `/`. Hash-Routing braucht keine Rewrites.
-
-**B) Eigener Server:** Multi-Stage-Docker (Node-Build → `caddy:2-alpine`).
+**Eigener Server (gewählt):** Multi-Stage-Docker (Node-Build → `caddy:2-alpine`), Vite-`base` = `/`, Hash-Routing (keine Rewrites nötig).
 ```dockerfile
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -231,14 +242,20 @@ spiel.example.org {
   header @shell Cache-Control "no-cache"
 }
 ```
-Caddy holt das TLS-Zertifikat automatisch. Update auf dem Server: `docker compose up -d --build`. Alternativ baut die CI ein Image nach GHCR, das der Server dann pullt.
+Caddy holt das TLS-Zertifikat automatisch (Domain + DNS-A-Record auf den Server nötig).
+
+**Deploy-Weg (Empfehlung):** Die CI baut bei Push auf `main` ein Image und pusht es nach GHCR. Für private Repos ist GHCR im Rahmen des Free-Kontingents kostenlos, und ein kleines statisches Image passt locker hinein. Der Server zieht das Image per Deploy-Job über SSH (`docker compose pull && up -d`). Die Zugangsdaten liegen als GitHub-Secrets: SSH-Key, Host und Nutzer.
+- Einfachere Alternative: per SSH `git pull && docker compose up -d --build` direkt auf dem Server.
+- Später möglich: das Repo öffentlich machen und kostenlos auf GitHub Pages ausweichen. Der Build ist dafür schon vorbereitet (`base` konfigurierbar).
+
+**Server-Voraussetzungen:** Docker + Compose, Ports 80/443 offen, eine (Sub-)Domain.
 
 **CI-Pipeline** (`ci.yml`, für PRs und `main`):
 1. install
 2. lint ‖ typecheck ‖ unit + content tests (Engine-Coverage ≥ 90 %, alle Level lösbar)
 3. build + Bundle-Size-Check
 4. Playwright E2E (Mobile + Desktop)
-5. deploy (nur `main`)
+5. deploy (nur `main`): Image → GHCR → SSH-Deploy auf deinen Server
 
 ---
 
@@ -246,11 +263,11 @@ Caddy holt das TLS-Zertifikat automatisch. Update auf dem Server: `docker compos
 
 | M | Inhalt | Deliverables | Definition of Done |
 |---|---|---|---|
-| **M0 Setup** | Gerüst | Vite/TS/Lint/Tests, Ordnerstruktur, `CLAUDE.md`, `docs/INTERFACES.md`, zod-Schemas v1 (Entwurf), CI, leere Seite live | `main` deployt automatisch, Import-Grenzen werden per Lint erzwungen |
+| **M0 Setup** | Gerüst | Vite/TS/Lint/Tests, Ordnerstruktur, `CLAUDE.md`, `docs/INTERFACES.md`, zod-Schemas v1 (Entwurf), CI, Docker/Caddy-Deploy, leere Seite live auf deinem Server | `main` deployt automatisch, Import-Grenzen werden per Lint erzwungen |
 | **M1 Engine** | Spiellogik headless | `step`, RNG, Klassik-Ruleset, Events, Replay-Format, 10 handgebaute Testlevel | Coverage ≥ 90 %; Determinismus-Test (gleiche Aktionen → gleicher Hash); Property-Tests |
 | **M2 Prototyp** | Spielbar | Pixi-Board, Touch, Event-Player, HUD, Sieg/Niederlage, einfache Levelauswahl | Auf iOS Safari + Android Chrome flüssig spielbar; E2E „gewinnen" und „verlieren" grün |
-| **M3 Regeln + 30 Level** | Datengetrieben | ≥ 3 Rulesets, Power-Ups (Undo/Shuffle/Extra-Slot), Fortschrittsspeicher, 30 Level in 3 Packs, Regel-Doku | Ruleset-Wechsel ohne Codeänderung; alle Level CI-verifiziert |
-| **M4 Solver/Generator/Editor/Share** | Content-Tools | Worker-Solver (Par + Hint), Generator mit Seed + Schwierigkeit, Tageslevel, Endlos, Editor, Share-URLs | Editor-Level → URL → anderes Gerät spielt identisch; Fuzz-Test: kaputte URLs verursachen nie einen Crash |
+| **M3 Regeln + 30 Level** | Datengetrieben | ≥ 3 Rulesets, Power-Ups (Undo/Shuffle/Extra-Slot), Fortschrittsspeicher (Freischalten + freie Levelwahl), 30 Level in 3 Packs, Regel-Doku | Ruleset-Wechsel ohne Codeänderung; alle Level CI-verifiziert; Fortschritt übersteht Reload |
+| **M4 Solver/Generator/Editor/Share** | Content-Tools | Worker-Solver (Par + Hint), Generator mit Seed + Schwierigkeit, Tageslevel (lokale Zeit), Endlos mit „Stufe halten“, „Ähnliches Level“, Editor, Share-URLs | Editor-Level → URL → anderes Gerät spielt identisch; Fuzz-Test: kaputte URLs verursachen nie einen Crash |
 | **M5 Polish** | Qualität | Sound, Animationen/Partikel, Spezialobjekte (Einbahn, Schlüssel, Schranken, Mystery), i18n, A11y, PWA | Lighthouse PWA/A11y ≥ 90, Offline-E2E grün, Budgets eingehalten |
 | **M6 Release** | Launch | ≥ 60 Level, README/Anleitung, Datenschutzhinweis (keine Cookies), Social-Preview, `v1.0.0`, optional Docker-Image | Release-Checkliste erledigt, Cross-Browser-Smoke, Deployment verifiziert |
 
@@ -315,5 +332,5 @@ Diese Dateien ändert nur der Orchestrator (CODEOWNERS).
 
 ## 6. Nächste Schritte
 1. Repo-Zugriff für Claude Code einrichten (Claude GitHub App für `dperpeet/parking`), dann diesen Plan nach `main` pushen.
-2. Offene Entscheidungen (Abschnitt 0) klären.
+2. Server-Infos bereitstellen: (Sub-)Domain, Docker vorhanden? SSH-Deploy-Nutzer anlegen, Secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` im Repo hinterlegen.
 3. M0 starten: Orchestrator legt Gerüst, Interfaces und CI an. Danach laufen die Pakete A, B, C und E parallel als Sonnet-Subagents.
