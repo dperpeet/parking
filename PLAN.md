@@ -30,7 +30,7 @@
 ## 1. Game Design
 
 ### 1.1 Setting
-Eine Spielzeug-Werkstatt: Holzautos auf Holzbrettern, die Passagiere sind Holzfiguren. Die Optik besteht aus flachen Vektorformen und wird zur Laufzeit erzeugt, deshalb braucht es keine Bild-Assets pro Farbe. Jede Farbe trägt zusätzlich ein **Symbol** (Kreis, Dreieck, Stern …), damit das Spiel farbenblind-tauglich ist.
+Comic-Stil (entschieden, siehe `docs/adr/0001-visual-style-comic.md`): dicke Konturen, harte Schatten, kräftige Farben, Schrift Baloo 2. Die Optik besteht aus Vektorformen und wird zur Laufzeit erzeugt. Jede Farbe trägt zusätzlich ein **Symbol** (●, ▲, ■, ★ …), damit das Spiel farbenblind-tauglich ist. Holz- und Flach-Stil aus den Mockups bleiben als spätere optionale Themes vorgemerkt.
 
 ### 1.2 Core Loop (Default-Regeln)
 1. Das Raster enthält Fahrzeuge (Länge 2/3/4, Farbe, Blickrichtung). Darunter liegt die **Halteschlange** (N Slots) und daneben die **Passagierreihe**.
