@@ -8,6 +8,8 @@ export interface VehicleButtons {
   update(state: GameState): void;
   /** Fokus per Pfeiltaste in Richtung (dx,dy) verschieben. */
   moveFocus(dx: number, dy: number): void;
+  /** Markiert ein Fahrzeug als Tipp (data-hint); null entfernt die Markierung. */
+  setHint(vehicleId: string | null): void;
 }
 
 export function createVehicleButtons(
@@ -37,6 +39,12 @@ export function createVehicleButtons(
   };
 
   return {
+    setHint(vehicleId) {
+      for (const [id, btn] of buttons) {
+        if (id === vehicleId) btn.setAttribute('data-hint', 'true');
+        else btn.removeAttribute('data-hint');
+      }
+    },
     update(state) {
       if (state.levelId !== lastLevel) {
         layer.replaceChildren();

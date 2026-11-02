@@ -1,7 +1,6 @@
 import type { Level, ResolvedRules } from '../schema';
 import type { Action, GameEvent, GameState } from '../engine/types';
 import type { EngineApi } from './engine-port';
-import { makeSimilarLevel } from './similar-level';
 
 export interface ControllerUpdate {
   /** 'new': frisch aufgebautes Spiel (Start, Neustart, naechstes Level); 'step': Ergebnis einer Aktion. */
@@ -15,31 +14,23 @@ export type ControllerListener = (update: ControllerUpdate) => void;
 
 export interface ControllerOptions {
   engine: EngineApi;
-  /** Reihenfolge der spielbaren Level; "Weiter" geht zum naechsten, nach dem letzten zu einer Variante. */
-  levels: Level[];
+  level: Level;
   rules: ResolvedRules;
-  startIndex?: number;
 }
 
+/** Haelt Level, Regeln und Engine-Zustand des laufenden Spiels. Welches Level als naechstes kommt, entscheidet die Session. */
 export class GameController {
   private readonly engine: EngineApi;
-  private readonly levels: Level[];
-  private readonly rules: ResolvedRules;
   private readonly listeners = new Set<ControllerListener>();
-  private index: number;
   private level: Level;
+  private rules: ResolvedRules;
   private state: GameState;
-  private variant = 0;
 
   constructor(opts: ControllerOptions) {
-    const first = opts.levels[opts.startIndex ?? 0];
-    if (!first) throw new Error('Keine Level vorhanden');
     this.engine = opts.engine;
-    this.levels = opts.levels;
+    this.level = opts.level;
     this.rules = opts.rules;
-    this.index = opts.startIndex ?? 0;
-    this.level = first;
-    this.state = this.engine.createGame(first, this.rules);
+    this.state = this.engine.createGame(opts.level, opts.rules);
   }
 
   getState(): GameState {
@@ -73,28 +64,14 @@ export class GameController {
   }
 
   restart(): void {
-    this.load(this.level);
+    this.load(this.level, this.rules);
   }
 
-  /** Naechstes Level der Liste, nach dem letzten eine Variante des aktuellen. */
-  next(): void {
-    if (this.index + 1 < this.levels.length) {
-      this.index += 1;
-      const lvl = this.levels[this.index];
-      if (lvl) this.load(lvl);
-    } else {
-      this.similar();
-    }
-  }
-
-  similar(): void {
-    this.variant += 1;
-    this.load(makeSimilarLevel(this.level, this.rules.vehicles.colors, this.variant));
-  }
-
-  private load(level: Level): void {
+  /** Startet ein anderes Level (mit seinen Regeln). */
+  load(level: Level, rules: ResolvedRules): void {
     this.level = level;
-    this.state = this.engine.createGame(level, this.rules);
+    this.rules = rules;
+    this.state = this.engine.createGame(level, rules);
     this.emit({ kind: 'new', state: this.state, level, events: [] });
   }
 

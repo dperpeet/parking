@@ -1,78 +1,60 @@
-import classicJson from '../content/rulesets/classic.json';
-import level007 from '../content/levels/pack-01/007.json';
-import { Level, Ruleset, resolveRules } from '../schema';
-import { BoardView, EventPlayer, createPixiApp } from '../render';
-import { THEME } from '../render/theme';
-import { applyThemeVars, bindKeyboard, createHud, mountShell } from '../ui';
-import type { EngineApi } from './engine-port';
 import { createGame, step } from '../engine';
-import { GameController } from './game-controller';
+import { applyThemeVars } from '../ui';
+import type { EngineApi } from './engine-port';
+import { mountGameScreen } from './game-screen';
+import { getCampaign } from './levels';
+import { Progress } from './progress';
+import { createRouter } from './router';
+import type { Route, Router } from './router';
+import { mountSelectScreen } from './select-screen';
+import { GameSession } from './session';
+import { applyLanguage, applyMotion } from './settings-apply';
+import { createSolverPort } from './solver-port';
 
 // ENGINE-WEICHE: einzige Stelle, an der die Engine gewaehlt wird (Tests nutzen app/fake-engine.ts).
 const engine: EngineApi = { createGame, step };
 
-async function loadFont(): Promise<void> {
-  try {
-    await Promise.race([
-      document.fonts.load(`800 24px ${THEME.font}`),
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-    ]);
-  } catch {
-    // Schrift ist optional, Fallback-Schrift reicht.
-  }
-}
-
-async function boot(): Promise<void> {
+function boot(): void {
   const root = document.getElementById('app');
   if (!root) return;
   applyThemeVars(document.documentElement);
 
-  const ruleset = Ruleset.parse(classicJson);
-  const level = Level.parse(level007);
-  const rules = resolveRules(ruleset, level.overrides);
-  const controller = new GameController({ engine, levels: [level], rules });
+  const progress = new Progress(() => window.localStorage);
+  applyLanguage(progress.get().settings.language, navigator.language);
+  applyMotion(progress.get().settings.motion);
 
-  const shell = mountShell(root);
-  await loadFont();
+  const campaign = getCampaign();
+  const solver = createSolverPort();
+  const now = (): Date => new Date();
+  let current: { dispose(): void } | null = null;
+  const router: Router = createRouter(window, (route) => show(route));
 
-  const hud = createHud(shell, () => controller.getRules(), {
-    dispatch: (a) => controller.dispatch(a),
-    restart: () => controller.restart(),
-    next: () => controller.next(),
-    similar: () => controller.similar(),
-  });
+  const show = (route: Route): void => {
+    current?.dispose();
+    current = null;
+    if (route.name === 'select') {
+      current = mountSelectScreen(root, { progress, campaign, router, now });
+      return;
+    }
+    const session = new GameSession(
+      {
+        engine,
+        solver,
+        progress,
+        campaign,
+        now,
+        syncRoute: (r) => router.replace(r),
+        exit: () => router.navigate({ name: 'select' }),
+      },
+      route,
+    );
+    current = mountGameScreen(root, session, {
+      back: () => router.navigate({ name: 'select' }),
+      retry: () => show(route),
+    });
+  };
 
-  // Pixi ist nur fuer das Brett zustaendig. Scheitert WebGL, bleibt das Spiel ueber die DOM-Buttons bedienbar.
-  let board: BoardView | null = null;
-  try {
-    const pixi = await createPixiApp(shell.boardHost);
-    board = new BoardView(pixi);
-    pixi.onResize(() => board?.resize());
-    shell.onFit(() => pixi.resize());
-  } catch (err) {
-    console.warn('Pixi konnte nicht gestartet werden', err);
-  }
-
-  const activePlayer = new EventPlayer(
-    board ?? {
-      shake: () => Promise.resolve(),
-      exit: () => Promise.resolve(),
-      sync: () => undefined,
-    },
-    hud,
-  );
-
-  controller.subscribe((u) => {
-    if (u.kind === 'new') void activePlayer.reset(u.state);
-    else void activePlayer.play(u.events, u.state);
-  });
-  bindKeyboard({
-    moveFocus: hud.moveFocus,
-    undo: () => controller.dispatch({ type: 'usePowerUp', powerUp: 'undo' }),
-    restart: () => controller.restart(),
-    isDialogOpen: hud.isDialogOpen,
-  });
-  controller.start();
+  show(router.current());
 }
 
-void boot();
+boot();

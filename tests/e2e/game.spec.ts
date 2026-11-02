@@ -11,7 +11,7 @@ async function tapAll(page: Page, ids: string[]): Promise<void> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/level/01/007');
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
 });
 
@@ -42,9 +42,11 @@ test('Level 007 gewinnen zeigt den Sieg-Dialog', async ({ page }, info) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `test-results/win-${info.project.name}.png` });
 
+  // Der Generator laeuft im Worker und braucht etwas Zeit (Zeitlimit 10 s, danach Variante).
   await dialog.getByRole('button', { name: 'Ähnliches Level' }).click();
-  await expect(page.getByTestId('win-dialog')).toHaveCount(0);
+  await expect(page.getByTestId('win-dialog')).toHaveCount(0, { timeout: 20_000 });
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
+  await expect(page.getByText('Ähnlich zu Level 7')).toBeVisible();
 });
 
 test('Verlieren zeigt den Niederlage-Dialog, Zurueck macht weiter', async ({ page }) => {

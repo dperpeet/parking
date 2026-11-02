@@ -1,18 +1,66 @@
 .dialog-layer {
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
 }
 
+/* Deckt das ganze Fenster ab; der Inhalt wird wie die Buehne auf 390 px Designbreite skaliert. */
 .overlay {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 24px;
   background: var(--t-overlay);
   pointer-events: auto;
   animation: fade-in 180ms ease-out;
+}
+
+.overlay-inner {
+  width: 390px;
+  padding: 24px;
+  transform: scale(var(--stage-scale, 1));
+}
+
+/* Ohne skalierte Buehne (Menue): volle Breite bis 420 px. */
+.overlay-inner.plain {
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  transform: none;
+}
+
+.dlg-score {
+  margin: 0;
+  font-size: 24px;
+}
+
+.dlg-record {
+  margin: -4px 0 4px;
+  font-size: 20px;
+  color: var(--t-accent);
+  -webkit-text-stroke: 0.6px var(--t-outline);
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 3px solid var(--t-outline);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+.btn.is-busy:disabled {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dialog {
@@ -95,6 +143,15 @@
 
 .btn-secondary {
   background: var(--t-panel);
+}
+
+.btn-link {
+  min-height: 40px;
+  font-size: 17px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-decoration: underline;
 }
 
 .dlg-row {

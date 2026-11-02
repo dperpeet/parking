@@ -1,7 +1,8 @@
 import { PALETTE } from '../../render/theme';
 import type { GameState } from '../../engine/types';
 import { h, icon } from '../dom';
-import { colorName, de } from '../strings';
+import { t } from '../../i18n';
+import { colorName } from '../strings';
 
 export interface QueueView {
   update(state: GameState): void;
@@ -17,7 +18,7 @@ export function createQueue(parent: HTMLElement): QueueView {
     update(state) {
       const used = state.slots.filter((s) => s.kind !== 'empty' && s.kind !== 'locked').length;
       const usable = state.slots.filter((s) => s.kind !== 'locked').length;
-      title.textContent = de.slotsTitle(used, usable);
+      title.textContent = t('slotsTitle', { used, total: usable });
       slotsEl.replaceChildren();
       const filled: number[] = [];
       state.slots.forEach((slot, i) => {
@@ -32,17 +33,22 @@ export function createQueue(parent: HTMLElement): QueueView {
           );
           el.setAttribute(
             'aria-label',
-            `Halteposition ${i + 1}: ${colorName(slot.color)}, ${slot.filled} von ${slot.capacity}`,
+            t('slotFilled', {
+              i: i + 1,
+              color: colorName(slot.color),
+              filled: slot.filled,
+              cap: slot.capacity,
+            }),
           );
           filled.push(slot.filled);
           if (prevFilled[i] !== slot.filled) el.classList.add('pop');
         } else if (slot.kind === 'locked') {
           el.classList.add('slot-locked');
           el.append(icon('lock'));
-          el.setAttribute('aria-label', `Halteposition ${i + 1}: ${de.slotLocked}`);
+          el.setAttribute('aria-label', t('slotState', { i: i + 1, state: t('slotLocked') }));
           filled.push(-1);
         } else {
-          el.setAttribute('aria-label', `Halteposition ${i + 1}: ${de.slotEmpty}`);
+          el.setAttribute('aria-label', t('slotState', { i: i + 1, state: t('slotEmpty') }));
           filled.push(-1);
         }
         slotsEl.append(el);
