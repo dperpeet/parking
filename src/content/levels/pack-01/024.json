@@ -1,0 +1,141 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-24",
+  "title": {
+    "de": "Level 24",
+    "en": "Level 24"
+  },
+  "seed": 3623449711,
+  "ruleset": "classic",
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [1, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v3",
+      "pos": [4, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [1, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [0, 5],
+      "dir": "S",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v8",
+      "pos": [2, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v9",
+      "pos": [3, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v10",
+      "pos": [4, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v11",
+      "pos": [5, 5],
+      "dir": "S",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v12",
+      "pos": [3, 3],
+      "dir": "E",
+      "type": "m",
+      "color": "yellow"
+    }
+  ],
+  "passengers": [
+    "yellow",
+    "blue",
+    "yellow",
+    "blue",
+    "yellow",
+    "green",
+    "yellow",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "blue",
+    "green",
+    "orange",
+    "orange",
+    "blue",
+    "yellow",
+    "yellow",
+    "blue",
+    "yellow",
+    "green",
+    "blue",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 12
+    },
+    "difficulty": 4.8,
+    "solverVersion": "1.0"
+  }
+}

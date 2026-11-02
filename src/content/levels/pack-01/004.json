@@ -1,0 +1,85 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-04",
+  "title": {
+    "de": "Level 4",
+    "en": "Level 4"
+  },
+  "seed": 307234348,
+  "ruleset": "classic",
+  "grid": {
+    "width": 5,
+    "height": 5,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [1, 1],
+      "dir": "W",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [4, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v4",
+      "pos": [4, 4],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [2, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "blue",
+    "orange",
+    "orange",
+    "orange",
+    "blue",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 6
+    },
+    "difficulty": 1.7,
+    "solverVersion": "1.0"
+  }
+}

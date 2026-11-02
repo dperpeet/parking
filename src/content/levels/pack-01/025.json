@@ -1,0 +1,137 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-25",
+  "title": {
+    "de": "Level 25",
+    "en": "Level 25"
+  },
+  "seed": 4043388098,
+  "ruleset": "classic",
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v2",
+      "pos": [5, 4],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [2, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [5, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v7",
+      "pos": [3, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v8",
+      "pos": [2, 4],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v9",
+      "pos": [3, 2],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v10",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v11",
+      "pos": [1, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v12",
+      "pos": [2, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
+    }
+  ],
+  "passengers": [
+    "green",
+    "green",
+    "green",
+    "green",
+    "yellow",
+    "yellow",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
+    "green",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "blue",
+    "blue",
+    "yellow",
+    "yellow"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 12
+    },
+    "difficulty": 4.7,
+    "solverVersion": "1.0"
+  }
+}

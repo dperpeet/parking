@@ -1,0 +1,103 @@
+{
+  "schema": "parking.level/1",
+  "id": "w1-12",
+  "title": {
+    "de": "Level 12",
+    "en": "Level 12"
+  },
+  "seed": 1282147298,
+  "ruleset": "classic",
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": []
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [5, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [4, 0],
+      "dir": "N",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 0],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v7",
+      "pos": [3, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v8",
+      "pos": [2, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "orange",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "blue",
+    "blue",
+    "blue",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "blue",
+    "green",
+    "blue"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 3,
+    "solverVersion": "1.0"
+  }
+}
