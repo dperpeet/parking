@@ -1,0 +1,17 @@
+# Auf dem Server nach ~/parking/compose.yml kopieren; PARKING_DOMAIN in ~/parking/.env setzen.
+services:
+  parking:
+    image: ghcr.io/dperpeet/parking:latest
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      PARKING_DOMAIN: ${PARKING_DOMAIN:-:80}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

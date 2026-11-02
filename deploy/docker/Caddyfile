@@ -1,0 +1,19 @@
+# Domain kommt aus der Umgebungsvariable PARKING_DOMAIN (z. B. spiel.example.org) -> automatisches TLS.
+# Ist sie nicht gesetzt, faellt Caddy auf `:80` zurueck (HTTP ohne TLS, nur zum Testen).
+{$PARKING_DOMAIN::80} {
+	root * /srv
+	encode zstd gzip
+	file_server
+
+	header {
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	@assets path /assets/* /audio/* /icons/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@shell path / /index.html /sw.js /manifest.webmanifest
+	header @shell Cache-Control "no-cache"
+}
