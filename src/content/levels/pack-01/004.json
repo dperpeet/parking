@@ -5,8 +5,16 @@
     "de": "Level 4",
     "en": "Level 4"
   },
-  "seed": 307234348,
+  "seed": 266565769,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
@@ -15,71 +23,78 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [1, 1],
-      "dir": "W",
+      "pos": [0, 4],
+      "dir": "S",
       "type": "m",
-      "color": "orange"
-    },
-    {
-      "id": "v2",
-      "pos": [4, 0],
-      "dir": "N",
-      "type": "s",
       "color": "blue"
     },
     {
-      "id": "v3",
-      "pos": [0, 2],
-      "dir": "W",
+      "id": "v2",
+      "pos": [3, 3],
+      "dir": "E",
       "type": "s",
-      "color": "orange"
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [2, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
     },
     {
       "id": "v4",
-      "pos": [4, 4],
-      "dir": "E",
-      "type": "m",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
       "color": "orange"
     },
     {
       "id": "v5",
-      "pos": [2, 3],
-      "dir": "S",
+      "pos": [4, 2],
+      "dir": "E",
       "type": "s",
       "color": "orange"
     },
     {
       "id": "v6",
-      "pos": [3, 2],
-      "dir": "W",
+      "pos": [2, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 0],
+      "dir": "N",
       "type": "s",
       "color": "orange"
     }
   ],
   "passengers": [
-    "orange",
+    "green",
+    "green",
+    "blue",
+    "green",
+    "green",
     "blue",
     "orange",
     "orange",
     "orange",
+    "orange",
+    "orange",
     "blue",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
+    "blue",
+    "blue",
+    "blue",
     "orange"
   ],
   "meta": {
     "author": "generator",
     "par": {
-      "moves": 6
+      "moves": 7
     },
-    "difficulty": 1.7,
+    "difficulty": 2.6,
     "solverVersion": "1.0"
   }
 }

@@ -5,8 +5,16 @@
     "de": "Level 20",
     "en": "Level 20"
   },
-  "seed": 2403206717,
+  "seed": 3406411419,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 7
+    }
+  },
   "grid": {
     "width": 6,
     "height": 6,
@@ -15,120 +23,131 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [1, 5],
-      "dir": "S",
+      "pos": [2, 1],
+      "dir": "N",
       "type": "s",
       "color": "green"
     },
     {
       "id": "v2",
-      "pos": [3, 5],
-      "dir": "S",
+      "pos": [5, 1],
+      "dir": "E",
       "type": "s",
-      "color": "orange"
-    },
-    {
-      "id": "v3",
-      "pos": [0, 3],
-      "dir": "W",
-      "type": "s",
-      "color": "blue"
-    },
-    {
-      "id": "v4",
-      "pos": [5, 5],
-      "dir": "S",
-      "type": "m",
       "color": "green"
     },
     {
+      "id": "v3",
+      "pos": [0, 5],
+      "dir": "S",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v4",
+      "pos": [1, 1],
+      "dir": "N",
+      "type": "m",
+      "color": "orange"
+    },
+    {
       "id": "v5",
-      "pos": [4, 3],
-      "dir": "E",
+      "pos": [1, 4],
+      "dir": "N",
       "type": "s",
       "color": "blue"
     },
     {
       "id": "v6",
-      "pos": [3, 2],
-      "dir": "S",
-      "type": "m",
+      "pos": [5, 5],
+      "dir": "E",
+      "type": "s",
       "color": "yellow"
     },
     {
       "id": "v7",
-      "pos": [1, 1],
+      "pos": [5, 4],
       "dir": "S",
       "type": "s",
       "color": "blue"
     },
     {
       "id": "v8",
-      "pos": [0, 0],
-      "dir": "N",
+      "pos": [4, 4],
+      "dir": "E",
       "type": "s",
-      "color": "yellow"
+      "color": "green"
     },
     {
       "id": "v9",
-      "pos": [4, 1],
-      "dir": "W",
-      "type": "s",
-      "color": "blue"
+      "pos": [4, 3],
+      "dir": "E",
+      "type": "m",
+      "color": "yellow"
     },
     {
       "id": "v10",
       "pos": [2, 5],
-      "dir": "S",
-      "type": "l",
-      "color": "green"
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
     },
     {
       "id": "v11",
-      "pos": [4, 4],
+      "pos": [0, 0],
       "dir": "N",
-      "type": "s",
-      "color": "orange"
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v12",
+      "pos": [3, 2],
+      "dir": "S",
+      "type": "m",
+      "color": "blue"
     }
   ],
   "passengers": [
-    "blue",
-    "green",
-    "green",
-    "blue",
-    "green",
-    "blue",
-    "green",
-    "blue",
-    "green",
-    "yellow",
     "orange",
-    "yellow",
-    "yellow",
-    "green",
-    "orange",
-    "yellow",
-    "blue",
-    "yellow",
-    "blue",
-    "yellow",
-    "blue",
-    "blue",
-    "green",
-    "orange",
-    "green",
     "orange",
     "green",
     "green",
+    "blue",
+    "orange",
+    "orange",
     "green",
-    "green"
+    "green",
+    "orange",
+    "yellow",
+    "orange",
+    "blue",
+    "orange",
+    "yellow",
+    "green",
+    "blue",
+    "green",
+    "orange",
+    "orange",
+    "yellow",
+    "orange",
+    "yellow",
+    "blue",
+    "yellow",
+    "yellow",
+    "yellow",
+    "blue",
+    "blue",
+    "yellow",
+    "blue",
+    "yellow",
+    "yellow",
+    "blue"
   ],
   "meta": {
     "author": "generator",
     "par": {
-      "moves": 11
+      "moves": 12
     },
-    "difficulty": 4.1,
+    "difficulty": 5.4,
     "solverVersion": "1.0"
   }
 }

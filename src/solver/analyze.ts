@@ -121,6 +121,311 @@ export class Searcher {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Schneller Pfad: kompakte Zustandsdarstellung statt Engine-step + hashState.
+// Gilt nur fuer den Regelumfang, in dem die Engine gerade Fahrzeuge ohne Sonderregeln bewegt
+// (straight/edges, firstFree, firstMatch, departOnFull, keine fixed/locked Elemente, kein Zuglimit).
+// Die Zaehlweise (Reihenfolge, Zustandslimit, Summation) entspricht exakt der Referenz (Searcher).
+// ---------------------------------------------------------------------------------------------
+
+const MASK_BITS = 30;
+const KEY_HALF = 16;
+const KEY_HALF_MASK = 0xffff;
+const FILL_SHIFT = 6;
+const EMPTY_SLOT = -1;
+const PLAYING = 0;
+const WON = 1;
+const LOST = 2;
+
+const DIR_STEP: Record<string, [number, number]> = {
+  N: [0, -1],
+  E: [1, 0],
+  S: [0, 1],
+  W: [-1, 0],
+};
+
+interface FastState {
+  /** Maske der geparkten Fahrzeuge (Index 0-29 / 30-59). */
+  pl: number;
+  ph: number;
+  pi: number;
+  /** Fahrzeugindex pro Slot oder -1. */
+  sv: number[];
+  sf: number[];
+  status: number;
+}
+
+interface FastNode {
+  wins: bigint;
+  total: bigint;
+  p: number;
+  min: number;
+  best: number;
+  unknown: boolean;
+  depth: number;
+  kids?: Array<{ idx: number; node: FastNode }>;
+}
+
+interface FastModel {
+  ids: string[];
+  capacity: number[];
+  color: number[];
+  blockLo: number[];
+  blockHi: number[];
+  passengers: number[];
+}
+
+function buildFastModel(state: GameState, rules: ResolvedRules): FastModel | null {
+  const supported =
+    rules.movement.model === 'straight' &&
+    rules.movement.exits === 'edges' &&
+    rules.queue.fillPolicy === 'firstFree' &&
+    rules.vehicles.departOnFull &&
+    rules.passengers.order === 'strict' &&
+    rules.passengers.boardPolicy === 'firstMatch' &&
+    rules.limits.moves === null &&
+    state.status === 'playing' &&
+    state.vehicles.length <= 2 * MASK_BITS &&
+    state.grid.cells.length === 0 &&
+    state.vehicles.every((v) => !v.locked) &&
+    state.slots.every((s) => s.kind !== 'locked');
+  if (!supported) return null;
+
+  const colorIds = new Map<string, number>();
+  const colorOf = (c: string): number => {
+    let id = colorIds.get(c);
+    if (id === undefined) {
+      id = colorIds.size;
+      colorIds.set(c, id);
+    }
+    return id;
+  };
+  const index = new Map(state.vehicles.map((v, i) => [v.id, i]));
+  const color = state.vehicles.map((v) => colorOf(v.color));
+  for (const s of state.slots) {
+    if (s.kind !== 'vehicle') continue;
+    const i = index.get(s.vehicleId);
+    const v = i === undefined ? undefined : state.vehicles[i];
+    if (!v || v.status !== 'queued' || v.capacity !== s.capacity || v.color !== s.color)
+      return null;
+  }
+
+  // Zellenbelegung je Fahrzeug und Blockademasken (statisch, da straight).
+  const occupant = new Map<number, number>();
+  const stride = state.grid.width + 1;
+  const keyOf = (x: number, y: number): number => y * stride + x;
+  state.vehicles.forEach((v, i) => {
+    const [dx, dy] = DIR_STEP[v.dir]!;
+    for (let k = 0; k < v.length; k++) occupant.set(keyOf(v.x - dx * k, v.y - dy * k), i);
+  });
+  const blockLo: number[] = [];
+  const blockHi: number[] = [];
+  state.vehicles.forEach((v, i) => {
+    let lo = 0;
+    let hi = 0;
+    const [dx, dy] = DIR_STEP[v.dir]!;
+    let x = v.x + dx;
+    let y = v.y + dy;
+    while (x >= 0 && y >= 0 && x < state.grid.width && y < state.grid.height) {
+      const j = occupant.get(keyOf(x, y));
+      if (j !== undefined && j !== i) {
+        if (j < MASK_BITS) lo |= 1 << j;
+        else hi |= 1 << (j - MASK_BITS);
+      }
+      x += dx;
+      y += dy;
+    }
+    blockLo.push(lo);
+    blockHi.push(hi);
+  });
+
+  return {
+    ids: state.vehicles.map((v) => v.id),
+    capacity: state.vehicles.map((v) => v.capacity),
+    color,
+    blockLo,
+    blockHi,
+    passengers: state.passengers.map(colorOf),
+  };
+}
+
+function fastRoot(state: GameState): FastState {
+  let pl = 0;
+  let ph = 0;
+  const index = new Map(state.vehicles.map((v, i) => [v.id, i]));
+  state.vehicles.forEach((v, i) => {
+    if (v.status !== 'parked') return;
+    if (i < MASK_BITS) pl |= 1 << i;
+    else ph |= 1 << (i - MASK_BITS);
+  });
+  return {
+    pl,
+    ph,
+    pi: state.passengerIndex,
+    sv: state.slots.map((s) => (s.kind === 'vehicle' ? index.get(s.vehicleId)! : EMPTY_SLOT)),
+    sf: state.slots.map((s) => (s.kind === 'vehicle' ? s.filled : 0)),
+    status: PLAYING,
+  };
+}
+
+class FastSearcher {
+  readonly memo = new Map<string, FastNode>();
+  truncated = false;
+  deadStates = 0;
+  deadDepthSum = 0;
+
+  constructor(
+    private readonly m: FastModel,
+    private readonly maxStates: number,
+  ) {}
+
+  private isParked(s: FastState, i: number): boolean {
+    return i < MASK_BITS ? (s.pl & (1 << i)) !== 0 : (s.ph & (1 << (i - MASK_BITS))) !== 0;
+  }
+
+  private hasEmpty(s: FastState): boolean {
+    return s.sv.includes(EMPTY_SLOT);
+  }
+
+  private tappable(s: FastState, i: number): boolean {
+    return (
+      this.isParked(s, i) && (s.pl & this.m.blockLo[i]!) === 0 && (s.ph & this.m.blockHi[i]!) === 0
+    );
+  }
+
+  /** Antippbare Fahrzeuge in Fahrzeugreihenfolge (Zustand muss "playing" sein). */
+  legal(s: FastState): number[] {
+    if (!this.hasEmpty(s)) return [];
+    const out: number[] = [];
+    for (let i = 0; i < this.m.ids.length; i++) if (this.tappable(s, i)) out.push(i);
+    return out;
+  }
+
+  /** Ein Zug samt Einsteigen und Ergebnisbewertung. */
+  move(s: FastState, i: number): FastState {
+    const m = this.m;
+    const sv = s.sv.slice();
+    const sf = s.sf.slice();
+    let pl = s.pl;
+    let ph = s.ph;
+    let pi = s.pi;
+    if (i < MASK_BITS) pl &= ~(1 << i);
+    else ph &= ~(1 << (i - MASK_BITS));
+    const slot = sv.indexOf(EMPTY_SLOT);
+    sv[slot] = i;
+    sf[slot] = 0;
+    const n = m.passengers.length;
+    while (pi < n) {
+      const c = m.passengers[pi]!;
+      let at = -1;
+      for (let k = 0; k < sv.length; k++) {
+        const v = sv[k]!;
+        if (v !== EMPTY_SLOT && m.color[v] === c && sf[k]! < m.capacity[v]!) {
+          at = k;
+          break;
+        }
+      }
+      if (at < 0) break;
+      sf[at] = sf[at]! + 1;
+      pi += 1;
+      if (sf[at]! >= m.capacity[sv[at]!]!) {
+        sv[at] = EMPTY_SLOT;
+        sf[at] = 0;
+      }
+    }
+    const next: FastState = { pl, ph, pi, sv, sf, status: PLAYING };
+    if (pi >= n) next.status = WON;
+    else if (!this.hasEmpty(next) || !this.anyTappable(next)) next.status = LOST;
+    return next;
+  }
+
+  private anyTappable(s: FastState): boolean {
+    for (let i = 0; i < this.m.ids.length; i++) if (this.tappable(s, i)) return true;
+    return false;
+  }
+
+  private key(s: FastState): string {
+    let k = String.fromCharCode(
+      s.pi,
+      s.pl & KEY_HALF_MASK,
+      s.pl >>> KEY_HALF,
+      s.ph & KEY_HALF_MASK,
+      s.ph >>> KEY_HALF,
+    );
+    for (let i = 0; i < s.sv.length; i++) {
+      k += String.fromCharCode((s.sv[i]! + 1) | (s.sf[i]! << FILL_SHIFT));
+    }
+    return k;
+  }
+
+  evaluate(s: FastState, keepKids = false): FastNode {
+    return this.evaluateKeyed(this.key(s), s, keepKids);
+  }
+
+  private evaluateKeyed(key: string, state: FastState, keepKids: boolean): FastNode {
+    const cached = this.memo.get(key);
+    if (cached) return cached;
+
+    if (state.status !== PLAYING) {
+      const won = state.status === WON;
+      const node: FastNode = {
+        wins: won ? 1n : 0n,
+        total: 1n,
+        p: won ? 1 : 0,
+        min: won ? 0 : Infinity,
+        best: -1,
+        unknown: false,
+        depth: 0,
+      };
+      this.memo.set(key, node);
+      return node;
+    }
+    if (this.memo.size >= this.maxStates) {
+      this.truncated = true;
+      return { wins: 0n, total: 1n, p: 0, min: Infinity, best: -1, unknown: true, depth: 0 };
+    }
+
+    const moves = this.legal(state);
+    const kids: Array<{ idx: number; node: FastNode }> = [];
+    let wins = 0n;
+    let total = 0n;
+    let pSum = 0;
+    let min = Infinity;
+    let best = -1;
+    let unknown = false;
+    let depth = 0;
+    for (const idx of moves) {
+      const node = this.evaluate(this.move(state, idx));
+      if (keepKids) kids.push({ idx, node });
+      wins += node.wins;
+      total += node.total;
+      pSum += node.p;
+      unknown ||= node.unknown;
+      if (node.min + 1 < min) {
+        min = node.min + 1;
+        best = idx;
+      }
+      depth = Math.max(depth, node.depth + 1);
+    }
+    const result: FastNode = {
+      wins,
+      total,
+      p: moves.length > 0 ? pSum / moves.length : 0,
+      min,
+      best,
+      unknown,
+      depth,
+    };
+    if (keepKids) result.kids = kids;
+    if (wins === 0n && !unknown) {
+      this.deadStates += 1;
+      this.deadDepthSum += depth;
+    }
+    this.memo.set(key, result);
+    return result;
+  }
+}
+
 export interface DifficultyInput {
   randomPlayWinProbability: number;
   deadStates: number;
@@ -180,8 +485,53 @@ function maxQueueUsed(state: GameState, solution: string[], rules: ResolvedRules
   return max;
 }
 
-/** Analysiert einen beliebigen Spielzustand (auch mitten im Spiel). */
-export function analyzeState(
+function finish(
+  state: GameState,
+  rules: ResolvedRules,
+  start: GameState,
+  parts: {
+    solvable: boolean;
+    truncated: boolean;
+    minRemaining: number;
+    solution: string[];
+    wins: bigint;
+    total: bigint;
+    p: number;
+    firstMoves: FirstMoveInfo[];
+    statesExplored: number;
+    deadStates: number;
+    deadDepthSum: number;
+  },
+): LevelAnalysis {
+  const colors = new Set(state.passengers.slice(state.passengerIndex)).size;
+  const avgDeadEndDepth = parts.deadStates > 0 ? parts.deadDepthSum / parts.deadStates : null;
+  return {
+    solvable: parts.solvable,
+    truncated: parts.truncated,
+    minMoves: parts.solvable ? parts.minRemaining + state.moves : null,
+    solution: parts.solvable ? parts.solution : null,
+    winningPaths: parts.wins.toString(),
+    totalPaths: parts.total.toString(),
+    winRate: ratio(parts.wins, parts.total),
+    randomPlayWinProbability: parts.p,
+    firstMoves: parts.firstMoves,
+    statesExplored: parts.statesExplored,
+    deadStates: parts.deadStates,
+    avgDeadEndDepth,
+    maxQueueUsedOnBestPath: parts.solvable ? maxQueueUsed(start, parts.solution, rules) : 0,
+    difficulty: computeDifficulty({
+      randomPlayWinProbability: parts.p,
+      deadStates: parts.deadStates,
+      statesExplored: parts.statesExplored,
+      avgDeadEndDepth,
+      colors,
+      slots: rules.queue.slots,
+    }),
+  };
+}
+
+/** Referenzimplementierung ueber die Engine (langsam, fuer Sonderregeln und Regressionstests). */
+export function analyzeStateReference(
   state: GameState,
   rules: ResolvedRules,
   opts: AnalyzeOptions = {},
@@ -200,42 +550,67 @@ export function analyzeState(
       s = strip(step(s, { type: 'tapVehicle', vehicleId: node.best }, rules).state);
     }
   }
-
-  const firstMoves: FirstMoveInfo[] = (root.kids ?? []).map(({ id, node }) => ({
-    vehicleId: id,
-    winningPaths: node.wins.toString(),
-    totalPaths: node.total.toString(),
-    deadEnd: node.wins === 0n && !node.unknown,
-  }));
-
-  const colors = new Set(state.passengers.slice(state.passengerIndex)).size;
-  const avgDeadEndDepth =
-    searcher.deadStates > 0 ? searcher.deadDepthSum / searcher.deadStates : null;
-  const statesExplored = searcher.memo.size;
-  const randomPlayWinProbability = root.p;
-  return {
+  return finish(state, rules, start, {
     solvable: root.min !== Infinity,
     truncated: searcher.truncated,
-    minMoves: root.min === Infinity ? null : root.min + state.moves,
-    solution: root.min === Infinity ? null : solution,
-    winningPaths: root.wins.toString(),
-    totalPaths: root.total.toString(),
-    winRate: ratio(root.wins, root.total),
-    randomPlayWinProbability,
-    firstMoves,
-    statesExplored,
+    minRemaining: root.min,
+    solution,
+    wins: root.wins,
+    total: root.total,
+    p: root.p,
+    firstMoves: (root.kids ?? []).map(({ id, node }) => ({
+      vehicleId: id,
+      winningPaths: node.wins.toString(),
+      totalPaths: node.total.toString(),
+      deadEnd: node.wins === 0n && !node.unknown,
+    })),
+    statesExplored: searcher.memo.size,
     deadStates: searcher.deadStates,
-    avgDeadEndDepth,
-    maxQueueUsedOnBestPath: root.min === Infinity ? 0 : maxQueueUsed(start, solution, rules),
-    difficulty: computeDifficulty({
-      randomPlayWinProbability,
-      deadStates: searcher.deadStates,
-      statesExplored,
-      avgDeadEndDepth,
-      colors,
-      slots: rules.queue.slots,
-    }),
-  };
+    deadDepthSum: searcher.deadDepthSum,
+  });
+}
+
+/** Analysiert einen beliebigen Spielzustand (auch mitten im Spiel). */
+export function analyzeState(
+  state: GameState,
+  rules: ResolvedRules,
+  opts: AnalyzeOptions = {},
+): LevelAnalysis {
+  const model = buildFastModel(state, rules);
+  if (!model) return analyzeStateReference(state, rules, opts);
+  const searcher = new FastSearcher(model, opts.maxStates ?? DEFAULT_MAX_STATES);
+  const start = strip(state);
+  const rootState = fastRoot(state);
+  const root = searcher.evaluate(rootState, true);
+
+  const solution: string[] = [];
+  if (root.min !== Infinity) {
+    let s = rootState;
+    for (;;) {
+      const node = searcher.evaluate(s);
+      if (s.status !== PLAYING || node.best < 0) break;
+      solution.push(model.ids[node.best]!);
+      s = searcher.move(s, node.best);
+    }
+  }
+  return finish(state, rules, start, {
+    solvable: root.min !== Infinity,
+    truncated: searcher.truncated,
+    minRemaining: root.min,
+    solution,
+    wins: root.wins,
+    total: root.total,
+    p: root.p,
+    firstMoves: (root.kids ?? []).map(({ idx, node }) => ({
+      vehicleId: model.ids[idx]!,
+      winningPaths: node.wins.toString(),
+      totalPaths: node.total.toString(),
+      deadEnd: node.wins === 0n && !node.unknown,
+    })),
+    statesExplored: searcher.memo.size,
+    deadStates: searcher.deadStates,
+    deadDepthSum: searcher.deadDepthSum,
+  });
 }
 
 /** Analysiert ein Level ab dem Startzustand. */

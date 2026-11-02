@@ -5,8 +5,16 @@
     "de": "Level 1",
     "en": "Level 1"
   },
-  "seed": 1172706517,
+  "seed": 1773659281,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
@@ -15,50 +23,46 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [0, 4],
-      "dir": "S",
+      "pos": [1, 0],
+      "dir": "N",
       "type": "s",
       "color": "orange"
     },
     {
       "id": "v2",
-      "pos": [1, 3],
-      "dir": "W",
-      "type": "m",
-      "color": "blue"
+      "pos": [2, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
     },
     {
       "id": "v3",
-      "pos": [2, 4],
-      "dir": "W",
+      "pos": [4, 0],
+      "dir": "E",
       "type": "s",
       "color": "blue"
     },
     {
       "id": "v4",
-      "pos": [3, 2],
-      "dir": "S",
+      "pos": [0, 4],
+      "dir": "W",
       "type": "s",
       "color": "blue"
     },
     {
       "id": "v5",
-      "pos": [2, 2],
-      "dir": "E",
-      "type": "m",
+      "pos": [3, 4],
+      "dir": "W",
+      "type": "s",
       "color": "blue"
     }
   ],
   "passengers": [
-    "blue",
-    "blue",
-    "blue",
-    "blue",
-    "blue",
-    "blue",
-    "blue",
-    "blue",
     "orange",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
     "orange",
     "blue",
     "blue",

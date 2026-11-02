@@ -5,133 +5,153 @@
     "de": "Level 25",
     "en": "Level 25"
   },
-  "seed": 4043388098,
+  "seed": 1034608795,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 6
+    }
+  },
   "grid": {
-    "width": 6,
-    "height": 6,
+    "width": 7,
+    "height": 7,
     "cells": []
   },
   "vehicles": [
     {
       "id": "v1",
-      "pos": [0, 1],
+      "pos": [1, 4],
       "dir": "W",
       "type": "s",
-      "color": "green"
+      "color": "pink"
     },
     {
       "id": "v2",
-      "pos": [5, 4],
-      "dir": "E",
+      "pos": [1, 0],
+      "dir": "W",
       "type": "s",
-      "color": "green"
+      "color": "blue"
     },
     {
       "id": "v3",
-      "pos": [0, 0],
-      "dir": "W",
+      "pos": [1, 1],
+      "dir": "N",
       "type": "s",
       "color": "yellow"
     },
     {
       "id": "v4",
-      "pos": [0, 2],
-      "dir": "N",
+      "pos": [0, 6],
+      "dir": "S",
       "type": "s",
       "color": "green"
     },
     {
       "id": "v5",
-      "pos": [2, 3],
+      "pos": [0, 3],
       "dir": "W",
       "type": "s",
-      "color": "orange"
+      "color": "pink"
     },
     {
       "id": "v6",
-      "pos": [5, 3],
-      "dir": "E",
+      "pos": [1, 5],
+      "dir": "N",
       "type": "s",
-      "color": "blue"
+      "color": "pink"
     },
     {
       "id": "v7",
-      "pos": [3, 5],
-      "dir": "S",
-      "type": "s",
-      "color": "green"
+      "pos": [3, 6],
+      "dir": "W",
+      "type": "l",
+      "color": "pink"
     },
     {
       "id": "v8",
-      "pos": [2, 4],
-      "dir": "E",
-      "type": "s",
-      "color": "green"
-    },
-    {
-      "id": "v9",
-      "pos": [3, 2],
+      "pos": [5, 5],
       "dir": "S",
-      "type": "s",
-      "color": "orange"
-    },
-    {
-      "id": "v10",
-      "pos": [0, 5],
-      "dir": "W",
       "type": "m",
-      "color": "green"
-    },
-    {
-      "id": "v11",
-      "pos": [1, 2],
-      "dir": "W",
-      "type": "s",
       "color": "blue"
     },
     {
-      "id": "v12",
-      "pos": [2, 1],
-      "dir": "S",
-      "type": "s",
+      "id": "v9",
+      "pos": [4, 5],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v10",
+      "pos": [5, 0],
+      "dir": "N",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v11",
+      "pos": [6, 0],
+      "dir": "N",
+      "type": "l",
       "color": "yellow"
+    },
+    {
+      "id": "v12",
+      "pos": [4, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
     }
   ],
   "passengers": [
-    "green",
-    "green",
-    "green",
-    "green",
+    "pink",
+    "blue",
+    "pink",
     "yellow",
-    "yellow",
-    "green",
-    "green",
-    "orange",
-    "orange",
-    "blue",
-    "blue",
-    "green",
-    "green",
-    "green",
-    "green",
-    "orange",
-    "orange",
-    "green",
-    "green",
-    "green",
-    "green",
-    "blue",
     "blue",
     "yellow",
-    "yellow"
+    "pink",
+    "pink",
+    "pink",
+    "green",
+    "green",
+    "pink",
+    "pink",
+    "pink",
+    "blue",
+    "pink",
+    "blue",
+    "pink",
+    "blue",
+    "blue",
+    "blue",
+    "pink",
+    "pink",
+    "orange",
+    "blue",
+    "orange",
+    "orange",
+    "orange",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "blue",
+    "yellow",
+    "yellow",
+    "blue",
+    "green",
+    "green"
   ],
   "meta": {
     "author": "generator",
     "par": {
       "moves": 12
     },
-    "difficulty": 4.7,
+    "difficulty": 6,
     "solverVersion": "1.0"
   }
 }

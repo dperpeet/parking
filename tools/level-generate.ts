@@ -1,25 +1,50 @@
-// CLI: pnpm level:generate --pack 01 --count 30 --seed 1
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+// CLI: pnpm level:generate [--pack 01] [--config tools/pack-01.config.json] [--only 3,5] [--dry]
+// Erzeugt ein Level-Pack deterministisch aus einer Konfigurationsdatei (feste Seeds pro Level).
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
+import type { GeneratorOptions } from '../src/solver/generator';
 import { Ruleset, resolveRules } from '../src/schema';
 import classic from '../src/content/rulesets/classic.json';
 
-const GROUP_SIZE = 5;
-const BASE_DIFFICULTY = 1.4;
-const GROUP_STEP = 0.7;
-const POS_STEP = 0.18;
-const TOLERANCE = 0.4;
-const SMALL_GRID = 5;
-const BIG_GRID = 6;
-const SMALL_GRID_LEVELS = 8;
-const MIN_VEHICLES = 5;
-const MAX_VEHICLES = 14;
-const MIN_COLORS = 2;
-const MAX_COLORS = 5;
-const MAX_ATTEMPTS = 80;
-const SEED_STRIDE = 1000;
 const PAD = 3;
-const SKIP_EXISTING = ['007'];
+const PERCENT = 100;
+const DEFAULT_TOLERANCE = 0.3;
+const DEFAULT_MAX_STATES = 200_000;
+const DEFAULT_MAX_ATTEMPTS = 120;
+
+/** Eintrag pro Level; fehlende Felder kommen aus `defaults`. */
+interface LevelConfig {
+  /** Level unveraendert lassen (nur Zielkurve dokumentiert). */
+  keep?: boolean;
+  /** Basis-Seed des Generators; aendern, wenn kein Treffer gefunden wird. */
+  seed: number;
+  /** Kantenlaenge des quadratischen Rasters. */
+  grid: number;
+  vehicles: number;
+  colors: number;
+  /** Ziel-Schwierigkeit; Treffer, wenn |difficulty - target| <= tolerance. */
+  target: number;
+  tolerance?: number;
+  slots?: number;
+  /** Nur Darstellung (Solver kennt volle Information), siehe GeneratorTuning. */
+  visible?: number;
+  shuffleWindow?: number;
+  blockiness?: number;
+  typeWeights?: Record<string, number>;
+  preferDeadEnds?: boolean;
+  minDeadEndDepth?: number;
+  maxRandomPlayWin?: number;
+  maxAttempts?: number;
+}
+
+interface PackConfig {
+  pack: string;
+  maxStates?: number;
+  maxAttempts?: number;
+  defaults: Partial<LevelConfig>;
+  levels: LevelConfig[];
+}
 
 function arg(name: string, fallback: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -27,55 +52,80 @@ function arg(name: string, fallback: string): string {
 }
 
 const pack = arg('pack', '01');
-const count = Number(arg('count', '30'));
-const seed = Number(arg('seed', '1'));
+const configPath = arg('config', `tools/pack-${pack}.config.json`);
+const only = arg('only', '').split(',').filter(Boolean).map(Number);
+const dry = process.argv.includes('--dry');
+const config = JSON.parse(readFileSync(configPath, 'utf8')) as PackConfig;
 const dir = `src/content/levels/pack-${pack}`;
 const rules = resolveRules(Ruleset.parse(classic));
+const colorIds = rules.vehicles.colors;
 mkdirSync(dir, { recursive: true });
 
-/** Saegezahn: je 5 Level steigend, danach kleiner Rueckschritt. */
-function targetFor(n: number): [number, number] {
-  const group = Math.floor((n - 1) / GROUP_SIZE);
-  const pos = (n - 1) % GROUP_SIZE;
-  const t = BASE_DIFFICULTY + group * GROUP_STEP + pos * POS_STEP;
-  return [t - TOLERANCE, t + TOLERANCE];
-}
-
-function lerp(n: number, a: number, b: number): number {
-  return Math.round(a + ((n - 1) * (b - a)) / Math.max(1, count - 1));
-}
-
 const ids: string[] = [];
-for (let n = 1; n <= count; n++) {
+let failures = 0;
+console.log('n   veh col slots vis  target  diff   rpw%   dead depth  matched attempts');
+config.levels.forEach((entry, index) => {
+  const n = index + 1;
   const file = String(n).padStart(PAD, '0');
   ids.push(file);
-  if (SKIP_EXISTING.includes(file)) {
-    console.log(`${file}: kept existing`);
-    continue;
+  if (entry.keep || (only.length > 0 && !only.includes(n))) {
+    console.log(`${String(n).padEnd(3)} kept ${file}`);
+    return;
   }
-  const size = n <= SMALL_GRID_LEVELS ? SMALL_GRID : BIG_GRID;
-  const g = generate(
-    {
-      seed: seed * SEED_STRIDE + n,
-      width: size,
-      height: size,
-      vehicleCount: lerp(n, MIN_VEHICLES, MAX_VEHICLES),
-      colors: rules.vehicles.colors.slice(0, lerp(n, MIN_COLORS, MAX_COLORS)),
-      targetDifficulty: targetFor(n),
-      maxAttempts: MAX_ATTEMPTS,
-      id: `w${Number(pack)}-${String(n).padStart(2, '0')}`,
-      title: { de: `Level ${n}`, en: `Level ${n}` },
-    },
-    rules,
-  );
-  writeFileSync(`${dir}/${file}.json`, JSON.stringify(g.level, null, 2) + '\n');
+  const c = { ...config.defaults, ...entry } as LevelConfig;
+  const tol = c.tolerance ?? DEFAULT_TOLERANCE;
+  const params: GeneratorOptions = {
+    seed: c.seed,
+    width: c.grid,
+    height: c.grid,
+    vehicleCount: c.vehicles,
+    colors: colorIds.slice(0, c.colors),
+    targetDifficulty: [c.target - tol, c.target + tol],
+    maxAttempts: c.maxAttempts ?? config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+    maxStates: config.maxStates ?? DEFAULT_MAX_STATES,
+    id: `w${Number(pack)}-${String(n).padStart(2, '0')}`,
+    title: { de: `Level ${n}`, en: `Level ${n}` },
+    ...(c.slots !== undefined && { slots: c.slots }),
+    ...(c.visible !== undefined && { visiblePassengers: c.visible }),
+    ...(c.shuffleWindow !== undefined && { shuffleWindow: c.shuffleWindow }),
+    ...(c.blockiness !== undefined && { blockiness: c.blockiness }),
+    ...(c.typeWeights !== undefined && { typeWeights: c.typeWeights }),
+    ...(c.preferDeadEnds !== undefined && { preferDeadEnds: c.preferDeadEnds }),
+    ...(c.minDeadEndDepth !== undefined && { minDeadEndDepth: c.minDeadEndDepth }),
+    ...(c.maxRandomPlayWin !== undefined && { maxRandomPlayWin: c.maxRandomPlayWin }),
+  };
+  let g;
+  try {
+    g = generate(params, rules);
+  } catch (e) {
+    failures++;
+    console.log(`${String(n).padEnd(3)} FAILED: ${(e as Error).message}`);
+    return;
+  }
+  if (!g.matched) failures++;
+  if (!dry) writeFileSync(`${dir}/${file}.json`, JSON.stringify(g.level, null, 2) + '\n');
   const a = g.analysis;
   console.log(
-    `${file}: veh=${g.level.vehicles.length} diff=${a.difficulty} target=${targetFor(n)
-      .map((x) => x.toFixed(2))
-      .join('-')} ` +
-      `matched=${g.matched} attempts=${g.attempts} rw=${a.randomPlayWinProbability.toFixed(3)}`,
+    [
+      String(n).padEnd(3),
+      String(g.level.vehicles.length).padStart(3),
+      String(c.colors).padStart(3),
+      String(c.slots ?? rules.queue.slots).padStart(5),
+      String(c.visible ?? rules.passengers.visible).padStart(3),
+      c.target.toFixed(1).padStart(7),
+      a.difficulty.toFixed(1).padStart(5),
+      (a.randomPlayWinProbability * PERCENT).toFixed(1).padStart(6),
+      String(a.deadStates).padStart(6),
+      (a.avgDeadEndDepth === null ? '-' : a.avgDeadEndDepth.toFixed(2)).padStart(5),
+      String(g.matched).padStart(8),
+      String(g.attempts).padStart(8),
+    ].join(' '),
   );
+});
+if (!dry && !existsSync(`${dir}/index.json`)) mkdirSync(dir, { recursive: true });
+if (!dry) writeFileSync(`${dir}/index.json`, JSON.stringify({ levels: ids }, null, 2) + '\n');
+if (!dry) execFileSync('pnpm', ['exec', 'prettier', '--write', dir], { stdio: 'ignore' });
+if (failures > 0) {
+  console.error(`${failures} level(s) not matched`);
+  process.exitCode = 1;
 }
-if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-writeFileSync(`${dir}/index.json`, JSON.stringify({ levels: ids }, null, 2) + '\n');

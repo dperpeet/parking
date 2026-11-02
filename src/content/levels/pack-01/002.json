@@ -5,8 +5,16 @@
     "de": "Level 2",
     "en": "Level 2"
   },
-  "seed": 2975580345,
+  "seed": 3134202882,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
@@ -15,36 +23,43 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [1, 2],
-      "dir": "W",
-      "type": "s",
+      "pos": [3, 2],
+      "dir": "S",
+      "type": "m",
       "color": "orange"
     },
     {
       "id": "v2",
-      "pos": [1, 1],
+      "pos": [4, 4],
       "dir": "S",
-      "type": "s",
-      "color": "blue"
-    },
-    {
-      "id": "v3",
-      "pos": [3, 0],
-      "dir": "E",
       "type": "s",
       "color": "orange"
     },
     {
-      "id": "v4",
-      "pos": [2, 1],
+      "id": "v3",
+      "pos": [0, 0],
       "dir": "W",
-      "type": "s",
-      "color": "blue"
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 4],
+      "dir": "S",
+      "type": "l",
+      "color": "orange"
     },
     {
       "id": "v5",
-      "pos": [3, 2],
+      "pos": [2, 2],
       "dir": "N",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [4, 1],
+      "dir": "S",
       "type": "s",
       "color": "blue"
     }
@@ -52,19 +67,31 @@
   "passengers": [
     "orange",
     "orange",
-    "blue",
-    "blue",
-    "blue",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
     "orange",
     "blue",
     "orange",
     "blue",
-    "blue"
+    "orange",
+    "orange",
+    "orange",
+    "orange"
   ],
   "meta": {
     "author": "generator",
     "par": {
-      "moves": 5
+      "moves": 6
     },
     "difficulty": 1.4,
     "solverVersion": "1.0"
