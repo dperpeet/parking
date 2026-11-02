@@ -5,8 +5,16 @@
     "de": "Level 5",
     "en": "Level 5"
   },
-  "seed": 2221827294,
+  "seed": 573751851,
   "ruleset": "classic",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
@@ -15,75 +23,82 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [0, 4],
+      "pos": [0, 3],
       "dir": "S",
       "type": "s",
       "color": "orange"
     },
     {
       "id": "v2",
-      "pos": [4, 2],
-      "dir": "S",
+      "pos": [1, 2],
+      "dir": "W",
       "type": "s",
-      "color": "orange"
-    },
-    {
-      "id": "v3",
-      "pos": [3, 1],
-      "dir": "E",
-      "type": "l",
       "color": "blue"
     },
     {
+      "id": "v3",
+      "pos": [4, 0],
+      "dir": "N",
+      "type": "l",
+      "color": "green"
+    },
+    {
       "id": "v4",
-      "pos": [0, 0],
-      "dir": "W",
-      "type": "s",
-      "color": "orange"
+      "pos": [4, 4],
+      "dir": "E",
+      "type": "m",
+      "color": "green"
     },
     {
       "id": "v5",
-      "pos": [2, 0],
-      "dir": "W",
-      "type": "m",
-      "color": "orange"
+      "pos": [3, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
     },
     {
       "id": "v6",
-      "pos": [2, 4],
-      "dir": "S",
-      "type": "m",
-      "color": "orange"
+      "pos": [2, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
     }
   ],
   "passengers": [
-    "orange",
-    "orange",
     "blue",
     "blue",
+    "green",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
     "blue",
-    "blue",
-    "orange",
-    "orange",
-    "orange",
-    "blue",
-    "orange",
-    "orange",
-    "blue",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange",
-    "orange"
+    "green",
+    "blue"
   ],
   "meta": {
     "author": "generator",
     "par": {
-      "moves": 6
+      "moves": 7
     },
-    "difficulty": 2,
+    "difficulty": 2.9,
     "solverVersion": "1.0"
   }
 }

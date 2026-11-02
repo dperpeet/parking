@@ -1,0 +1,302 @@
+{
+  "pack": "01",
+  "maxStates": 200000,
+  "maxAttempts": 300,
+  "defaults": {
+    "slots": 5,
+    "visible": 8,
+    "shuffleWindow": 3,
+    "blockiness": 0.7,
+    "tolerance": 0.15,
+    "maxRandomPlayWin": 0.85
+  },
+  "levels": [
+    {
+      "seed": 101,
+      "grid": 5,
+      "vehicles": 5,
+      "colors": 2,
+      "target": 1.5,
+      "maxRandomPlayWin": 1,
+      "tolerance": 0.4
+    },
+    {
+      "seed": 102,
+      "grid": 5,
+      "vehicles": 6,
+      "colors": 2,
+      "target": 1.8,
+      "maxRandomPlayWin": 1,
+      "tolerance": 0.4
+    },
+    {
+      "seed": 103,
+      "grid": 5,
+      "vehicles": 6,
+      "colors": 3,
+      "target": 2.4,
+      "maxRandomPlayWin": 0.84
+    },
+    {
+      "seed": 104,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 2.5,
+      "maxRandomPlayWin": 0.85
+    },
+    {
+      "seed": 105,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 2.9,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 106,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 2.8
+    },
+    {
+      "keep": true,
+      "seed": 0,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 3.7
+    },
+    {
+      "seed": 108,
+      "grid": 5,
+      "vehicles": 8,
+      "colors": 3,
+      "target": 3.4,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 109,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 3,
+      "target": 3.6,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 110,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 3,
+      "target": 3.9,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 111,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 3,
+      "target": 3.7,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 112,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 4.0,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 113,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 4.2,
+      "shuffleWindow": 4
+    },
+    {
+      "seed": 114,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 4.5,
+      "shuffleWindow": 5
+    },
+    {
+      "seed": 115,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 4.7,
+      "shuffleWindow": 5
+    },
+    {
+      "seed": 116,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 4.4,
+      "shuffleWindow": 4,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 1.5
+    },
+    {
+      "seed": 117,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 4,
+      "target": 4.7,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 1.5
+    },
+    {
+      "seed": 118,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 4,
+      "target": 4.9,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 1.5
+    },
+    {
+      "seed": 119,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 4,
+      "target": 5.1,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 1.5,
+      "visible": 7
+    },
+    {
+      "seed": 120,
+      "grid": 6,
+      "vehicles": 12,
+      "colors": 4,
+      "target": 5.3,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 1.5,
+      "visible": 7
+    },
+    {
+      "seed": 121,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 4,
+      "target": 5.0,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 7
+    },
+    {
+      "seed": 122,
+      "grid": 6,
+      "vehicles": 12,
+      "colors": 4,
+      "target": 5.3,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 7
+    },
+    {
+      "seed": 123,
+      "grid": 6,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 5.5,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 7
+    },
+    {
+      "seed": 124,
+      "grid": 6,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 5.7,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 7
+    },
+    {
+      "seed": 125,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 5.9,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 6
+    },
+    {
+      "seed": 126,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 5.6,
+      "shuffleWindow": 6,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 6,
+      "slots": 6
+    },
+    {
+      "seed": 127,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 5.9,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 6
+    },
+    {
+      "seed": 128,
+      "grid": 7,
+      "vehicles": 13,
+      "colors": 5,
+      "target": 6.1,
+      "shuffleWindow": 6,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 6,
+      "slots": 6
+    },
+    {
+      "seed": 229,
+      "grid": 7,
+      "vehicles": 13,
+      "colors": 5,
+      "target": 6.2,
+      "shuffleWindow": 5,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 5,
+      "maxAttempts": 1000
+    },
+    {
+      "seed": 130,
+      "grid": 7,
+      "vehicles": 13,
+      "colors": 5,
+      "target": 6.5,
+      "shuffleWindow": 6,
+      "preferDeadEnds": true,
+      "minDeadEndDepth": 2,
+      "visible": 5,
+      "slots": 6
+    }
+  ]
+}
