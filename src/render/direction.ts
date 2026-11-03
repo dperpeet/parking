@@ -16,6 +16,9 @@ export const CHEVRON_ARM = 0.6;
 export const HEADLIGHT_ALONG = 0.1;
 export const HEADLIGHT_ACROSS = 0.3;
 export const HEADLIGHT_RADIUS = 0.06;
+/** Schriftgroesse des Farbsymbols und Chevron-Strichstaerke, jeweils als Anteil der Zellgroesse. */
+export const GLYPH_SIZE = 0.42;
+export const CHEVRON_STROKE = 0.085;
 
 /** Zellen vor der Kopfzelle bis zum Rasterrand (ohne Kopfzelle), in Fahrtrichtung. */
 export function laneCells(v: VehicleGeom, cols: number, rows: number): Array<[number, number]> {

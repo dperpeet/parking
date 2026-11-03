@@ -6,6 +6,8 @@ import { LockDecor } from './lock-decor';
 import type { LockMark } from './lock-marks';
 import {
   CHEVRON_SIZE,
+  CHEVRON_STROKE,
+  GLYPH_SIZE,
   HEADLIGHT_RADIUS,
   chevronCenters,
   chevronPoints,
@@ -17,9 +19,7 @@ import {
 const WINDSHIELD_THICKNESS = 0.16;
 const WINDSHIELD_MARGIN = 0.14;
 const WINDSHIELD_SIDE_INSET = 0.2;
-const GLYPH_SIZE = 0.42;
-/** Chevron-Strichstaerke als Anteil der Zellgroesse; Mindeststaerke und Scheinwerferkontur in px. */
-const CHEVRON_STROKE = 0.085;
+/** Mindest-Strichstaerke des Chevrons und Scheinwerferkontur in px. */
 const CHEVRON_MIN_STROKE = 2;
 const HEADLIGHT_OUTLINE = 1.5;
 /** Leuchtrahmen des Tipps: Abstand zum Fahrzeug und Strichstaerke in px. */
@@ -41,7 +41,7 @@ export class VehicleView extends Container {
     private readonly dir: Dir,
     colorId: string,
     private readonly cell: number,
-    length = 1,
+    private readonly length = 1,
   ) {
     super();
     const style = PALETTE[colorId] ?? { fill: '#CCCCCC', ink: THEME.ink, glyph: '?' };
@@ -109,6 +109,7 @@ export class VehicleView extends Container {
       h,
       radius,
       cell: this.cell,
+      length: this.length,
       dir: this.dir,
       lock: mark.lock,
       key: mark.key,
