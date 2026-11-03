@@ -312,15 +312,16 @@
   }
 }
 
-/* Kurzmeldung (Tipp) in der Luecke zwischen Halteplaetzen und Brett */
+/* Kurzmeldung (Tipp): haengt am oberen Brettrand und ragt nach oben in die Luecke zu den Halteplaetzen, nie ins Brett */
 .toast {
   position: absolute;
-  top: 306px;
-  right: 16px;
-  left: 16px;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: 0;
   z-index: 5;
-  padding: 10px 14px 6px;
-  font-size: 18px;
+  padding: 6px 12px 2px;
+  font-size: 16px;
+  line-height: 1.25;
   text-align: center;
   pointer-events: none;
   animation: fade-in 180ms ease-out;

@@ -83,9 +83,9 @@ export function mountGameScreen(
   };
 
   const toast = (text: string): void => {
-    shell.stage.querySelector('.toast')?.remove();
+    shell.boardWrap.querySelector('.toast')?.remove();
     const node = el('div', 'toast panel', text);
-    shell.stage.append(node);
+    shell.boardWrap.append(node);
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => node.remove(), TOAST_MS);
   };
