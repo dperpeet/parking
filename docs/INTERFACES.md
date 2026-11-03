@@ -96,3 +96,22 @@ Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellunge
 
 `SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, neu `analyze(level, rules, { maxStates?, signal? })`.
 Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams & GeneratorTuning`).
+
+## Welten (Welt 2: Poller & Schluessel)
+
+- Pack-Index `src/content/levels/pack-XX/index.json` = `PackIndex` (`src/schema/pack.ts`):
+  `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet
+  einer Datei-ID eine `Mechanic` (`bollards` | `keys`) zu: vor diesem Level erscheint die Intro-Karte.
+- Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed` und `special.keyVehicles`).
+  Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine
+  verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhaengig davon.
+- Kampagne (`src/app/levels.ts`): `Campaign.worlds: CampaignWorld[]` (aufsteigend), `CampaignLevel.world`,
+  `CampaignLevel.intro?`. `number` zaehlt je Welt ab 1, `levels` ist die flache Liste aller Welten,
+  `after()` bleibt innerhalb des Packs. Packs ohne gueltigen `PackIndex` werden ignoriert.
+- Freischalten: Level 1 von Welt 1 ist offen; innerhalb einer Welt schaltet ein geschafftes Level
+  (>= 1 Stern) das naechste frei; Level 1 von Welt N+1 ist offen, sobald **alle** Level von Welt N
+  geschafft sind. Bereits geschaffte Level bleiben immer spielbar (keine Rueck-Sperre).
+- Intro-Karte: einmal pro Mechanik vor dem ersten Start des Levels mit `intro`; gesehen wird im
+  Spielstand gemerkt (additiv, `seenIntros: Mechanic[]`), ueber die Levelauswahl erneut abrufbar.
+- Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
+  (Default 1). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.

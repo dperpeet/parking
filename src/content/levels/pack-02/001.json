@@ -1,0 +1,76 @@
+{
+  "schema": "parking.level/1",
+  "id": "w2-01",
+  "title": {
+    "de": "Level 1",
+    "en": "Level 1"
+  },
+  "ruleset": "world2",
+  "grid": {
+    "width": 5,
+    "height": 5,
+    "cells": [
+      {
+        "x": 2,
+        "y": 2,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [2, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [4, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [2, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [1, 4],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "blue",
+    "blue"
+  ],
+  "meta": {
+    "author": "placeholder",
+    "par": {
+      "moves": 5
+    },
+    "difficulty": 1.4
+  }
+}

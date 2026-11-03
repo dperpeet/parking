@@ -89,6 +89,20 @@ export interface GeneratorTuning {
   minDeadEndDepth?: number;
   /** Kandidaten mit hoeherer Zufallsspiel-Siegchance bekommen SOFT_PENALTY (Default: aus). */
   maxRandomPlayWin?: number;
+  /**
+   * Anzahl Poller (Zellen `fixed`), Zahl oder Bereich [min, max] (seed-deterministisch gewaehlt).
+   * Default 0. Poller stehen nie auf einem Fahrzeug und nie auf dem Ausfahrweg eines Fahrzeugs;
+   * mindestens einer begrenzt eine Platzierung (liegt in einer Zeile/Spalte mit einem Fahrzeug).
+   */
+  bollards?: number | [number, number];
+  /**
+   * Anzahl gesperrter Fahrzeuge (`locked` + `keyId`), Zahl oder Bereich. Default 0.
+   * Der Schluessel faehrt in der konstruierten Loesung vor dem Schloss aus; das Schloss wuerde
+   * ohne Sperre frueher tippbar sein (die Sperre aendert die Analyse). Ketten bleiben azyklisch.
+   */
+  keys?: number | [number, number];
+  /** Maximale Laenge einer Schluesselkette (A sperrt B sperrt C ... ), Default 1. */
+  keyChainDepth?: number;
 }
 
 /** Generator-Eingabe inklusive Tuning. */

@@ -1,6 +1,7 @@
 import { deflateSync, inflateSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import classicJson from '../../../src/content/rulesets/classic.json';
+import world2Json from '../../../src/content/rulesets/world2.json';
 import { getCampaign } from '../../../src/app/levels';
 import {
   SHARED_DEFAULT_TITLE,
@@ -25,9 +26,13 @@ import { level as level007 } from '../helpers';
 const campaign = getCampaign();
 const classic = Ruleset.parse(classicJson);
 
-/** Wie der Session-Lookup: nur "classic" ist bekannt. */
-const lookup: RulesLookup = (id, overrides) =>
-  id === classic.id ? resolveRules(classic, overrides) : null;
+/** Wie der Session-Lookup: alle ausgelieferten Rulesets. */
+const world2 = Ruleset.parse(world2Json);
+const RULESETS = new Map([classic, world2].map((r) => [r.id, r]));
+const lookup: RulesLookup = (id, overrides) => {
+  const ruleset = RULESETS.get(id);
+  return ruleset ? resolveRules(ruleset, overrides) : null;
+};
 
 const b64url = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64url');
 

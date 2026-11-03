@@ -21,9 +21,10 @@ export interface SelectContext {
 
 export function buildSelectModel(ctx: SelectContext): LevelSelectModel {
   const { campaign, save } = ctx;
-  const order = campaign.levels.map((l) => l.key);
+  const world = campaign.worlds[0]?.levels ?? [];
+  const order = world.map((l) => l.key);
   const unlocked = unlockedFlags(order, save.levels);
-  const tiles: TileModel[] = campaign.levels.map((l, i) => {
+  const tiles: TileModel[] = world.map((l, i) => {
     const result = save.levels[l.key];
     const done = result?.completed === true;
     return {

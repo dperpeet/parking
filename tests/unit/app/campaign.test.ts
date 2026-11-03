@@ -11,10 +11,9 @@ describe('Kampagne laden', () => {
   const campaign = getCampaign();
 
   it('laedt alle Level aus index.json in Reihenfolge', () => {
-    expect(campaign.levels).toHaveLength(30);
-    expect(campaign.levels.map((l) => l.number)).toEqual(
-      Array.from({ length: 30 }, (_, i) => i + 1),
-    );
+    const world1 = campaign.levels.filter((l) => l.world === 1);
+    expect(world1).toHaveLength(30);
+    expect(world1.map((l) => l.number)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
     expect(campaign.levels[0]?.key).toBe('01/001');
     expect(campaign.levels[6]?.key).toBe('01/007');
     expect(campaign.levels[6]?.level.id).toBe('w1-07');
@@ -25,7 +24,7 @@ describe('Kampagne laden', () => {
     expect(e?.number).toBe(7);
     expect(e && campaign.after(e)?.fileId).toBe('008');
     expect(campaign.find('01', 'nope')).toBeUndefined();
-    const last = campaign.levels.at(-1);
+    const last = campaign.levels.find((l) => l.key === '01/030');
     expect(last && campaign.after(last)).toBeUndefined();
   });
 
@@ -51,10 +50,22 @@ describe('Kampagne laden', () => {
         '/x/levels/pack-09/b.json': { kaputt: true },
         '/x/levels/pack-09/c.json': { ...level007, ruleset: 'fremd' },
       },
-      { '/x/levels/pack-09/index.json': { levels: ['a', 'b', 'c', 'fehlt'] } },
+      {
+        '/x/levels/pack-09/index.json': { world: 9, name: 'X', levels: ['a', 'b', 'c', 'fehlt'] },
+        '/x/levels/pack-08/index.json': { levels: ['a'] },
+      },
       { '/x/rulesets/classic.json': classic },
     );
     expect(c.levels.map((l) => l.key)).toEqual(['09/a']);
+    expect(c.worlds.map((w) => w.world)).toEqual([9]);
+  });
+
+  it('Welten nach Nummer, mit Intro-Mechanik je Level', () => {
+    expect(campaign.worlds.map((w) => w.world)).toEqual([1, 2]);
+    expect(campaign.worlds[1]?.levels[0]?.intro).toBe('bollards');
+    expect(campaign.worlds[0]?.levels.every((l) => l.intro === undefined)).toBe(true);
+    const lastOfWorld1 = campaign.find('01', '030');
+    expect(lastOfWorld1 && campaign.after(lastOfWorld1)).toBeUndefined();
   });
 });
 

@@ -1,6 +1,6 @@
 // Kampagnen-Level und Rulesets laden: JSON per Glob einbinden, mit zod pruefen, Regeln aufloesen.
-import { Level, Ruleset, resolveRules } from '../schema';
-import type { ResolvedRules } from '../schema';
+import { Level, PackIndex, Ruleset, resolveRules } from '../schema';
+import type { LocalizedText, Mechanic, ResolvedRules } from '../schema';
 import { stageForDifficulty } from './stages';
 
 export interface CampaignLevel {
@@ -14,10 +14,25 @@ export interface CampaignLevel {
   level: Level;
   rules: ResolvedRules;
   stage: number;
+  /** Weltnummer aus dem Pack-Index (ab 1). */
+  world: number;
+  /** Mechanik, deren Intro-Karte vor diesem Level gezeigt wird (aus `intros` im Pack-Index). */
+  intro?: Mechanic;
+}
+
+/** Eine Welt = ein Pack, mit ihren Leveln in Spielreihenfolge. */
+export interface CampaignWorld {
+  world: number;
+  pack: string;
+  name: LocalizedText;
+  levels: CampaignLevel[];
 }
 
 export interface Campaign {
+  /** Alle Level aller Welten, nach Welt und dann Pack-Reihenfolge. */
   levels: CampaignLevel[];
+  /** Welten aufsteigend nach Nummer (nur Welten mit mindestens einem gueltigen Level). */
+  worlds: CampaignWorld[];
   find(pack: string, fileId: string): CampaignLevel | undefined;
   /** Naechstes Level in Pack-Reihenfolge. */
   after(entry: CampaignLevel): CampaignLevel | undefined;
@@ -54,15 +69,15 @@ export function buildCampaign(
   const byPath = new Map<string, unknown>();
   for (const [path, mod] of Object.entries(levelFiles)) byPath.set(path, mod);
 
-  const levels: CampaignLevel[] = [];
-  const indexEntries = Object.entries(indexFiles).sort(([a], [b]) => a.localeCompare(b));
-  for (const [indexPath, indexRaw] of indexEntries) {
+  const worlds: CampaignWorld[] = [];
+  for (const [indexPath, indexRaw] of Object.entries(indexFiles)) {
     const dir = /levels\/([^/]+)\/index\.json$/.exec(indexPath)?.[1];
-    const order = (indexRaw as { levels?: unknown }).levels;
-    if (!dir || !Array.isArray(order)) continue;
-    let number = 0;
-    for (const fileId of order) {
-      if (typeof fileId !== 'string') continue;
+    const index = PackIndex.safeParse(indexRaw);
+    if (!dir || !index.success) continue;
+    const pack = packName(dir);
+    const { world, name, intros } = index.data;
+    const worldLevels: CampaignLevel[] = [];
+    for (const fileId of index.data.levels) {
       const entry = [...byPath.entries()].find(([p]) => {
         const m = LEVEL_PATH.exec(p);
         return m?.[1] === dir && m[2] === fileId;
@@ -71,24 +86,29 @@ export function buildCampaign(
       if (!parsed?.success) continue;
       try {
         const rules = rulesFor(parsed.data);
-        number += 1;
-        const pack = packName(dir);
-        levels.push({
+        const intro = intros[fileId];
+        worldLevels.push({
           key: `${pack}/${fileId}`,
           pack,
           fileId,
-          number,
+          number: worldLevels.length + 1,
           level: parsed.data,
           rules,
           stage: stageForDifficulty(parsed.data.meta?.difficulty),
+          world,
+          ...(intro ? { intro } : {}),
         });
       } catch {
         // Level mit unbekanntem Ruleset wird uebersprungen.
       }
     }
+    if (worldLevels.length > 0) worlds.push({ world, pack, name, levels: worldLevels });
   }
+  worlds.sort((a, b) => a.world - b.world || a.pack.localeCompare(b.pack));
+  const levels = worlds.flatMap((w) => w.levels);
   return {
     levels,
+    worlds,
     find: (pack, fileId) => levels.find((l) => l.pack === pack && l.fileId === fileId),
     after: (entry) => {
       const i = levels.findIndex((l) => l.key === entry.key);

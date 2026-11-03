@@ -1,0 +1,82 @@
+{
+  "schema": "parking.ruleset/1",
+  "id": "world2",
+  "name": {
+    "de": "Poller & Schlüssel",
+    "en": "Bollards & Keys"
+  },
+  "queue": {
+    "slots": 5,
+    "fillPolicy": "firstFree",
+    "lockedSlots": [],
+    "loseOnFull": true
+  },
+  "vehicles": {
+    "types": {
+      "s": {
+        "length": 2,
+        "capacity": 2
+      },
+      "m": {
+        "length": 3,
+        "capacity": 4
+      },
+      "l": {
+        "length": 4,
+        "capacity": 6
+      }
+    },
+    "colors": ["blue", "orange", "green", "yellow", "pink", "purple"],
+    "dualColor": false,
+    "departOnFull": true
+  },
+  "movement": {
+    "model": "straight",
+    "exits": "edges",
+    "reversible": false
+  },
+  "passengers": {
+    "order": "strict",
+    "lookahead": 1,
+    "visible": 8,
+    "mysteryRate": 0,
+    "boardPolicy": "firstMatch"
+  },
+  "limits": {
+    "timeSec": null,
+    "moves": null
+  },
+  "scoring": {
+    "starMode": "powerupsUsed",
+    "stars": {
+      "three": 0,
+      "two": 2
+    }
+  },
+  "special": {
+    "barriers": false,
+    "oneWay": false,
+    "keyVehicles": true,
+    "fixed": true,
+    "mysteryVehicles": false
+  },
+  "powerups": {
+    "undo": {
+      "enabled": true,
+      "uses": 3
+    },
+    "shuffle": {
+      "enabled": true,
+      "uses": 1
+    },
+    "extraSlot": {
+      "enabled": true,
+      "uses": 1
+    },
+    "honk": {
+      "enabled": false,
+      "uses": 0
+    },
+    "earnRule": "byStars"
+  }
+}
