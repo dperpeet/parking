@@ -10,13 +10,17 @@ export interface SettingsModel {
   motion: MotionChoice;
 }
 
+export type ImportMode = 'merge' | 'replace';
+
 export interface SettingsHandlers {
   getModel(): SettingsModel;
   onLanguage(lang: Lang): void;
   onMotion(motion: MotionChoice): void;
   onExport(): void;
-  /** Gibt zurueck, ob die Datei ein gueltiger Spielstand war (und eingespielt wurde). */
-  onImport(text: string): boolean;
+  /** Prueft, ob der Dateiinhalt ein gueltiger Spielstand ist (ohne etwas zu aendern). */
+  validateImport(text: string): boolean;
+  /** Spielt den Spielstand ein; gibt zurueck, ob es geklappt hat. */
+  onImport(text: string, mode: ImportMode): boolean;
   onReset(): void;
 }
 
@@ -42,6 +46,8 @@ export function openSettings(
 ): SettingsDialog {
   let message = '';
   let confirmingReset = false;
+  /** Gueltiger Dateiinhalt, der auf die Wahl Zusammenfuehren/Ersetzen wartet. */
+  let pendingImport: string | null = null;
   let closed = false;
 
   const close = (): void => {
@@ -103,7 +109,12 @@ export function openSettings(
       if (!file) return;
       void file.text().then(
         (text) => {
-          message = handlers.onImport(text) ? t('importOk') : t('importFail');
+          if (handlers.validateImport(text)) {
+            pendingImport = text;
+            message = '';
+          } else {
+            message = t('importFail');
+          }
           render();
         },
         () => {
@@ -138,6 +149,31 @@ export function openSettings(
       'aria-labelledby': 'set-title',
       'data-testid': 'settings-dialog',
     });
+
+    if (pendingImport !== null) {
+      const finish = (mode: ImportMode): void => {
+        const text = pendingImport ?? '';
+        pendingImport = null;
+        message = handlers.onImport(text, mode) ? t('importOk') : t('importFail');
+        render();
+      };
+      dialog.append(
+        title,
+        h('p', { class: 'dlg-sub set-confirm' }, t('importChoose')),
+        h(
+          'p',
+          { class: 'set-warn', role: 'alert', 'data-testid': 'import-warning' },
+          t('importReplaceWarn'),
+        ),
+        action(t('importMerge'), 'import-merge', () => finish('merge'), 'btn-primary'),
+        action(t('importReplace'), 'import-replace', () => finish('replace')),
+        action(t('cancel'), 'import-cancel', () => {
+          pendingImport = null;
+          render();
+        }),
+      );
+      return dialog;
+    }
 
     if (confirmingReset) {
       dialog.append(
