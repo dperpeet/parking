@@ -5,7 +5,7 @@
     "de": "Level 24",
     "en": "Level 24"
   },
-  "seed": 1047033377,
+  "seed": 3074566971,
   "ruleset": "world2",
   "overrides": {
     "queue": {
@@ -20,18 +20,18 @@
     "height": 7,
     "cells": [
       {
-        "x": 1,
-        "y": 3,
-        "type": "fixed"
-      },
-      {
-        "x": 6,
+        "x": 4,
         "y": 0,
         "type": "fixed"
       },
       {
-        "x": 4,
-        "y": 6,
+        "x": 3,
+        "y": 4,
+        "type": "fixed"
+      },
+      {
+        "x": 1,
+        "y": 5,
         "type": "fixed"
       }
     ]
@@ -39,134 +39,126 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [0, 0],
-      "dir": "N",
-      "type": "s",
-      "color": "yellow"
-    },
-    {
-      "id": "v2",
-      "pos": [3, 0],
+      "pos": [1, 1],
       "dir": "N",
       "type": "s",
       "color": "green"
     },
     {
+      "id": "v2",
+      "pos": [1, 6],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
       "id": "v3",
-      "pos": [6, 3],
-      "dir": "E",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v4",
+      "pos": [2, 2],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [3, 2],
+      "dir": "W",
       "type": "m",
       "color": "blue"
     },
     {
-      "id": "v4",
-      "pos": [0, 5],
-      "dir": "W",
-      "type": "s",
-      "color": "orange"
-    },
-    {
-      "id": "v5",
-      "pos": [1, 4],
-      "dir": "W",
-      "type": "s",
-      "color": "orange"
-    },
-    {
       "id": "v6",
-      "pos": [4, 0],
-      "dir": "N",
+      "pos": [6, 5],
+      "dir": "E",
       "type": "m",
-      "color": "pink"
+      "color": "pink",
+      "locked": true,
+      "keyId": "v1"
     },
     {
       "id": "v7",
-      "pos": [2, 5],
-      "dir": "W",
+      "pos": [6, 4],
+      "dir": "E",
       "type": "m",
-      "color": "pink",
+      "color": "orange",
       "locked": true,
       "keyId": "v5"
     },
     {
       "id": "v8",
-      "pos": [0, 6],
-      "dir": "W",
-      "type": "l",
-      "color": "blue",
-      "locked": true,
-      "keyId": "v4"
-    },
-    {
-      "id": "v9",
-      "pos": [2, 3],
-      "dir": "S",
-      "type": "m",
-      "color": "orange"
-    },
-    {
-      "id": "v10",
-      "pos": [0, 2],
-      "dir": "W",
+      "pos": [6, 3],
+      "dir": "E",
       "type": "s",
       "color": "green",
       "locked": true,
-      "keyId": "v1"
+      "keyId": "v3"
+    },
+    {
+      "id": "v9",
+      "pos": [6, 6],
+      "dir": "E",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v10",
+      "pos": [5, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
     },
     {
       "id": "v11",
-      "pos": [6, 4],
-      "dir": "E",
-      "type": "l",
-      "color": "pink"
+      "pos": [6, 2],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
     }
   ],
   "passengers": [
+    "orange",
     "green",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "pink",
+    "yellow",
+    "yellow",
+    "pink",
+    "blue",
+    "blue",
+    "blue",
+    "pink",
+    "orange",
+    "blue",
+    "pink",
+    "orange",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "orange",
     "yellow",
     "green",
-    "blue",
-    "orange",
-    "blue",
-    "blue",
-    "blue",
     "yellow",
-    "orange",
-    "pink",
-    "pink",
-    "pink",
-    "orange",
-    "orange",
-    "pink",
-    "blue",
-    "pink",
-    "blue",
-    "pink",
-    "pink",
-    "blue",
-    "pink",
-    "green",
-    "blue",
-    "orange",
-    "orange",
-    "blue",
-    "green",
-    "pink",
-    "pink",
-    "pink",
-    "orange",
-    "orange",
-    "pink",
-    "blue",
-    "pink",
-    "pink"
+    "yellow",
+    "yellow"
   ],
   "meta": {
     "author": "generator",
     "par": {
       "moves": 11
     },
-    "difficulty": 7,
+    "difficulty": 7.5,
     "solverVersion": "1.0"
   }
 }
