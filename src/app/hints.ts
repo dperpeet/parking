@@ -59,7 +59,10 @@ export class HintTracker {
 
   async request(getState: () => GameState, rules: ResolvedRules): Promise<HintResult> {
     const state = getState();
-    if (this.working || this.left() <= 0 || state.status !== 'playing') return { kind: 'ignored' };
+    const stuck =
+      state.status === 'lost' && state.loseReason === 'noMoves' && state.powerUps.honk > 0;
+    if (this.working || this.left() <= 0 || (state.status !== 'playing' && !stuck))
+      return { kind: 'ignored' };
     this.working = true;
     try {
       const move = await this.port.hint(state, rules);
@@ -68,7 +71,8 @@ export class HintTracker {
         now.levelId !== state.levelId ||
         now.moves !== state.moves ||
         now.history.length !== state.history.length ||
-        now.status !== 'playing';
+        now.powerUpsUsed !== state.powerUpsUsed ||
+        now.status !== state.status;
       if (stale) return { kind: 'ignored' };
       this.usedCount += 1;
       return move === null

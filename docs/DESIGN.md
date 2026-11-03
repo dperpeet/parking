@@ -80,7 +80,7 @@ Dazu kommt die Lösbarkeit: Der Solver prüft sie im Editor, beim Import geteilt
 Der Solver (`src/solver`) läuft im Web Worker (`worker.ts`, Zugriff über `client.ts`) und wird von der App erst bei Bedarf geladen. Die Anfragen heißen `analyze`, `hint` und `generate`.
 
 - `analyze` durchsucht den Zustandsraum vollständig per memoisierter Tiefensuche über die Engine-Funktionen `step` und `hashState` (nur Tipp-Aktionen, Zustandslimit als Obergrenze). Ergebnis: lösbar ja/nein, kürzeste Lösung, Anzahl Gewinn- und Gesamtpfade, tote Zustände, Schwierigkeit. „Unbekannt" (`truncated`) ist ein erlaubtes Ergebnis.
-- `hint` liefert den Tipp mit den meisten Gewinnfolgen.
+- `hint` liefert den Tipp mit den meisten Gewinnfolgen (`tap`). Gewinnt keiner und ist eine Hupe übrig, liefert er stattdessen das Fahrzeug, dessen erfolgreiche Hupe die meisten Gewinnfolgen (danach nur Tipps) ergibt (`honk`); das gilt auch nach einer Niederlage durch fehlende Züge. Beide Suchen teilen sich einen Searcher und damit das Zustandslimit.
 - `generate` ist seed-deterministisch. Der Generator konstruiert Level rückwärts, damit sie lösbar sind, verwürfelt die Passagierfolge, prüft jeden Kandidaten mit `analyze` und wählt den, der dem Schwierigkeitsziel am nächsten liegt.
 - Zufall kommt ausschließlich aus dem Seed-PRNG der Engine (`mulberry32`, `src/engine/rng.ts`). Seeds für Tages-, Endlos- und Ähnliche Level entstehen aus Text per FNV-1a (`src/app/seed.ts`).
 - Schwierigkeit (`computeDifficulty`, Skala 1-10): gewichtete Summe aus Zufallsspiel-Misserfolg, Anteil toter Zustände, Tiefe der Sackgassen und Farbdruck auf die Schlange.
