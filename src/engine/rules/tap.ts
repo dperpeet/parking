@@ -8,20 +8,31 @@ export type TapCheck =
   | { ok: true; path: Point[] }
   | { ok: false; reason: 'path' | 'queueFull' | 'locked'; blockerId: string | null };
 
+export type Obstacle = { kind: 'fixed' } | { kind: 'vehicle'; vehicleId: string };
+
+/** Erstes Hindernis (geparktes Fahrzeug oder fixed-Zelle) auf dem Weg von `v` zum Rand, sonst `null`. */
+export function firstObstacle(state: GameState, v: VehicleState): Obstacle | null {
+  const occupancy = parkedOccupancy(state);
+  const fixed = fixedCells(state.grid);
+  for (const [x, y] of pathToEdge(v, state.grid)) {
+    const key = cellKey(x, y);
+    const blocker = occupancy.get(key);
+    if (blocker !== undefined) return { kind: 'vehicle', vehicleId: blocker };
+    if (fixed.has(key)) return { kind: 'fixed' };
+  }
+  return null;
+}
+
 /** Prueft die Regeln fuer das Antippen: locked > path > queueFull. */
 export function checkTap(state: GameState, v: VehicleState): TapCheck {
   if (v.locked) return { ok: false, reason: 'locked', blockerId: null };
-  const path = pathToEdge(v, state.grid);
-  const occupancy = parkedOccupancy(state);
-  const fixed = fixedCells(state.grid);
-  for (const [x, y] of path) {
-    const key = cellKey(x, y);
-    const blocker = occupancy.get(key);
-    if (blocker !== undefined) return { ok: false, reason: 'path', blockerId: blocker };
-    if (fixed.has(key)) return { ok: false, reason: 'path', blockerId: null };
+  const obstacle = firstObstacle(state, v);
+  if (obstacle) {
+    const blockerId = obstacle.kind === 'vehicle' ? obstacle.vehicleId : null;
+    return { ok: false, reason: 'path', blockerId };
   }
   if (!hasEmptySlot(state.slots)) return { ok: false, reason: 'queueFull', blockerId: null };
-  return { ok: true, path };
+  return { ok: true, path: pathToEdge(v, state.grid) };
 }
 
 /** IDs aller Fahrzeuge, die jetzt ausfahren koennen. */

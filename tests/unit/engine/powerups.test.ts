@@ -214,18 +214,3 @@ describe('extraSlot', () => {
     ]);
   });
 });
-
-describe('honk', () => {
-  it('is rejected as notImplemented', () => {
-    const { state, rules } = setup({
-      ...BASIC,
-      overrides: { powerups: { honk: { enabled: true, uses: 2 } } },
-    });
-    const res = step(state, power('honk'), rules);
-    expect(res.events).toEqual([{ type: 'invalidAction', reason: 'notImplemented' }]);
-    expect(res.state.powerUps.honk).toBe(2);
-    expect(step(setup(BASIC).state, power('honk'), rules).events[0]).toMatchObject({
-      type: 'invalidAction',
-    });
-  });
-});

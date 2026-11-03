@@ -1,6 +1,7 @@
 import type { ResolvedRules } from '../schema';
 import { boardPassengers } from './boarding';
 import { draft, takeSnapshot } from './draft';
+import { applyHonk } from './rules/powerups/honk';
 import { applyExtraSlot } from './rules/powerups/extraSlot';
 import { applyShuffle } from './rules/powerups/shuffle';
 import type { PowerUpOutcome } from './rules/powerups/types';
@@ -43,8 +44,16 @@ function tap(state: GameState, vehicleId: string, rules: ResolvedRules): StepRes
   return { state: s, events };
 }
 
-function usePowerUp(state: GameState, powerUp: PowerUpId, rules: ResolvedRules): StepResult {
-  if (state.status === 'lost' && powerUp !== 'undo') return invalid(state, 'gameLost');
+function usePowerUp(
+  state: GameState,
+  powerUp: PowerUpId,
+  vehicleId: string | undefined,
+  rules: ResolvedRules,
+): StepResult {
+  // Nach Niederlage erlaubt: Undo immer, Hupe nur bei noMoves.
+  const allowedWhenLost =
+    powerUp === 'undo' || (powerUp === 'honk' && state.loseReason === 'noMoves');
+  if (state.status === 'lost' && !allowedWhenLost) return invalid(state, 'gameLost');
   if (state.powerUps[powerUp] <= 0) return invalid(state, 'noUsesLeft');
 
   const s = draft(state);
@@ -61,7 +70,7 @@ function usePowerUp(state: GameState, powerUp: PowerUpId, rules: ResolvedRules):
       outcome = applyExtraSlot(s, rules, events);
       break;
     case 'honk':
-      outcome = { ok: false, reason: 'notImplemented' };
+      outcome = applyHonk(s, state, vehicleId, events);
       break;
   }
   if (!outcome.ok) return invalid(state, outcome.reason);
@@ -80,7 +89,7 @@ export function step(state: GameState, action: Action, rules: ResolvedRules): St
       if (state.status === 'lost') return invalid(state, 'gameLost');
       return tap(state, action.vehicleId, rules);
     case 'usePowerUp':
-      return usePowerUp(state, action.powerUp, rules);
+      return usePowerUp(state, action.powerUp, action.vehicleId, rules);
     case 'timeUp': {
       if (state.status === 'lost') return invalid(state, 'gameLost');
       const s = draft(state);
