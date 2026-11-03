@@ -1,27 +1,13 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'json' };
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
-
-const SAVE_KEY = 'parking.save.v1';
+import { seedSave } from './support';
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
 function worldOneDone(): string {
   const levels: Record<string, { stars: number; bestMoves: number; completed: boolean }> = {};
   for (const id of world1.levels) levels[`01/${id}`] = { stars: 3, bestMoves: 20, completed: true };
   return JSON.stringify({ version: 1, levels });
-}
-
-/** Schreibt den Spielstand nur beim ersten Laden, damit spaetere Aenderungen (gesehene Intros) bleiben. */
-async function seedSave(page: Page, save: string): Promise<void> {
-  await page.addInitScript(
-    ([key, value]) => {
-      if (!window.localStorage.getItem(key as string)) {
-        window.localStorage.setItem(key as string, value as string);
-      }
-    },
-    [SAVE_KEY, save],
-  );
 }
 
 test('Frischer Stand: Welt 2 ist sichtbar, aber gesperrt, mit Hinweis', async ({ page }) => {
