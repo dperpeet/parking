@@ -9,6 +9,10 @@ export interface BoardAnimator {
   previewKey?(vehicleId: string): void;
   /** Optional: Schloss springt auf (Animation vor dem Abgleich mit dem Zustand). */
   unlock?(vehicleId: string): Promise<void>;
+  /** Optional: Hupe am hupenden Fahrzeug (Schallzacken mit kleinem Ruck). */
+  honk?(vehicleId: string): Promise<void>;
+  /** Optional: der Blocker gleitet von Kopfzelle `from` nach `to`. */
+  yield?(vehicleId: string, from: [number, number], to: [number, number]): Promise<void>;
   /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
   exit(vehicleId: string, path: Array<[number, number]>): Promise<void>;
   /** Gleicht die sichtbaren Fahrzeuge mit dem Zustand ab (z. B. nach Undo). */
@@ -59,6 +63,11 @@ export class EventPlayer {
         case 'vehicleExited':
           await this.board.exit(event.vehicleId, event.path);
           this.hud.onEvent(event, state);
+          break;
+        case 'vehicleYielded':
+          this.hud.onEvent(event, state);
+          await this.board.honk?.(event.byVehicleId);
+          await this.board.yield?.(event.vehicleId, event.from, event.to);
           break;
         case 'vehicleUnlocked':
           this.hud.onEvent(event, state);

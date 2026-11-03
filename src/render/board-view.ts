@@ -8,6 +8,8 @@ import { computeLockMarks } from './lock-marks';
 import type { LockMarks } from './lock-marks';
 import { THEME } from './theme';
 import { Tweener, easings } from './tween';
+import { HonkBurst } from './honk-fx';
+import { t } from '../i18n';
 import { VehicleView } from './vehicle-view';
 
 export interface BoardHost {
@@ -39,6 +41,18 @@ const BLOCKER_GROW = 3;
 /** Wie lange das Schluessel-Fahrzeug nach einem Tipp auf ein gesperrtes Fahrzeug hervorgehoben bleibt. */
 const KEY_HINT_MS = 1600;
 const UNLOCK_MS = 480;
+/** Hupe: Dauer und Staerke des Rucks (Zellanteil, Zyklen), Standzeit der Sprechblase danach, Aufpoppen (Startmass, Ueberschwingen). */
+const HONK_JOLT_MS = 260;
+const HONK_JOLT_AMPLITUDE = 0.07;
+const HONK_JOLT_CYCLES = 2;
+const HONK_HOLD_MS = 420;
+const HONK_POP_FROM = 0.4;
+const HONK_POP_OVERSHOOT = 0.25;
+/** Abstand der Sprechblase vor der Fahrzeugfront (Zellanteil). */
+const HONK_BURST_OFFSET = 0.75;
+/** Ausweichen: Gleitdauer je Zelle und Mindestdauer. */
+const YIELD_MS_PER_CELL = 150;
+const YIELD_MIN_MS = 280;
 /** Poller: Radien als Anteil der Zelle (Kappe, Reflexring innen/aussen) und Schattenversatz. */
 const POST_RADIUS = 0.34;
 const POST_RING = 0.21;
@@ -105,11 +119,15 @@ export class BoardView implements BoardAnimator {
     this.marks = computeLockMarks(state.vehicles);
     const parked = new Set(state.vehicles.filter((v) => v.status === 'parked').map((v) => v.id));
     for (const [id, view] of this.vehicles) {
-      if (!parked.has(id)) {
+      const v = state.vehicles.find((o) => o.id === id);
+      if (!parked.has(id) || !v) {
         view.destroy({ children: true });
         this.vehicles.delete(id);
       } else {
         view.setLock(this.marks.of(id), this.marks.count > 1);
+        // Nach dem Ausweichen (oder Undo davon) steht das Fahrzeug an einer neuen Zelle.
+        const rect = vehicleRect(this.layout, v);
+        if (rect.x !== view.restX || rect.y !== view.restY) view.placeAt(rect);
       }
     }
     for (const v of state.vehicles) {
@@ -246,6 +264,73 @@ export class BoardView implements BoardAnimator {
       })
       .then(() => {
         view.x = view.restX;
+        this.host.requestRender();
+      });
+  }
+
+  /** Hupe: Schallzacken "HUP!" vor der Front des Fahrzeugs, dazu ein kleiner Ruck entlang der Fahrtrichtung. */
+  async honk(vehicleId: string): Promise<void> {
+    const view = this.vehicles.get(vehicleId);
+    const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
+    const layout = this.layout;
+    if (this.disposed || !view || !veh || !layout) return;
+    this.clearLane();
+    const { width, height } = this.host.size();
+    const [dx, dy] = DIR_VECTOR[veh.dir];
+    const head = cellRect(layout, veh.x, veh.y);
+    const reach = layout.cell * HONK_BURST_OFFSET;
+    const margin = layout.cell * HONK_POP_OVERSHOOT + layout.cell / 2;
+    const burst = new HonkBurst(t('honkBubble'), layout.cell);
+    burst.position.set(
+      Math.min(width - margin, Math.max(margin, head.x + head.w / 2 + dx * reach)),
+      Math.min(height - margin, Math.max(margin, head.y + head.h / 2 + dy * reach)),
+    );
+    burst.scale.set(HONK_POP_FROM);
+    this.root.addChild(burst);
+    this.host.requestRender();
+    const jolt = layout.cell * HONK_JOLT_AMPLITUDE;
+    await this.host.tweener.run({
+      durationMs: HONK_JOLT_MS,
+      ease: easings.easeOutQuad,
+      onUpdate: (p) => {
+        const wiggle = Math.sin(p * HONK_JOLT_CYCLES * 2 * Math.PI) * jolt * (1 - p);
+        view.x = view.restX + dx * wiggle;
+        view.y = view.restY + dy * wiggle;
+        burst.scale.set(HONK_POP_FROM + (1 - HONK_POP_FROM + HONK_POP_OVERSHOOT * (1 - p)) * p);
+        this.host.requestRender();
+      },
+    });
+    view.x = view.restX;
+    view.y = view.restY;
+    burst.scale.set(1);
+    this.host.requestRender();
+    // Die Blase bleibt kurz stehen, auch bei reduzierter Bewegung.
+    await new Promise<void>((resolve) => setTimeout(resolve, HONK_HOLD_MS));
+    burst.destroy({ children: true });
+    this.host.requestRender();
+  }
+
+  /** Der Blocker gleitet von seiner alten zur neuen Kopfzelle; danach gilt die neue Position als Ruhelage. */
+  yield(vehicleId: string, from: [number, number], to: [number, number]): Promise<void> {
+    const view = this.vehicles.get(vehicleId);
+    const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
+    const layout = this.layout;
+    if (this.disposed || !view || !veh || !layout) return Promise.resolve();
+    const start = vehicleRect(layout, { ...veh, x: from[0], y: from[1] });
+    const end = vehicleRect(layout, { ...veh, x: to[0], y: to[1] });
+    const cells = Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1]));
+    return this.host.tweener
+      .run({
+        durationMs: Math.max(YIELD_MIN_MS, cells * YIELD_MS_PER_CELL),
+        ease: easings.easeInOutQuad,
+        onUpdate: (p) => {
+          view.x = start.x + (end.x - start.x) * p;
+          view.y = start.y + (end.y - start.y) * p;
+          this.host.requestRender();
+        },
+      })
+      .then(() => {
+        view.placeAt(end);
         this.host.requestRender();
       });
   }
