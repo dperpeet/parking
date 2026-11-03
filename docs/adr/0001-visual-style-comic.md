@@ -14,7 +14,7 @@ Wir setzen **C Comic** um:
 - dicke dunkle Konturen (3 px, `#1A1A1A`), harte Versatzschatten (3–5 px), runde Ecken
 - warmer gelber Hintergrund, türkises Spielfeld, Akzent Korallenrot
 - Schrift **Baloo 2** (self-hosted, keine externen Requests zur Laufzeit)
-- jede Fahrzeug-/Fahrgastfarbe hat zusätzlich ein **Symbol** (● ▲ ■ ★ ◆ ✚ …)
+- jede Fahrzeug-/Fahrgastfarbe hat zusätzlich ein **Symbol** (● ♣ ■ ★ ◆ ✚ …; keine richtungsartigen Formen wie ▲, weil Fahrzeuge Richtungspfeile tragen)
 
 Verbindliche Werte: `src/render/theme.ts` (`PALETTE`, `THEME`).
 
