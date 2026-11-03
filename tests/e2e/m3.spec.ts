@@ -20,21 +20,21 @@ test('Start ist die Levelauswahl: Level 1 offen, die uebrigen gesperrt', async (
   await expect(page.getByTestId('level-select')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'ParKing' })).toBeVisible();
   await expect(page.getByText('Welt 1 · Werkstatt')).toBeVisible();
-  await expect(page.getByTestId('world-stars')).toHaveText('0 / 90 Sterne');
+  await expect(page.getByTestId('world-stars-1')).toHaveText('0 / 90 Sterne');
   await expect(page.getByTestId('card-daily')).toBeVisible();
   await expect(page.getByTestId('card-endless')).toBeVisible();
-  await expect(page.getByTestId('tile-1')).toBeEnabled();
-  await expect(page.getByTestId('tile-1')).toHaveAttribute('data-state', 'open');
-  await expect(page.getByTestId('tile-2')).toBeDisabled();
-  await expect(page.getByTestId('tile-30')).toBeDisabled();
-  await expect(page.getByTestId('tile-7')).toBeDisabled();
+  await expect(page.getByTestId('tile-1-1')).toBeEnabled();
+  await expect(page.getByTestId('tile-1-1')).toHaveAttribute('data-state', 'open');
+  await expect(page.getByTestId('tile-1-2')).toBeDisabled();
+  await expect(page.getByTestId('tile-1-30')).toBeDisabled();
+  await expect(page.getByTestId('tile-1-7')).toBeDisabled();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'test-results/select-screen.png' });
 });
 
 test('Level 1 laesst sich oeffnen und der Zurueck-Pfeil fuehrt zur Auswahl', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('tile-1').click();
+  await page.getByTestId('tile-1-1').click();
   await expect(page).toHaveURL(/#\/level\/01\/001$/);
   await expect(page.getByRole('heading', { name: 'Level 1' })).toBeVisible();
   await page.getByTestId('back').click();
@@ -48,16 +48,16 @@ test('Level 7 gewinnen: Sterne, Freischaltung von Level 8, Fortschritt bleibt na
   await win007(page);
   await page.getByTestId('dlg-menu').click();
   await expect(page.getByTestId('level-select')).toBeVisible();
-  await expect(page.getByTestId('tile-7')).toHaveAttribute('data-state', 'done');
-  await expect(page.getByTestId('tile-7')).toHaveAccessibleName('Level 7, 3 von 3 Sternen');
-  await expect(page.getByTestId('tile-8')).toBeEnabled();
-  await expect(page.getByTestId('tile-9')).toBeDisabled();
-  await expect(page.getByTestId('world-stars')).toHaveText('3 / 90 Sterne');
+  await expect(page.getByTestId('tile-1-7')).toHaveAttribute('data-state', 'done');
+  await expect(page.getByTestId('tile-1-7')).toHaveAccessibleName('Level 7, 3 von 3 Sternen');
+  await expect(page.getByTestId('tile-1-8')).toBeEnabled();
+  await expect(page.getByTestId('tile-1-9')).toBeDisabled();
+  await expect(page.getByTestId('world-stars-1')).toHaveText('3 / 90 Sterne');
 
   await page.reload();
-  await expect(page.getByTestId('tile-7')).toHaveAttribute('data-state', 'done');
-  await expect(page.getByTestId('tile-8')).toBeEnabled();
-  await expect(page.getByTestId('world-stars')).toHaveText('3 / 90 Sterne');
+  await expect(page.getByTestId('tile-1-7')).toHaveAttribute('data-state', 'done');
+  await expect(page.getByTestId('tile-1-8')).toBeEnabled();
+  await expect(page.getByTestId('world-stars-1')).toHaveText('3 / 90 Sterne');
 });
 
 test('Stufe halten bleibt nach Reload erhalten', async ({ page }) => {

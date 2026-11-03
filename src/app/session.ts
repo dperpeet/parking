@@ -1,11 +1,11 @@
 // Spiel-Session: verbindet Controller, Modus (Kampagne, Tageslevel, Endlos, Aehnliches Level),
 // Fortschritt, Tipps und Level-Generierung. Kennt kein DOM und keinen Renderer.
-import type { Level, ResolvedRules, RulesetOverrides, ShareError } from '../schema';
+import type { Level, Mechanic, ResolvedRules, RulesetOverrides, ShareError } from '../schema';
 import type { GameState } from '../engine/types';
 import { getLanguage, t } from '../i18n';
 import type { GeneratorParams } from '../solver/types';
 import type { EngineApi } from './engine-port';
-import { formatDay } from './format';
+import { formatDay, localizedText } from './format';
 import { GameController } from './game-controller';
 import { HintTracker, displayStars } from './hints';
 import type { Campaign, CampaignLevel } from './levels';
@@ -25,6 +25,7 @@ import {
   endlessStage,
   stageShape,
 } from './stages';
+import { nextCampaignLevel } from './unlock';
 
 const DEFAULT_RULESET = 'classic';
 /** Hoechste Schwierigkeit auf der 0-10-Skala. */
@@ -286,9 +287,9 @@ export class GameSession {
     if (!mode) return;
     switch (mode.kind) {
       case 'campaign':
-        return this.goCampaign(this.deps.campaign.after(mode.entry));
+        return this.goCampaign(this.successor(mode.entry));
       case 'similar':
-        return this.goCampaign(mode.origin ? this.deps.campaign.after(mode.origin) : undefined);
+        return this.goCampaign(mode.origin ? this.successor(mode.origin) : undefined);
       case 'daily':
       case 'shared':
         this.deps.exit();
@@ -296,6 +297,23 @@ export class GameSession {
       case 'endless':
         return this.nextEndless(mode.run);
     }
+  }
+
+  /** Naechstes Level; nach dem letzten Level einer Welt Level 1 der naechsten, sofern freigeschaltet. */
+  private successor(entry: CampaignLevel): CampaignLevel | undefined {
+    return nextCampaignLevel(this.deps.campaign, this.deps.progress.get().levels, entry);
+  }
+
+  // --- Intro-Karten ---
+
+  /** Mechanik, deren Intro-Karte vor dem aktuellen Level noch nicht gezeigt wurde. */
+  pendingIntro(): Mechanic | null {
+    const intro = this.mode?.kind === 'campaign' ? this.mode.entry.intro : undefined;
+    return intro && !this.deps.progress.hasSeenIntro(intro) ? intro : null;
+  }
+
+  markIntroSeen(mechanic: Mechanic): void {
+    this.deps.progress.markIntroSeen(mechanic);
   }
 
   private goCampaign(entry: CampaignLevel | undefined): void {
@@ -460,12 +478,12 @@ export class GameSession {
     switch (mode.kind) {
       case 'campaign':
         return {
-          world: worldTitle(mode.entry.pack),
+          world: this.worldTitle(mode.entry),
           level: t('levelLabel', { n: mode.entry.number }),
         };
       case 'similar':
         return {
-          world: mode.origin ? worldTitle(mode.origin.pack) : t('similar'),
+          world: mode.origin ? this.worldTitle(mode.origin) : t('similar'),
           level: mode.origin ? t('titleSimilar', { n: mode.origin.number }) : t('similar'),
         };
       case 'daily':
@@ -485,6 +503,14 @@ export class GameSession {
     }
   }
 
+  private worldTitle(entry: CampaignLevel): string {
+    const world = this.deps.campaign.worlds.find((w) => w.pack === entry.pack);
+    return t('worldLabel', {
+      n: entry.world,
+      name: world ? localizedText(world.name, getLanguage()) : '',
+    }).replace(/ · $/, '');
+  }
+
   /** Daten fuer "Ergebnis teilen": nur nach einem Sieg im Tageslevel. */
   dailyShare(state: GameState): DailyShareData | null {
     const mode = this.mode;
@@ -499,11 +525,10 @@ export class GameSession {
 
   dialogInfo(state: GameState): SessionDialogInfo {
     const mode = this.mode;
-    const { campaign } = this.deps;
     const stars = displayStars(state.stars, this.hints.used());
     let hasNext = true;
-    if (mode?.kind === 'campaign') hasNext = campaign.after(mode.entry) !== undefined;
-    else if (mode?.kind === 'similar') hasNext = !!mode.origin && !!campaign.after(mode.origin);
+    if (mode?.kind === 'campaign') hasNext = this.successor(mode.entry) !== undefined;
+    else if (mode?.kind === 'similar') hasNext = !!mode.origin && !!this.successor(mode.origin);
     else if (mode?.kind === 'daily' || mode?.kind === 'shared') hasNext = false;
     return {
       stars,
@@ -515,9 +540,4 @@ export class GameSession {
           : null,
     };
   }
-}
-
-function worldTitle(pack: string): string {
-  const n = Number(pack) || 1;
-  return t('worldLabel', { n, name: n === 1 ? t('worldName1') : '' }).replace(/ · $/, '');
 }

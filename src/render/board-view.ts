@@ -3,7 +3,9 @@ import type { GameState, VehicleState } from '../engine/types';
 import type { BoardAnimator } from './event-player';
 import { dashSegments, laneCells } from './direction';
 import { DIR_VECTOR, cellRect, computeBoardLayout, vehicleRect } from './layout';
-import type { BoardLayout } from './layout';
+import type { BoardLayout, Rect } from './layout';
+import { computeLockMarks } from './lock-marks';
+import type { LockMarks } from './lock-marks';
 import { THEME } from './theme';
 import { Tweener, easings } from './tween';
 import { VehicleView } from './vehicle-view';
@@ -31,6 +33,14 @@ const LANE_WIDTH_RATIO = 0.08;
 const LANE_MIN_WIDTH = 3;
 const LANE_ARROW = 0.2;
 const BLOCKER_GROW = 3;
+/** Wie lange das Schluessel-Fahrzeug nach einem Tipp auf ein gesperrtes Fahrzeug hervorgehoben bleibt. */
+const KEY_HINT_MS = 1600;
+const UNLOCK_MS = 480;
+/** Poller: Radien als Anteil der Zelle (Kappe, Reflexring innen/aussen) und Schattenversatz. */
+const POST_RADIUS = 0.34;
+const POST_RING = 0.21;
+const POST_RING_WIDTH = 0.1;
+const POST_CORE = 0.08;
 
 export class BoardView implements BoardAnimator {
   private readonly root = new Container();
@@ -42,6 +52,7 @@ export class BoardView implements BoardAnimator {
   /** Wiederverwendete Vorschau-Grafik; wird nur pro Antippen gezeichnet, nie pro Frame. */
   private lane: Graphics | null = null;
   private laneToken = 0;
+  private marks: LockMarks = computeLockMarks([]);
 
   constructor(private readonly host: BoardHost) {
     host.stage.addChild(this.root);
@@ -54,6 +65,7 @@ export class BoardView implements BoardAnimator {
   /** Baut Brett und Fahrzeuge komplett neu auf. */
   build(state: GameState): void {
     this.state = state;
+    this.marks = computeLockMarks(state.vehicles);
     this.laneToken += 1;
     this.lane = null;
     this.root.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -77,11 +89,14 @@ export class BoardView implements BoardAnimator {
       return;
     }
     this.state = state;
+    this.marks = computeLockMarks(state.vehicles);
     const parked = new Set(state.vehicles.filter((v) => v.status === 'parked').map((v) => v.id));
     for (const [id, view] of this.vehicles) {
       if (!parked.has(id)) {
         view.destroy({ children: true });
         this.vehicles.delete(id);
+      } else {
+        view.setLock(this.marks.of(id), this.marks.count > 1);
       }
     }
     for (const v of state.vehicles) {
@@ -125,6 +140,25 @@ export class BoardView implements BoardAnimator {
       },
     });
     setTimeout(stop, durationMs);
+  }
+
+  /** Hebt zu einem gesperrten Fahrzeug das Schluessel-Fahrzeug kurz hervor. */
+  previewKey(vehicleId: string): void {
+    const keyId = this.state?.vehicles.find((v) => v.id === vehicleId)?.keyId;
+    if (keyId) this.highlight(keyId, KEY_HINT_MS);
+  }
+
+  /** Schloss springt auf und verschwindet; danach ist das Fahrzeug frei. */
+  unlock(vehicleId: string): Promise<void> {
+    const view = this.vehicles.get(vehicleId);
+    if (!view) return Promise.resolve();
+    return this.host.tweener.run({
+      durationMs: UNLOCK_MS,
+      onUpdate: (p) => {
+        view.setUnlockProgress(p);
+        this.host.requestRender();
+      },
+    });
   }
 
   /** Markiert die Fahrspur in Blickrichtung bis zum Rand und das blockierende Fahrzeug. */
@@ -239,8 +273,22 @@ export class BoardView implements BoardAnimator {
       this.layout.cell,
       v.length,
     );
+    view.setLock(this.marks.of(v.id), this.marks.count > 1);
     this.vehicles.set(v.id, view);
     this.root.addChild(view);
+  }
+
+  /** Poller von oben: harter Schatten, rote Kappe mit weissem Reflexring und dunklem Kern. */
+  private drawBollard(g: Graphics, r: Rect): void {
+    const c = Math.min(r.w, r.h);
+    const cx = r.x + r.w / 2;
+    const cy = r.y + r.h / 2;
+    g.circle(cx + THEME.shadowOffset, cy + THEME.shadowOffset, c * POST_RADIUS).fill(THEME.outline);
+    g.circle(cx, cy, c * POST_RADIUS)
+      .fill(THEME.accent)
+      .stroke({ width: THEME.outlineWidth, color: THEME.outline });
+    g.circle(cx, cy, c * POST_RING).stroke({ width: c * POST_RING_WIDTH, color: THEME.panel });
+    g.circle(cx, cy, c * POST_CORE).fill(THEME.outline);
   }
 
   private drawBoard(l: BoardLayout): Graphics {
@@ -257,7 +305,8 @@ export class BoardView implements BoardAnimator {
       for (let cx = 0; cx < l.cols; cx++) {
         const r = cellRect(l, cx, cy);
         const isFixed = fixed.some((c) => c.x === cx && c.y === cy);
-        g.roundRect(r.x, r.y, r.w, r.h, 8).fill(isFixed ? THEME.outline : THEME.cell);
+        g.roundRect(r.x, r.y, r.w, r.h, 8).fill(THEME.cell);
+        if (isFixed) this.drawBollard(g, r);
       }
     }
     return g;

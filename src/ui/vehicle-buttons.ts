@@ -1,6 +1,7 @@
 // Transparente, echte <button>-Elemente ueber den Fahrzeugen im Pixi-Canvas: Tippen, Tastatur, Screenreader.
 import type { GameState } from '../engine/types';
 import { computeBoardLayout, vehicleRect } from '../render/layout';
+import { computeLockMarks } from '../render/lock-marks';
 import { h } from './dom';
 import { vehicleLabel } from './strings';
 
@@ -57,6 +58,7 @@ export function createVehicleButtons(
         layer.clientWidth,
         layer.clientHeight,
       );
+      const marks = computeLockMarks(state.vehicles);
       const active = document.activeElement;
       let lostFocusAt: [number, number] | null = null;
       for (const [id, btn] of buttons) {
@@ -87,7 +89,10 @@ export function createVehicleButtons(
         btn.style.top = `${r.y}px`;
         btn.style.width = `${r.w}px`;
         btn.style.height = `${r.h}px`;
-        btn.setAttribute('aria-label', vehicleLabel(v));
+        btn.setAttribute(
+          'aria-label',
+          vehicleLabel(v, { mark: marks.of(v.id), count: marks.count }),
+        );
       }
       if (lostFocusAt) nearestTo(lostFocusAt[0], lostFocusAt[1])?.focus();
     },

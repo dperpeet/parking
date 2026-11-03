@@ -1,6 +1,6 @@
 // Fortschritt ohne Accounts: ein localStorage-Eintrag `parking.save.v1`, versioniert, mit Speicher-Fallback.
 import { z } from 'zod';
-import { SHARE_MAX_LENGTH, SHARE_TEXT_MAX } from '../schema';
+import { Mechanic, SHARE_MAX_LENGTH, SHARE_TEXT_MAX } from '../schema';
 import { STAGE_COUNT, clampStage } from './stages';
 
 export const SAVE_KEY = 'parking.save.v1';
@@ -36,6 +36,10 @@ const CustomLevel = z.object({
 });
 export type CustomLevel = z.infer<typeof CustomLevel>;
 
+function uniqueMechanics(list: readonly Mechanic[]): Mechanic[] {
+  return [...new Set(list)];
+}
+
 const SaveSchema = z.object({
   version: z.literal(SAVE_VERSION),
   levels: z
@@ -67,6 +71,11 @@ const SaveSchema = z.object({
     .array(CustomLevel.nullable().catch(null))
     .catch([])
     .transform((list) => list.filter((e): e is CustomLevel => e !== null)),
+  /** Additiv zu v1: Mechaniken, deren Intro-Karte schon gezeigt wurde. Fehlt in alten Staenden. */
+  seenIntros: z
+    .array(Mechanic.nullable().catch(null))
+    .catch([])
+    .transform((list) => uniqueMechanics(list.filter((m): m is Mechanic => m !== null))),
 });
 
 export type SaveData = z.infer<typeof SaveSchema>;
@@ -83,6 +92,7 @@ export function emptySave(): SaveData {
     similarCounter: 0,
     settings: { language: 'auto', motion: 'system' },
     customLevels: [],
+    seenIntros: [],
   };
 }
 
@@ -186,6 +196,7 @@ export function mergeSaves(base: SaveData, incoming: SaveData): SaveData {
     similarCounter: Math.max(base.similarCounter, incoming.similarCounter),
     settings: base.settings,
     customLevels: mergeCustom(base.customLevels, incoming.customLevels),
+    seenIntros: uniqueMechanics([...base.seenIntros, ...incoming.seenIntros]),
   };
 }
 
@@ -378,6 +389,19 @@ export class Progress {
   replace(incoming: SaveData): void {
     this.update((d) => {
       Object.assign(d, { ...structuredClone(incoming), settings: d.settings });
+    });
+  }
+
+  // --- Intro-Karten ---
+
+  hasSeenIntro(mechanic: Mechanic): boolean {
+    return this.data.seenIntros.includes(mechanic);
+  }
+
+  markIntroSeen(mechanic: Mechanic): void {
+    if (this.hasSeenIntro(mechanic)) return;
+    this.update((d) => {
+      d.seenIntros.push(mechanic);
     });
   }
 

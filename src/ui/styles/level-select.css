@@ -504,3 +504,38 @@
   border: var(--t-outline-w) solid var(--t-outline);
   border-radius: 12px;
 }
+
+.intro-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.intro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 3px 12px 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--t-ink);
+  background: var(--t-panel);
+  border: 2px solid var(--t-outline);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--t-outline);
+}
+
+.intro-q {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding-top: 2px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--t-accent-ink);
+  background: var(--t-star);
+  border: 2px solid var(--t-outline);
+  border-radius: 50%;
+}

@@ -5,6 +5,10 @@ export interface BoardAnimator {
   shake(vehicleId: string): Promise<void>;
   /** Optional: zeigt Fahrspur und Blocker (Geometrie; die Ursache kommt aus dem Event). */
   previewLane?(vehicleId: string, blockerId: string | null): void;
+  /** Optional: hebt zu einem gesperrten Fahrzeug das Schluessel-Fahrzeug hervor. */
+  previewKey?(vehicleId: string): void;
+  /** Optional: Schloss springt auf (Animation vor dem Abgleich mit dem Zustand). */
+  unlock?(vehicleId: string): Promise<void>;
   /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
   exit(vehicleId: string, path: Array<[number, number]>): Promise<void>;
   /** Gleicht die sichtbaren Fahrzeuge mit dem Zustand ab (z. B. nach Undo). */
@@ -48,12 +52,17 @@ export class EventPlayer {
       switch (event.type) {
         case 'vehicleBlocked':
           this.hud.onEvent(event, state);
-          this.board.previewLane?.(event.vehicleId, event.blockerId);
+          if (event.reason === 'locked') this.board.previewKey?.(event.vehicleId);
+          else this.board.previewLane?.(event.vehicleId, event.blockerId);
           await this.board.shake(event.vehicleId);
           break;
         case 'vehicleExited':
           await this.board.exit(event.vehicleId, event.path);
           this.hud.onEvent(event, state);
+          break;
+        case 'vehicleUnlocked':
+          this.hud.onEvent(event, state);
+          await this.board.unlock?.(event.vehicleId);
           break;
         default:
           this.hud.onEvent(event, state);

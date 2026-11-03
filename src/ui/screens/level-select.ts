@@ -1,11 +1,15 @@
 // Levelauswahl: Tageslevel, Endlos, "Stufe halten" und das Level-Raster der Welt.
 import { t, tn } from '../../i18n';
+import type { Mechanic } from '../../schema';
+import { mechanicTitle } from '../components/intro-card';
 import { h, icon, starIcon } from '../dom';
 
 export type TileState = 'locked' | 'open' | 'done';
 
 export interface TileModel {
   key: string;
+  /** Weltnummer ab 1; `number` zaehlt je Welt. */
+  world: number;
   number: number;
   state: TileState;
   stars: number;
@@ -21,14 +25,24 @@ export interface LevelSelectModel {
   /** Hoechste erreichte Stufe; hoehere Stufen sind gesperrt. */
   reachedStage: number;
   stageCount: number;
-  worldTitle: string;
-  starsEarned: number;
-  starsTotal: number;
-  tiles: TileModel[];
+  worlds: WorldModel[];
   /** false: Speicher nicht verfuegbar, Hinweis anzeigen. */
   persistent: boolean;
   /** Eigene Level aus dem Editor (optional, Standard: keine). */
   customLevels?: CustomLevelModel[];
+}
+
+export interface WorldModel {
+  world: number;
+  title: string;
+  /** Gesperrte Welt: nur Titel und Hinweis, keine Kacheln. */
+  locked: boolean;
+  lockedHint: string;
+  starsEarned: number;
+  starsTotal: number;
+  tiles: TileModel[];
+  /** Mechaniken mit Intro-Karte in dieser Welt (zum erneuten Abrufen). */
+  intros: Mechanic[];
 }
 
 export interface CustomLevelModel {
@@ -44,6 +58,7 @@ export interface LevelSelectHandlers {
   onSettings(): void;
   onHold(enabled: boolean): void;
   onHoldStage(stage: number): void;
+  onIntro(mechanic: Mechanic): void;
   onEditor?(): void;
   onCustomPlay?(id: string): void;
   onCustomEdit?(id: string): void;
@@ -153,7 +168,7 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
 
   const tile = (tl: TileModel): HTMLElement => {
     const b = button(`tile tile-${tl.state}`, `tile-${tl.key}`, () => handlers.onLevel(tl.key));
-    b.setAttribute('data-testid', `tile-${tl.number}`);
+    b.setAttribute('data-testid', `tile-${tl.world}-${tl.number}`);
     b.setAttribute('data-state', tl.state);
     if (tl.state === 'locked') {
       b.disabled = true;
@@ -171,39 +186,56 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
     return b;
   };
 
-  const world = (m: LevelSelectModel): HTMLElement => {
-    const grid = h('div', { class: 'tiles', role: 'group', 'aria-label': t('levelsHeading') });
+  const world = (w: WorldModel): HTMLElement => {
+    if (w.locked) {
+      const card = h(
+        'section',
+        {
+          class: 'card card-teaser world-locked',
+          'aria-disabled': 'true',
+          'data-testid': `world-${w.world}`,
+          'data-state': 'locked',
+        },
+        icon('lock'),
+        h(
+          'div',
+          {},
+          h('h2', { class: 'card-title' }, w.title),
+          h('span', { class: 'card-sub', 'data-testid': `world-hint-${w.world}` }, w.lockedHint),
+        ),
+      );
+      return card;
+    }
+    const grid = h('div', { class: 'tiles', role: 'group', 'aria-label': w.title });
     grid.style.setProperty('--cols', String(TILE_COLUMNS));
-    for (const tl of m.tiles) grid.append(tile(tl));
+    for (const tl of w.tiles) grid.append(tile(tl));
+    const intros = w.intros.map((mechanic) => {
+      const name = mechanicTitle(mechanic);
+      const b = button('intro-btn', `intro-${w.world}-${mechanic}`, () =>
+        handlers.onIntro(mechanic),
+      );
+      b.append(h('span', { class: 'intro-q', 'aria-hidden': 'true' }, '?'), name);
+      b.setAttribute('aria-label', t('introReplay', { name }));
+      b.setAttribute('data-testid', `intro-${mechanic}`);
+      return b;
+    });
     return h(
       'section',
-      { class: 'world' },
+      { class: 'world', 'data-testid': `world-${w.world}`, 'data-state': 'open' },
       h(
         'div',
         { class: 'world-head' },
-        h('h2', { class: 'world-title' }, m.worldTitle),
+        h('h2', { class: 'world-title' }, w.title),
         h(
           'span',
-          { class: 'world-stars', 'data-testid': 'world-stars' },
-          t('starsCount', { n: m.starsEarned, total: m.starsTotal }),
+          { class: 'world-stars', 'data-testid': `world-stars-${w.world}` },
+          t('starsCount', { n: w.starsEarned, total: w.starsTotal }),
         ),
       ),
+      intros.length > 0 ? h('div', { class: 'intro-row' }, ...intros) : null,
       grid,
     );
   };
-
-  const teaser = (): HTMLElement =>
-    h(
-      'section',
-      { class: 'card card-teaser', 'aria-disabled': 'true' },
-      icon('lock'),
-      h(
-        'div',
-        {},
-        h('h2', { class: 'card-title' }, t('world2')),
-        h('span', { class: 'card-sub' }, t('world2Soon')),
-      ),
-    );
 
   const customList = (m: LevelSelectModel): HTMLElement => {
     const list = m.customLevels ?? [];
@@ -301,7 +333,13 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
       const fid =
         document.activeElement instanceof HTMLElement ? document.activeElement.dataset.fid : null;
       const top = el.scrollTop;
-      inner.replaceChildren(header(), modeCards(m), holdCard(m), world(m), customList(m), teaser());
+      inner.replaceChildren(
+        header(),
+        modeCards(m),
+        holdCard(m),
+        ...m.worlds.map(world),
+        customList(m),
+      );
       el.querySelector('.notice')?.remove();
       if (!m.persistent && !noticeDismissed) el.append(notice());
       el.scrollTop = top;

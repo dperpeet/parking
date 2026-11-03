@@ -22,7 +22,7 @@ test('Geteiltes Level per Link spielen, zaehlt nicht zum Fortschritt', async ({ 
   await expect(page.getByTestId('dlg-next')).toHaveText('Zum Menü');
   await page.getByTestId('dlg-next').click();
   await expect(page.getByTestId('level-select')).toBeVisible();
-  await expect(page.getByTestId('tile-7')).toBeDisabled();
+  await expect(page.getByTestId('tile-1-7')).toBeDisabled();
 });
 
 test('Kaputter Share-Link zeigt eine Meldung statt abzustuerzen', async ({ page }) => {
@@ -59,8 +59,8 @@ test('Import: Ersetzen ueberschreibt den Fortschritt', async ({ page }) => {
   await page.getByTestId('import-replace').click();
   await expect(page.getByTestId('settings-message')).toBeVisible();
   await page.getByTestId('settings-close').click();
-  await expect(page.getByTestId('tile-1')).toHaveAttribute('data-state', 'done');
-  await expect(page.getByTestId('tile-2')).toBeEnabled();
+  await expect(page.getByTestId('tile-1-1')).toHaveAttribute('data-state', 'done');
+  await expect(page.getByTestId('tile-1-2')).toBeEnabled();
   await expect(page.getByTestId('hold-switch')).toHaveAttribute('aria-checked', 'false');
 });
 
