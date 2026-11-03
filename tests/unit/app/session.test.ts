@@ -291,6 +291,18 @@ describe('Session: Tageslevel', () => {
     await tomorrow.start();
     solve(tomorrow);
     expect(h.progress.get().daily.streak).toBe(2);
+    const share = tomorrow.dailyShare(tomorrow.controller.getState());
+    expect(share).toMatchObject({ date: '2026-11-03', streak: 2 });
+  });
+
+  it('dailyShare ist nur im gewonnenen Tageslevel gesetzt', async () => {
+    const s = h.make({ name: 'daily' });
+    await s.start();
+    expect(s.dailyShare(s.controller.getState())).toBeNull();
+    const c = h.make(route007);
+    await c.start();
+    solve(c);
+    expect(c.dailyShare(c.controller.getState())).toBeNull();
   });
 
   it('fehlgeschlagene Generierung ergibt error', async () => {

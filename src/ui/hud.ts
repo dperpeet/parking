@@ -1,5 +1,6 @@
 import type { Action, GameEvent, GameState, PowerUpId } from '../engine/types';
 import type { ResolvedRules } from '../schema';
+import { t } from '../i18n';
 import { createDialogs } from './components/dialogs';
 import type { DialogInfo, MaybeAsync } from './components/dialogs';
 import { createHeader } from './components/header';
@@ -10,6 +11,7 @@ import type { HintStatus } from './components/powerups';
 import { createQueue } from './components/queue';
 import type { Shell } from './shell';
 import { announce } from './strings';
+import { h } from './dom';
 import { createVehicleButtons } from './vehicle-buttons';
 
 /** Alles, was das HUD pro Zustand vom Modus (Kampagne, Tageslevel, Endlos ...) erfragt. */
@@ -17,7 +19,11 @@ export interface HudInfo {
   title: HeaderTitle;
   dialog: DialogInfo;
   hint: HintStatus;
+  /** Teilbarer Ergebnistext (nur Tageslevel nach Sieg), sonst null. */
+  share: string | null;
 }
+
+export type ShareResult = 'shared' | 'copied' | 'manual' | 'cancelled';
 
 export interface HudActions {
   dispatch(action: Action): void;
@@ -27,6 +33,8 @@ export interface HudActions {
   next(): MaybeAsync;
   similar(): MaybeAsync;
   hint(): void;
+  /** Teilt den Text (Share-Dialog, Zwischenablage); wirft nie. */
+  share(text: string): Promise<ShareResult>;
   back(): void;
   info(state: GameState): HudInfo;
 }
@@ -80,6 +88,49 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     powerUps.update(state, info.hint);
     buttons.update(state);
     dialogs.update(state);
+    attachShare(state, info.share);
+  };
+
+  /** Haengt "Ergebnis teilen" an den Sieg-Dialog (einmalig je Dialog). */
+  const attachShare = (state: GameState, text: string | null): void => {
+    const dialog = shell.dialogLayer.querySelector('.dialog-win');
+    if (!dialog || state.status !== 'won' || text === null) return;
+    if (dialog.querySelector('[data-testid="share-result"]')) return;
+    const status = h('p', {
+      class: 'share-status',
+      role: 'status',
+      'data-testid': 'share-status',
+    });
+    const button = h(
+      'button',
+      { type: 'button', class: 'btn btn-secondary', 'data-testid': 'share-result' },
+      t('shareResult'),
+    );
+    button.addEventListener('click', () => {
+      void actions.share(text).then((result) => {
+        if (!button.isConnected) return;
+        if (result === 'copied') status.textContent = t('shareCopied');
+        else if (result === 'manual') {
+          // Letzter Ausweg: Text zum Markieren anzeigen.
+          const box = h('textarea', {
+            class: 'share-text',
+            readonly: true,
+            rows: text.split('\n').length,
+            'aria-label': t('shareManual'),
+            'data-testid': 'share-text',
+          });
+          box.value = text;
+          status.replaceChildren(t('shareManual'), box);
+          box.focus();
+          box.select();
+        }
+      });
+    });
+    const next = dialog.querySelector('.dlg-row');
+    dialog.insertBefore(
+      h('div', { class: 'dlg-share' }, button, status),
+      next?.nextSibling ?? null,
+    );
   };
 
   const say = (text: string): void => {

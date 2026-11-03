@@ -1,11 +1,13 @@
 // Spielbildschirm: Shell + HUD + Pixi-Brett, verbunden mit einer GameSession.
 import { t } from '../i18n';
+import type { GameState } from '../engine/types';
 import { BoardView, EventPlayer, createPixiApp } from '../render';
 import type { PixiHandle } from '../render';
 import { THEME } from '../render/theme';
 import { bindKeyboard, createHud, mountShell } from '../ui';
 import type { Hud } from '../ui';
 import { hintAnnouncement } from '../ui/strings';
+import { browserShareEnv, buildDailyShareText, pageUrl, shareText } from './daily-share';
 import { HINT_DISPLAY_MS } from './hints';
 import type { GameSession } from './session';
 
@@ -130,6 +132,11 @@ export function mountGameScreen(
     }
   };
 
+  const shareFor = (state: GameState): string | null => {
+    const data = session.dailyShare(state);
+    return data ? buildDailyShareText(data, pageUrl(location)) : null;
+  };
+
   const wire = async (): Promise<void> => {
     const { controller } = session;
     hud = createHud(shell, () => controller.getRules(), {
@@ -139,11 +146,13 @@ export function mountGameScreen(
       next: () => session.next(),
       similar: () => session.similar(),
       hint: () => void onHint(),
+      share: (text) => shareText(text, browserShareEnv()),
       back: opts.back,
       info: (state) => ({
         title: session.title(),
         dialog: session.dialogInfo(state),
         hint: { left: session.hints.left(), busy: session.hints.busy() },
+        share: shareFor(state),
       }),
     });
 
