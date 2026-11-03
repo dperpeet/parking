@@ -1,6 +1,6 @@
-# Schnittstellen (eingefroren für M1/M2)
+# Schnittstellen
 
-Änderungen an den hier genannten Dateien nur durch den Orchestrator.
+Verträge zwischen Engine, App, Renderer und Solver. Änderungen an den hier genannten Dateien nur bewusst, in einem eigenen PR und zusammen mit diesem Dokument.
 
 | Vertrag                                        | Datei                                                                      |
 | ---------------------------------------------- | -------------------------------------------------------------------------- |
@@ -9,9 +9,10 @@
 | Farbpalette, Symbole, Theme-Tokens             | `src/render/theme.ts`                                                      |
 | Beispiel-Content                               | `src/content/rulesets/classic.json`, `src/content/levels/pack-01/007.json` |
 | Share-Format (zod, Grenzen, Fehlercodes)       | `src/schema/share.ts`                                                      |
-| Share-Codec-API                                | `src/app/share.ts` (Signaturen; Rumpf gehoert Paket F1)                    |
+| Share-Codec-API                                | `src/app/share.ts`                                                         |
 | Solver-Typen inkl. `GeneratorTuning`           | `src/solver/types.ts`                                                      |
 | Routen                                         | `src/app/router.ts` (`Route`, `PlayRoute`)                                 |
+| Kampagne, Welten, Packs                        | `src/schema/pack.ts`, `src/app/levels.ts` (`Campaign`, `CampaignLevel`)    |
 
 ## Engine-API (`src/engine/index.ts`)
 
@@ -27,12 +28,12 @@ nextRandom(rng: number): [value: number, next: number]   // value in [0, 1)
 
 `rules` entsteht per `resolveRules(ruleset, level.overrides)` aus `src/schema`.
 
-## Spielregeln (M1-Umfang)
+## Spielregeln
 
 1. **Antippen** (`tapVehicle`): Fahrzeug muss `parked` sein und darf nicht `locked` sein. Der Weg von der Kopfzelle in Blickrichtung bis zum Rasterrand muss frei sein (keine `parked`-Fahrzeuge, keine `fixed`-Zellen). Es muss ein `empty`-Slot existieren. Sonst: Event `vehicleBlocked` (Grund `locked` > `path` > `queueFull`; `blockerId` = erstes blockierendes Fahrzeug oder `null`), Zustand unverändert, **kein Zug gezählt**, kein Verlaufseintrag.
 2. **Ausfahren:** Snapshot in `history`, Fahrzeug → `queued`, belegt den ersten `empty`-Slot (`firstFree`) bzw. den ersten freien Slot nach dem letzten belegten (`fifo`). `moves + 1`. Event `vehicleExited` mit `path` (Zellen bis zum Rand). Fahrzeuge mit `keyId` = dieses Fahrzeug werden entsperrt (`vehicleUnlocked`).
 3. **Einsteigen** (automatisch, nach jeder Zustandsänderung): Solange der vorderste Fahrgast in einen Slot-Fahrzeug gleicher Farbe mit freier Kapazität passt, steigt er ein (Slot mit kleinstem Index zuerst, `firstMatch`). Event `passengerBoarded`. Ist das Fahrzeug voll und `departOnFull`, fährt es ab: Status `departed`, Slot `empty`, Event `vehicleDeparted`; bei `fifo` rücken die folgenden Slots auf (`slotShifted`).
-4. **Sieg:** alle Fahrgäste eingestiegen → `won`, Sterne nach `scoring` (Wert = `powerUpsUsed`, `moves - par` bzw. Zeit), Event `won`.
+4. **Sieg:** alle Fahrgäste eingestiegen → `won`, Sterne nach `scoring` (siehe „Details zu Events und Zustand“), Event `won`.
 5. **Niederlage** (in dieser Priorität, nur wenn nicht gewonnen):
    - `queueFull`: kein `empty`-Slot und der vorderste Fahrgast passt nirgends (nur wenn `queue.loseOnFull`).
    - `noMoves`: `legalMoves` ist leer.
@@ -43,11 +44,11 @@ nextRandom(rng: number): [value: number, next: number]   // value in [0, 1)
    - `undo`: letzten Snapshot wiederherstellen, `stateRestored`. Ohne Verlauf → `invalidAction`. Undo selbst ist nicht rückgängig zu machen.
    - `shuffle`: mischt die Fahrgäste im Fenster `[passengerIndex, passengerIndex + passengers.visible)` mit dem PRNG, legt vorher einen Snapshot an, danach Einsteigen + Sieg/Niederlage prüfen. Event `passengersShuffled`.
    - `extraSlot`: entsperrt den ersten `locked`-Slot, sonst hängt einen neuen `empty`-Slot an. Event `slotAdded`.
-   - `honk`: in M1 nicht implementiert → `invalidAction`.
+   - `honk`: nicht implementiert → `invalidAction` (`notImplemented`).
      Jede erfolgreiche Nutzung: Zähler − 1, `powerUpsUsed + 1`, Event `powerUpUsed`.
 7. Aktionen im Zustand `won` bzw. `lost` (außer Undo bei `lost`) → `invalidAction`.
 
-## Nicht unterstützt in M1
+## Nicht unterstützte Regeln
 
 `createGame` liefert `LevelIssue` `unsupportedRule` für: `movement.model ≠ straight`, `movement.exits ≠ edges`, `movement.reversible`, `passengers.order ≠ strict`, `passengers.boardPolicy ≠ firstMatch`, `passengers.mysteryRate > 0`, `vehicles.dualColor`, `vehicles.departOnFull = false`, `special.oneWay|barriers|mysteryVehicles`. Unterstützt: `special.fixed` (Zellen `fixed`) und `special.keyVehicles` (`locked`/`keyId`).
 
@@ -61,16 +62,16 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Er berechnet keine Spiellogik; Eingaben werden als `Action` an den Game-Controller (`src/app`) gegeben.
 - Farben/Symbole/Tokens nur aus `src/render/theme.ts`.
 
-## Präzisierungen (nach M1-Umsetzung)
+## Details zu Events und Zustand
 
 - `vehicleExited.path`: Zellen **vor** der Kopfzelle bis zur letzten Zelle im Raster (ohne Kopfzelle; leer, wenn der Kopf schon am Rand steht).
 - `passengersShuffled.to` ist exklusiv.
 - `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `notImplemented`.
 - Undo nimmt nur Züge/Shuffles zurück: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
 - `createGame` bewertet sofort das Ergebnis; ein Level ohne möglichen ersten Zug startet als `lost`/`noMoves`.
-- Offen: `starMode` `moves`/`time` brauchen Par bzw. Zeit; die Engine kennt beides nicht. Bis zur Klärung bewertet `moves` die rohe Zugzahl und `time` immer mit 3 Sternen (App muss Zeit selbst bewerten). Default bleibt `powerupsUsed`.
+- Sterne: `starMode` `powerupsUsed` (Default) bewertet `powerUpsUsed`. Die Engine kennt weder Par noch Zeit: `moves` bewertet die rohe Zugzahl, `time` ergibt immer 3 Sterne (siehe `docs/ROADMAP.md`).
 
-## Teilen per URL (M4)
+## Teilen per URL
 
 - URL: `#/play?l=<code>`, Editor: `#/editor` bzw. `#/editor?l=<code>` (Level bearbeiten).
 - `code = "1." + base64url(deflate(JSON(ShareLevel)))` ohne Padding, `fflate` (`deflateSync`/`inflateSync`, Level 9).
@@ -94,10 +95,10 @@ Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellunge
 
 ## Solver-Port (App)
 
-`SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, neu `analyze(level, rules, { maxStates?, signal? })`.
+`SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, `analyze(level, rules, { maxStates?, signal? })`.
 Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams & GeneratorTuning`).
 
-## Welten (Welt 2: Poller & Schluessel)
+## Welten und Packs
 
 - Pack-Index `src/content/levels/pack-XX/index.json` = `PackIndex` (`src/schema/pack.ts`):
   `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet

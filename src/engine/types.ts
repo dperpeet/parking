@@ -1,4 +1,4 @@
-// Engine-Vertrag. Aenderungen nur durch den Orchestrator (siehe docs/INTERFACES.md).
+// Engine-Vertrag (siehe docs/INTERFACES.md).
 import type { ColorId, Dir, Level, ResolvedRules } from '../schema';
 
 export type VehicleStatus = 'parked' | 'queued' | 'departed';

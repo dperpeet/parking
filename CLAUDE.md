@@ -1,8 +1,8 @@
-# CLAUDE.md - Leitplanken fuer Agents
+# CLAUDE.md - Leitplanken
 
-Projekt: **ParKing**, regelbasiertes Parkplatz-Puzzle im Browser. Source of truth: `PLAN.md`.
-Schnittstellen (`docs/INTERFACES.md`, Engine-Typen, Schemas) aendert nur der Orchestrator.
-Als Subagent: nur die im Auftrag genannten Verzeichnisse aendern.
+Projekt: **ParKing**, regelbasiertes Parkplatz-Puzzle im Browser.
+Design und Ist-Stand: `docs/DESIGN.md`; Offenes: `docs/ROADMAP.md`; Vertraege: `docs/INTERFACES.md`.
+Schnittstellendateien (siehe `docs/INTERFACES.md`) nur bewusst aendern, in einem eigenen kleinen PR und zusammen mit der Doku.
 
 ## Architektur und Import-Regeln
 
@@ -32,11 +32,11 @@ pnpm test:e2e      # lokal ggf. PW_CHROMIUM_PATH=/opt/pw-browsers/chromium
 
 - `lint`, `format:check`, `typecheck`, `test` und `test:e2e` laufen lokal gruen; CI ist gruen.
 - Tests fuer neue Logik sind mitgeliefert; Engine-Coverage >= 90 %.
-- PR klein (ca. < 500 Zeilen), nur Dateien aus dem Auftrag, keine Aenderungen an Interface-Dateien.
+- PR klein (ca. < 500 Zeilen) und auf ein Thema beschraenkt; Schnittstellen-Aenderungen getrennt.
 - Keine verbotenen Imports, keine Magic Numbers, kein Debug-Code.
 
 ## Git
 
-- Branches: `feat/<paket>-<kurz>` (z. B. `feat/a-engine-step`), `fix/...`, `chore/...`.
+- Branches: `feat/<kurz>` (z. B. `feat/honk`), `fix/...`, `chore/...`.
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `ci:`, `refactor:`).
 - Nie direkt auf `main` pushen; Merge per PR (Squash) nach gruener CI.
