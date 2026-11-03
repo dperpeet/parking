@@ -17,6 +17,9 @@ export type {
   LevelSelectView,
   TileModel,
   TileState,
+  WorldModel,
 } from './screens/level-select';
 export { openSettings } from './screens/settings';
 export type { SettingsDialog, SettingsHandlers, SettingsModel } from './screens/settings';
+export { openIntro } from './components/intro-card';
+export type { IntroCard } from './components/intro-card';

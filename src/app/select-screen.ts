@@ -1,8 +1,8 @@
 // Levelauswahl-Screen: verbindet Fortschritt, Kampagne und Einstellungen mit der UI.
 import { getLanguage, onLanguageChange } from '../i18n';
 import type { Lang } from '../i18n';
-import { createLevelSelect, openSettings } from '../ui';
-import type { SettingsDialog } from '../ui';
+import { createLevelSelect, openIntro, openSettings } from '../ui';
+import type { IntroCard, SettingsDialog } from '../ui';
 import type { Campaign } from './levels';
 import { Progress, localDateKey, parseImport } from './progress';
 import type { Router } from './router';
@@ -36,6 +36,7 @@ function downloadJson(name: string, text: string): void {
 export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): SelectScreen {
   const { progress, campaign, router, now } = deps;
   let settings: SettingsDialog | null = null;
+  let intro: IntroCard | null = null;
   const dialogLayer = document.createElement('div');
   dialogLayer.className = 'dialog-layer';
 
@@ -85,6 +86,16 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
       progress.setHold(enabled, needsStage ? progress.reachedStage() : undefined);
     },
     onHoldStage: (stage) => progress.setHold(true, stage),
+    onIntro: (mechanic) => {
+      intro = openIntro(dialogLayer, view.el, mechanic, {
+        plain: true,
+        onClosed: () => {
+          intro = null;
+          progress.markIntroSeen(mechanic);
+          view.el.querySelector<HTMLElement>(`[data-testid="intro-${mechanic}"]`)?.focus();
+        },
+      });
+    },
     onEditor: () => router.navigate({ name: 'editor', code: null }),
     onCustomPlay: (id) => {
       const entry = progress.customLevels().find((e) => e.id === id);
@@ -128,6 +139,7 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
       offProgress();
       offLang();
       settings?.close();
+      intro?.close();
       root.replaceChildren();
     },
   };

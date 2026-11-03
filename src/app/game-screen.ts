@@ -5,8 +5,8 @@ import type { GameState } from '../engine/types';
 import { BoardView, EventPlayer, createPixiApp } from '../render';
 import type { PixiHandle } from '../render';
 import { THEME } from '../render/theme';
-import { bindKeyboard, createHud, mountShell } from '../ui';
-import type { Hud } from '../ui';
+import { bindKeyboard, createHud, mountShell, openIntro } from '../ui';
+import type { Hud, IntroCard } from '../ui';
 import { hintAnnouncement } from '../ui/strings';
 import { browserShareEnv, buildDailyShareText, pageUrl, shareText } from './daily-share';
 import { HINT_DISPLAY_MS } from './hints';
@@ -75,6 +75,7 @@ export function mountGameScreen(
   let board: BoardView | null = null;
   let hud: Hud | null = null;
   let unbindKeys: (() => void) | null = null;
+  let intro: IntroCard | null = null;
   let hintTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -157,6 +158,21 @@ export function mountGameScreen(
     }
   };
 
+  /** Zeigt die Intro-Karte, falls das Level eine noch ungesehene Mechanik einfuehrt. */
+  const maybeShowIntro = (): void => {
+    const mechanic = session.pendingIntro();
+    if (!mechanic || intro) return;
+    intro = openIntro(shell.dialogLayer, shell.game, mechanic, {
+      plain: false,
+      onClosed: () => {
+        intro = null;
+        if (disposed) return;
+        session.markIntroSeen(mechanic);
+        shell.game.querySelector<HTMLElement>('.vehicle-btn')?.focus();
+      },
+    });
+  };
+
   const shareFor = (state: GameState): string | null => {
     const data = session.dailyShare(state);
     return data ? buildDailyShareText(data, pageUrl(location)) : null;
@@ -206,14 +222,16 @@ export function mountGameScreen(
     );
     controller.subscribe((u) => {
       clearHint();
-      if (u.kind === 'new') void player.reset(u.state);
-      else void player.play(u.events, u.state);
+      if (u.kind === 'new') {
+        void player.reset(u.state);
+        maybeShowIntro();
+      } else void player.play(u.events, u.state);
     });
     unbindKeys = bindKeyboard({
       moveFocus: hud.moveFocus,
       undo: () => controller.dispatch({ type: 'usePowerUp', powerUp: 'undo' }),
       restart: () => session.restart(),
-      isDialogOpen: hud.isDialogOpen,
+      isDialogOpen: () => hud?.isDialogOpen() === true || intro !== null,
     });
     controller.start();
     layer.remove();
@@ -242,6 +260,7 @@ export function mountGameScreen(
       clearTimeout(hintTimer);
       clearTimeout(toastTimer);
       unbindKeys?.();
+      intro?.close();
       session.dispose();
       shell.dispose();
       pixi?.destroy();

@@ -204,3 +204,120 @@
   border-radius: 12px;
   resize: none;
 }
+
+/* Intro-Karte (Poller, Schluessel) */
+.dialog-intro {
+  gap: 14px;
+}
+
+.dialog-intro .dlg-title {
+  font-size: 30px;
+}
+
+.intro-text {
+  margin: 0;
+  color: var(--t-ink);
+}
+
+.intro-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 84px;
+  padding: 10px;
+  background: var(--t-board);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 16px;
+}
+
+.art-car {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 44px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--t-ink);
+  background: var(--car, var(--t-accent));
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--t-outline);
+}
+
+.art-chevron {
+  padding-bottom: 4px;
+}
+
+.art-post {
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(
+    circle,
+    var(--t-outline) 0 14%,
+    var(--t-panel) 15% 40%,
+    var(--t-accent) 41%
+  );
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--t-outline);
+}
+
+.art-detour {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--t-ink);
+}
+
+.art-locked {
+  display: block;
+  padding: 3px;
+  border: var(--t-outline-w) dashed var(--t-panel);
+  border-radius: 18px;
+}
+
+.art-locked .art-car {
+  background:
+    linear-gradient(color-mix(in srgb, var(--t-outline) 30%, transparent) 0 0), var(--car);
+}
+
+.art-badge {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 26px;
+  padding: 0 6px 0 3px;
+  color: var(--t-ink);
+  background: var(--t-panel);
+  border: 2px solid var(--t-outline);
+  border-radius: 999px;
+}
+
+.art-badge-key {
+  background: var(--t-star);
+}
+
+.art-badge .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.art-badge b {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.art-detour {
+  animation: art-nudge 900ms ease-in-out infinite alternate;
+}
+
+@keyframes art-nudge {
+  to {
+    transform: translateX(4px);
+  }
+}

@@ -82,11 +82,12 @@ describe('Auswahl-Modell', () => {
 
   it('zeigt neu: Level 1 offen, Rest gesperrt, 0 von 90 Sternen', () => {
     const m = buildSelectModel({ ...base, save: emptySave() });
-    expect(m.tiles[0]).toMatchObject({ number: 1, state: 'open' });
-    expect(m.tiles.slice(1).every((t) => t.state === 'locked')).toBe(true);
-    expect(m.starsTotal).toBe(90);
-    expect(m.starsEarned).toBe(0);
-    expect(m.worldTitle).toBe('Welt 1 · Werkstatt');
+    const w1 = m.worlds[0];
+    expect(w1?.tiles[0]).toMatchObject({ number: 1, state: 'open' });
+    expect(w1?.tiles.slice(1).every((t) => t.state === 'locked')).toBe(true);
+    expect(w1?.starsTotal).toBe(90);
+    expect(w1?.starsEarned).toBe(0);
+    expect(w1?.title).toBe('Welt 1 · Werkstatt');
     expect(m.holdEnabled).toBe(false);
   });
 
@@ -94,10 +95,11 @@ describe('Auswahl-Modell', () => {
     const p = new Progress(() => null);
     p.recordLevel('01/007', { stars: 2, moves: 12, stage: 2 });
     const m = buildSelectModel({ ...base, save: p.get(), reachedStage: p.reachedStage() });
-    expect(m.tiles[6]).toMatchObject({ number: 7, state: 'done', stars: 2 });
-    expect(m.tiles[7]).toMatchObject({ number: 8, state: 'open' });
-    expect(m.tiles[8]?.state).toBe('locked');
-    expect(m.starsEarned).toBe(2);
+    const tiles = m.worlds[0]?.tiles ?? [];
+    expect(tiles[6]).toMatchObject({ number: 7, state: 'done', stars: 2 });
+    expect(tiles[7]).toMatchObject({ number: 8, state: 'open' });
+    expect(tiles[8]?.state).toBe('locked');
+    expect(m.worlds[0]?.starsEarned).toBe(2);
     expect(m.reachedStage).toBe(2);
   });
 
