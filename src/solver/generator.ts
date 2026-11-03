@@ -1,4 +1,4 @@
-// Seed-deterministischer Level-Generator (Rueckwaerts-Konstruktion, siehe PLAN.md 1.5).
+// Seed-deterministischer Level-Generator (Rueckwaerts-Konstruktion, siehe docs/DESIGN.md).
 import { createRng, nextRandom, validateLevel } from '../engine';
 import type { Dir, Level, ResolvedRules } from '../schema';
 import { Level as LevelSchema } from '../schema';
