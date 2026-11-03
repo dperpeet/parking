@@ -3,6 +3,8 @@ import { validateLevel } from '../../../src/engine';
 import { Level, Ruleset, resolveRules } from '../../../src/schema';
 import { analyze } from '../../../src/solver/analyze';
 import { generate } from '../../../src/solver/generator';
+import { assignKeys } from '../../../src/solver/generator-special';
+import type { SpecialVehicle } from '../../../src/solver/generator-special';
 import type { GeneratorOptions } from '../../../src/solver/types';
 import world2Json from '../../../src/content/rulesets/world2.json';
 import { rules as classicRules } from '../helpers';
@@ -186,6 +188,30 @@ describe('generator: bollards and keys', () => {
       const withLocks = analyze(level, world2);
       const without = analyze(open, world2);
       expect(without.totalPaths).not.toBe(withLocks.totalPaths);
+    }
+  });
+});
+
+describe('assignKeys', () => {
+  const FREE: SpecialVehicle[] = Array.from({ length: 6 }, (_, i) => ({
+    dir: 'N',
+    cells: [[i, 1]],
+    path: [[i, 0]],
+  }));
+
+  function chainLengths(keyOf: Map<number, number>): number[] {
+    return [...keyOf.keys()].map((lock) => {
+      let len = 0;
+      for (let cur = lock; keyOf.has(cur); cur = keyOf.get(cur)!) len += 1;
+      return len;
+    });
+  }
+
+  it('never builds chains longer than maxDepth, also when a key becomes a lock later', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const keyOf = assignKeys({ state: seed }, FREE, 3, 1);
+      expect(keyOf).not.toBeNull();
+      for (const len of chainLengths(keyOf!)) expect(len).toBe(1);
     }
   });
 });

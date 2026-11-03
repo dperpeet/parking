@@ -90,11 +90,22 @@ export function assignKeys(
   });
   const keyOf = new Map<number, number>();
   const depth = (i: number): number => (keyOf.has(i) ? 1 + depth(keyOf.get(i)!) : 0);
+  /** Laengste Kette oberhalb von i (Schloesser, deren Schluessel-Kette bei i ankommt). */
+  const above = (i: number): number => {
+    let m = 0;
+    keyOf.forEach((k, lock) => {
+      if (k === i) m = Math.max(m, 1 + above(lock));
+    });
+    return m;
+  };
   for (let n = 0; n < count; n++) {
     const pairs: Array<[number, number]> = [];
     for (let l = 0; l < vehicles.length; l++) {
       if (keyOf.has(l)) continue;
-      for (let k = maxBlocker[l]! + 1; k < l; k++) if (depth(k) < maxDepth) pairs.push([l, k]);
+      const up = above(l);
+      for (let k = maxBlocker[l]! + 1; k < l; k++) {
+        if (up + 1 + depth(k) <= maxDepth) pairs.push([l, k]);
+      }
     }
     if (pairs.length === 0) return null;
     const [l, k] = pick(r, pairs);
