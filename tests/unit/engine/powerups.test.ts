@@ -216,7 +216,7 @@ describe('extraSlot', () => {
 });
 
 describe('honk', () => {
-  it('is not implemented in M1', () => {
+  it('is rejected as notImplemented', () => {
     const { state, rules } = setup({
       ...BASIC,
       overrides: { powerups: { honk: { enabled: true, uses: 2 } } },

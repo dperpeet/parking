@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import classicJson from '../../../src/content/rulesets/classic.json';
 import { createGame } from '../../../src/engine';
 import { analyze } from '../../../src/solver/analyze';
-import { Level, Ruleset } from '../../../src/schema';
+import { Level } from '../../../src/schema';
 import {
   EDITOR_LIMITS,
   checkLevel,
@@ -27,9 +27,8 @@ import {
 } from '../../../src/app/editor-model';
 import type { EditResult, EditorState, VehicleSpec } from '../../../src/app/editor-model';
 import { loadRulesets } from '../../../src/app/editor-rulesets';
-import { level as level007 } from '../helpers';
+import { classicRuleset as ruleset, level as level007 } from '../helpers';
 
-const ruleset = Ruleset.parse(classicJson);
 const rulesFor = (s: EditorState) => rulesOfState(s, ruleset);
 
 /** Operation ausfuehren und Erfolg erzwingen. */

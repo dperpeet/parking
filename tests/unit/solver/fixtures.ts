@@ -1,10 +1,4 @@
-import classicJson from '../../../src/content/rulesets/classic.json';
-import { Level, Ruleset, resolveRules } from '../../../src/schema';
-import type { ResolvedRules } from '../../../src/schema';
-
-export function rulesFor(level: Level): ResolvedRules {
-  return resolveRules(Ruleset.parse(classicJson), level.overrides);
-}
+import { Level } from '../../../src/schema';
 
 const base = {
   schema: 'parking.level/1' as const,

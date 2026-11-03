@@ -3,7 +3,7 @@ import { Container } from 'pixi.js';
 import { BoardView } from '../../../src/render/board-view';
 import type { BoardHost } from '../../../src/render/board-view';
 import { Tweener } from '../../../src/render/tween';
-import { fakeEngine } from '../../../src/app/fake-engine';
+import { fakeEngine } from '../../support/fake-engine';
 import type { GameState } from '../../../src/engine/types';
 import { level, rules } from '../helpers';
 

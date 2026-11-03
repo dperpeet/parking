@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, step } from '../../../src/engine';
 import { analyze } from '../../../src/solver/analyze';
-import { level as level007, rules as rules007 } from '../helpers';
-import { deadlock, doubleFree, oneOrder, rulesFor } from './fixtures';
+import { level as level007, rules as rules007, rulesFor } from '../helpers';
+import { deadlock, doubleFree, oneOrder } from './fixtures';
 
 describe('analyze', () => {
   it('counts independent free vehicles when order does not matter', () => {

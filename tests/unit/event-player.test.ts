@@ -3,7 +3,7 @@ import { EventPlayer } from '../../src/render/event-player';
 import type { BoardAnimator, HudSink } from '../../src/render/event-player';
 import { Tweener, easings } from '../../src/render/tween';
 import type { GameEvent, GameState } from '../../src/engine/types';
-import { fakeEngine } from '../../src/app/fake-engine';
+import { fakeEngine } from '../support/fake-engine';
 import { level, rules } from './helpers';
 
 function setup() {

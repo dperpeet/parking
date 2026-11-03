@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { validateLevel } from '../../../src/engine';
-import { Level, Ruleset, resolveRules } from '../../../src/schema';
+import { Level, resolveRules } from '../../../src/schema';
 import { analyze } from '../../../src/solver/analyze';
 import { generate } from '../../../src/solver/generator';
 import { assignKeys } from '../../../src/solver/generator-special';
 import type { SpecialVehicle } from '../../../src/solver/generator-special';
 import type { GeneratorOptions } from '../../../src/solver/types';
-import world2Json from '../../../src/content/rulesets/world2.json';
-import { rules as classicRules } from '../helpers';
+import { rules as classicRules, world2Ruleset } from '../helpers';
 
-const world2 = resolveRules(Ruleset.parse(world2Json));
+const world2 = resolveRules(world2Ruleset);
 const COLORS = ['blue', 'orange', 'green', 'yellow'];
 const SEEDS = Array.from({ length: 30 }, (_, i) => i + 1);
 const MIN_VEHICLES = 7;

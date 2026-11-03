@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fakeEngine } from '../../src/app/fake-engine';
+import { fakeEngine } from '../support/fake-engine';
 import { GameController } from '../../src/app/game-controller';
 import type { ControllerUpdate } from '../../src/app/game-controller';
 import { makeSimilarLevel } from '../../src/app/similar-level';

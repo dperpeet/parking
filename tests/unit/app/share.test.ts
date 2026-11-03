@@ -1,7 +1,5 @@
 import { deflateSync, inflateSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import classicJson from '../../../src/content/rulesets/classic.json';
-import world2Json from '../../../src/content/rulesets/world2.json';
 import { getCampaign } from '../../../src/app/levels';
 import {
   SHARED_DEFAULT_TITLE,
@@ -13,7 +11,6 @@ import type { EncodeOptions, RulesLookup } from '../../../src/app/share';
 import { createGame, hashState } from '../../../src/engine';
 import {
   Level,
-  Ruleset,
   SHARE_MAX_INFLATED,
   SHARE_MAX_LENGTH,
   SHARE_PREFIX,
@@ -21,13 +18,11 @@ import {
   resolveRules,
 } from '../../../src/schema';
 import type { ShareError } from '../../../src/schema';
-import { level as level007 } from '../helpers';
+import { classicRuleset as classic, level as level007, world2Ruleset as world2 } from '../helpers';
 
 const campaign = getCampaign();
-const classic = Ruleset.parse(classicJson);
 
 /** Wie der Session-Lookup: alle ausgelieferten Rulesets. */
-const world2 = Ruleset.parse(world2Json);
 const RULESETS = new Map([classic, world2].map((r) => [r.id, r]));
 const lookup: RulesLookup = (id, overrides) => {
   const ruleset = RULESETS.get(id);

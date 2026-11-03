@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { fakeEngine } from '../../src/app/fake-engine';
+import { fakeEngine } from '../support/fake-engine';
 import { setLanguage } from '../../src/i18n';
 import type { GameEvent, GameState } from '../../src/engine/types';
 import { EventPlayer } from '../../src/render/event-player';

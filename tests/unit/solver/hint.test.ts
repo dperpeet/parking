@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createGame, step } from '../../../src/engine';
 import type { GameState } from '../../../src/engine';
 import { hint } from '../../../src/solver/hint';
-import { level, rules } from '../helpers';
-import { deadlock, oneOrder, rulesFor } from './fixtures';
+import { level, rules, rulesFor } from '../helpers';
+import { deadlock, oneOrder } from './fixtures';
 
 function followHints(start: GameState): GameState {
   let s = start;

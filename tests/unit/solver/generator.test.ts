@@ -4,8 +4,7 @@ import { Level } from '../../../src/schema';
 import { analyze } from '../../../src/solver/analyze';
 import { generate } from '../../../src/solver/generator';
 import { handleRequest } from '../../../src/solver/handle';
-import { rules } from '../helpers';
-import { rulesFor } from './fixtures';
+import { rules, rulesFor } from '../helpers';
 
 const params = {
   width: 5,
