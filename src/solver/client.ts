@@ -4,7 +4,7 @@ import type { Level, ResolvedRules } from '../schema';
 import type {
   AnalyzeOptions,
   GenerateResult,
-  GeneratorParams,
+  GeneratorOptions,
   LevelAnalysis,
   SolveRequest,
   SolveResponse,
@@ -93,7 +93,7 @@ export class SolverClient {
     return this.call({ kind: 'hint', state, rules }, (r) => r.result as string | null);
   }
 
-  generate(params: GeneratorParams, rules: ResolvedRules): SolverCall<GenerateResult> {
+  generate(params: GeneratorOptions, rules: ResolvedRules): SolverCall<GenerateResult> {
     return this.call({ kind: 'generate', params, rules }, (r) => r.result as GenerateResult);
   }
 

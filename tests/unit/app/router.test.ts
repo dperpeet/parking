@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRouter, formatRoute, parseHash, sameRoute } from '../../../src/app/router';
 import type { Route } from '../../../src/app/router';
+import { SHARE_MAX_LENGTH } from '../../../src/schema';
 
 describe('parseHash', () => {
   it('liest alle Routen', () => {
@@ -32,12 +33,38 @@ describe('parseHash', () => {
       { name: 'level', pack: '01', id: '012' },
       { name: 'daily' },
       { name: 'endless' },
+      { name: 'shared', code: '1.eJyrVkrOz0' },
+      { name: 'editor', code: null },
+      { name: 'editor', code: '1.abc_-' },
     ];
     for (const r of routes) {
       expect(parseHash(formatRoute(r))).toEqual(r);
       expect(sameRoute(r, parseHash(formatRoute(r)))).toBe(true);
     }
     expect(sameRoute({ name: 'daily' }, { name: 'endless' })).toBe(false);
+  });
+});
+
+describe('Share- und Editor-Routen', () => {
+  it('liest den Code aus l=', () => {
+    expect(parseHash('#/play?l=1.abc')).toEqual({ name: 'shared', code: '1.abc' });
+    expect(parseHash('#/play?x=1&l=1.abc')).toEqual({ name: 'shared', code: '1.abc' });
+    expect(parseHash('#/editor')).toEqual({ name: 'editor', code: null });
+    expect(parseHash('#/editor?l=1.abc')).toEqual({ name: 'editor', code: '1.abc' });
+  });
+
+  it('ohne l= gibt es kein geteiltes Level', () => {
+    expect(parseHash('#/play')).toEqual({ name: 'select' });
+    expect(parseHash('#/play?x=1')).toEqual({ name: 'select' });
+    expect(parseHash('#/play/1')).toEqual({ name: 'select' });
+  });
+
+  it('ungueltige oder zu lange Codes werden leer', () => {
+    expect(parseHash('#/play?l=<script>')).toEqual({ name: 'shared', code: '' });
+    expect(parseHash('#/play?l=a%20b')).toEqual({ name: 'shared', code: '' });
+    expect(parseHash(`#/play?l=${'a'.repeat(5000)}`)).toEqual({ name: 'shared', code: '' });
+    const max = 'a'.repeat(SHARE_MAX_LENGTH + 1);
+    expect(parseHash(`#/play?l=${max}`)).toEqual({ name: 'shared', code: max });
   });
 });
 

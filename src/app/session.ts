@@ -10,7 +10,7 @@ import { GameController } from './game-controller';
 import { HintTracker, displayStars } from './hints';
 import type { Campaign, CampaignLevel } from './levels';
 import { Progress, localDateKey } from './progress';
-import type { Route } from './router';
+import type { PlayRoute, Route } from './router';
 import { dailySeed, endlessSeed, hashString, similarSeed } from './seed';
 import { makeSimilarLevel } from './similar-level';
 import type { SolverPort } from './solver-port';
@@ -91,7 +91,7 @@ export class GameSession {
 
   constructor(
     private readonly deps: SessionDeps,
-    private readonly route: Exclude<Route, { name: 'select' }>,
+    private readonly route: PlayRoute,
   ) {
     this.hints = new HintTracker(deps.solver);
   }
@@ -146,6 +146,10 @@ export class GameSession {
         case 'endless':
           await this.startRun();
           break;
+        case 'shared':
+          // Platzhalter bis zum Share-Codec (Paket F1).
+          this.setStatus('notFound');
+          return this.status;
       }
     } catch {
       if (!this.disposed) this.setStatus('error');

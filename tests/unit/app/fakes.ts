@@ -2,7 +2,8 @@ import { createGame, step } from '../../../src/engine';
 import type { EngineApi } from '../../../src/app/engine-port';
 import type { GenerateOptions, SolverPort } from '../../../src/app/solver-port';
 import type { Level, ResolvedRules } from '../../../src/schema';
-import type { GeneratorParams } from '../../../src/solver/types';
+import { analyze } from '../../../src/solver';
+import type { AnalyzeOptions, GeneratorParams, LevelAnalysis } from '../../../src/solver/types';
 import { level } from '../helpers';
 
 export const realEngine: EngineApi = { createGame, step };
@@ -24,6 +25,13 @@ export class FakeSolver implements SolverPort {
     if (this.hintGate) await this.hintGate;
     if (this.hintResult instanceof Error) throw this.hintResult;
     return this.hintResult;
+  }
+
+  analyzeCalls = 0;
+  /** Standard: echte Analyse im selben Thread. */
+  async analyze(level: Level, rules: ResolvedRules, opts?: AnalyzeOptions): Promise<LevelAnalysis> {
+    this.analyzeCalls += 1;
+    return analyze(level, rules, opts);
   }
 
   async generate(

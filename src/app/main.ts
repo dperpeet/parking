@@ -32,7 +32,8 @@ function boot(): void {
   const show = (route: Route): void => {
     current?.dispose();
     current = null;
-    if (route.name === 'select') {
+    if (route.name === 'select' || route.name === 'editor') {
+      // 'editor': Platzhalter bis zum Level-Editor (Paket F2).
       current = mountSelectScreen(root, { progress, campaign, router, now });
       return;
     }

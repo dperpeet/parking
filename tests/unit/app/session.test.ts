@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { getCampaign } from '../../../src/app/levels';
 import { Progress } from '../../../src/app/progress';
 import type { StorageLike } from '../../../src/app/progress';
-import type { Route } from '../../../src/app/router';
+import type { PlayRoute, Route } from '../../../src/app/router';
 import { dailySeed, similarSeed } from '../../../src/app/seed';
 import { GameSession } from '../../../src/app/session';
 import { difficultyRange, stageShape } from '../../../src/app/stages';
@@ -25,7 +25,7 @@ interface Harness {
   progress: Progress;
   synced: Route[];
   exits: number;
-  make(route: Exclude<Route, { name: 'select' }>, now?: Date): GameSession;
+  make(route: PlayRoute, now?: Date): GameSession;
 }
 
 let h: Harness;

@@ -3,30 +3,7 @@ import { createRng, nextRandom, validateLevel } from '../engine';
 import type { Dir, Level, ResolvedRules } from '../schema';
 import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
-import type { GenerateResult, GeneratorParams, LevelAnalysis } from './types';
-
-/**
- * Zusaetzliche, optionale Parameter (additiv zu GeneratorParams, Defaults aendern nichts).
- * Hinweis: `visiblePassengers` wirkt nur auf die Darstellung; Solver und Schwierigkeit kennen
- * volle Information und ignorieren es.
- */
-export interface GeneratorTuning {
-  /** Halteplaetze; wird als overrides.queue.slots ins Level geschrieben und fuer Analyse/Fenster genutzt. */
-  slots?: number;
-  /** Sichtbare Fahrgaeste; wird als overrides.passengers.visible ins Level geschrieben. */
-  visiblePassengers?: number;
-  /**
-   * Bevorzugt Kandidaten mit toten Zustaenden (Fehler zeigen sich spaeter): Kandidaten ohne tote
-   * Zustaende bekommen SOFT_PENALTY auf die Zielabstands-Metrik und zaehlen nicht als Treffer.
-   */
-  preferDeadEnds?: boolean;
-  /** Mindest-Tiefe (avgDeadEndDepth) fuer preferDeadEnds; Default 0 (nur deadStates > 0). */
-  minDeadEndDepth?: number;
-  /** Kandidaten mit hoeherer Zufallsspiel-Siegchance bekommen SOFT_PENALTY (Default: aus). */
-  maxRandomPlayWin?: number;
-}
-
-export type GeneratorOptions = GeneratorParams & GeneratorTuning;
+import type { GenerateResult, GeneratorOptions, GeneratorTuning, LevelAnalysis } from './types';
 
 const DEFAULT_MAX_ATTEMPTS = 40;
 /** Zustandslimit pro Versuch: groessere Level gelten als zu teuer zu pruefen und werden verworfen. */

@@ -70,6 +70,30 @@ export interface GeneratorParams {
   title?: Level['title'];
 }
 
+/**
+ * Zusaetzliche, optionale Parameter (additiv zu GeneratorParams, Defaults aendern nichts).
+ * Hinweis: `visiblePassengers` wirkt nur auf die Darstellung; Solver und Schwierigkeit kennen
+ * volle Information und ignorieren es.
+ */
+export interface GeneratorTuning {
+  /** Halteplaetze; wird als overrides.queue.slots ins Level geschrieben und fuer Analyse/Fenster genutzt. */
+  slots?: number;
+  /** Sichtbare Fahrgaeste; wird als overrides.passengers.visible ins Level geschrieben. */
+  visiblePassengers?: number;
+  /**
+   * Bevorzugt Kandidaten mit toten Zustaenden (Fehler zeigen sich spaeter): Kandidaten ohne tote
+   * Zustaende bekommen SOFT_PENALTY auf die Zielabstands-Metrik und zaehlen nicht als Treffer.
+   */
+  preferDeadEnds?: boolean;
+  /** Mindest-Tiefe (avgDeadEndDepth) fuer preferDeadEnds; Default 0 (nur deadStates > 0). */
+  minDeadEndDepth?: number;
+  /** Kandidaten mit hoeherer Zufallsspiel-Siegchance bekommen SOFT_PENALTY (Default: aus). */
+  maxRandomPlayWin?: number;
+}
+
+/** Generator-Eingabe inklusive Tuning. */
+export type GeneratorOptions = GeneratorParams & GeneratorTuning;
+
 export interface GenerateResult {
   level: Level;
   analysis: LevelAnalysis;
@@ -81,7 +105,7 @@ export interface GenerateResult {
 export type SolveRequest =
   | { id: number; kind: 'analyze'; level: Level; rules: ResolvedRules; opts?: AnalyzeOptions }
   | { id: number; kind: 'hint'; state: GameState; rules: ResolvedRules }
-  | { id: number; kind: 'generate'; params: GeneratorParams; rules: ResolvedRules };
+  | { id: number; kind: 'generate'; params: GeneratorOptions; rules: ResolvedRules };
 
 export type SolveResponse =
   | { id: number; ok: true; kind: 'analyze'; result: LevelAnalysis }

@@ -3,7 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
-import type { GeneratorOptions } from '../src/solver/generator';
+import type { GeneratorOptions } from '../src/solver/types';
 import { Ruleset, resolveRules } from '../src/schema';
 import classic from '../src/content/rulesets/classic.json';
 

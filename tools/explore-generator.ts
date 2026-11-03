@@ -1,7 +1,7 @@
 // Exploration: welche Generator-Parameter erzeugen tote Zustaende?
 // Aufruf: pnpm exec tsx tools/explore-generator.ts [samples] [filter]
 import { generate } from '../src/solver/generator';
-import type { GeneratorOptions } from '../src/solver/generator';
+import type { GeneratorOptions } from '../src/solver/types';
 import { Ruleset, resolveRules } from '../src/schema';
 import classic from '../src/content/rulesets/classic.json';
 

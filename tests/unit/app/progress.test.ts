@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CUSTOM_LEVEL_LIMIT,
   DAILY_HISTORY_LIMIT,
   Progress,
   SAVE_KEY,
@@ -359,5 +360,76 @@ describe('Import und Zusammenfuehren', () => {
     expect(parseImport('{"version":2,"levels":{}}')).toBeNull();
     expect(parseImport('{"version":1}')).toBeNull();
     expect(parseImport('null')).toBeNull();
+  });
+});
+
+describe('Eigene Level und Ersetzen', () => {
+  const entry = { code: '1.abc', title: 'Mein Level', verified: true };
+
+  it('speichert, aktualisiert und loescht eigene Level', () => {
+    const storage = new FakeStorage();
+    const p = new Progress(() => storage);
+    const id = p.saveCustom(entry);
+    expect(id).toBe('c1');
+    expect(p.saveCustom({ ...entry, title: 'Neu' })).toBe('c1');
+    expect(p.saveCustom({ code: '1.def', title: 'Zwei', verified: false })).toBe('c2');
+    expect(p.saveCustom({ code: '1.ghi', title: 'Zwei b', verified: true }, 'c2')).toBe('c2');
+    expect(stored(storage).customLevels).toEqual([
+      { id: 'c1', code: '1.abc', title: 'Neu', verified: true },
+      { id: 'c2', code: '1.ghi', title: 'Zwei b', verified: true },
+    ]);
+    p.deleteCustom('c1');
+    expect(p.customLevels().map((e) => e.id)).toEqual(['c2']);
+    expect(p.saveCustom({ code: '1.x', title: '', verified: false })).toBe('c3');
+  });
+
+  it('begrenzt die Anzahl eigener Level', () => {
+    const p = new Progress(() => new FakeStorage());
+    for (let i = 0; i < CUSTOM_LEVEL_LIMIT + 5; i++) {
+      p.saveCustom({ code: `1.l${i}`, title: '', verified: false });
+    }
+    expect(p.customLevels()).toHaveLength(CUSTOM_LEVEL_LIMIT);
+    expect(p.customLevels()[0]?.code).toBe('1.l5');
+  });
+
+  it('alte Staende ohne customLevels und kaputte Eintraege', () => {
+    const { customLevels: _drop, ...old } = emptySave();
+    void _drop;
+    expect(migrate(old).customLevels).toEqual([]);
+    const broken = migrate({ ...old, customLevels: [{ id: 'x' }, { ...entry, id: 'c4' }] });
+    expect(broken.customLevels).toEqual([{ ...entry, id: 'c4' }]);
+    expect(migrate({ ...old, customLevels: 'nope' }).customLevels).toEqual([]);
+  });
+
+  it('Zusammenfuehren vereinigt eigene Level nach Code', () => {
+    const a: SaveData = { ...emptySave(), customLevels: [{ ...entry, id: 'c1', verified: false }] };
+    const b: SaveData = {
+      ...emptySave(),
+      customLevels: [
+        { ...entry, id: 'c7' },
+        { code: '1.zzz', title: 'B', verified: false, id: 'c1' },
+      ],
+    };
+    expect(mergeSaves(a, b).customLevels).toEqual([
+      { ...entry, id: 'c1', verified: true },
+      { code: '1.zzz', title: 'B', verified: false, id: 'c2' },
+    ]);
+  });
+
+  it('replace ersetzt den Stand, Einstellungen bleiben', () => {
+    const storage = new FakeStorage();
+    const p = new Progress(() => storage);
+    p.setLanguage('en');
+    p.recordEndless(4, 2);
+    const incoming: SaveData = {
+      ...emptySave(),
+      levels: { q: { stars: 1, bestMoves: 3, completed: true } },
+      settings: { language: 'de', motion: 'off' },
+    };
+    p.replace(incoming);
+    const s = stored(storage);
+    expect(s.levels).toEqual(incoming.levels);
+    expect(s.endless.best).toBe(0);
+    expect(s.settings.language).toBe('en');
   });
 });

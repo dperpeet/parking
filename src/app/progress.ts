@@ -1,5 +1,6 @@
 // Fortschritt ohne Accounts: ein localStorage-Eintrag `parking.save.v1`, versioniert, mit Speicher-Fallback.
 import { z } from 'zod';
+import { SHARE_MAX_LENGTH, SHARE_TEXT_MAX } from '../schema';
 import { STAGE_COUNT, clampStage } from './stages';
 
 export const SAVE_KEY = 'parking.save.v1';
@@ -7,6 +8,8 @@ export const SAVE_VERSION = 1;
 /** Anzahl gespeicherter Tageslevel-Ergebnisse. */
 export const DAILY_HISTORY_LIMIT = 60;
 export const MAX_STARS = 3;
+/** Hoechstzahl gespeicherter eigener Level (Editor). */
+export const CUSTOM_LEVEL_LIMIT = 50;
 
 export type LanguageSetting = 'auto' | 'de' | 'en';
 export type MotionSetting = 'system' | 'on' | 'off';
@@ -22,6 +25,16 @@ const LevelResult = z.object({
 });
 
 const DailyEntry = z.object({ date: DateKey, stars: Stars, moves: Count });
+
+/** Eigenes Level aus dem Editor, gespeichert als Share-Code (siehe src/schema/share.ts). */
+const CustomLevel = z.object({
+  id: z.string().regex(/^c\d{1,6}$/),
+  code: z.string().min(1).max(SHARE_MAX_LENGTH),
+  title: z.string().max(SHARE_TEXT_MAX),
+  /** Vom Solver als loesbar bestaetigt. */
+  verified: z.boolean(),
+});
+export type CustomLevel = z.infer<typeof CustomLevel>;
 
 const SaveSchema = z.object({
   version: z.literal(SAVE_VERSION),
@@ -49,6 +62,11 @@ const SaveSchema = z.object({
       motion: z.enum(['system', 'on', 'off']).catch('system'),
     })
     .catch({ language: 'auto', motion: 'system' }),
+  /** Additiv zu v1: fehlt in alten Staenden und faellt dann auf [] zurueck. */
+  customLevels: z
+    .array(CustomLevel.nullable().catch(null))
+    .catch([])
+    .transform((list) => list.filter((e): e is CustomLevel => e !== null)),
 });
 
 export type SaveData = z.infer<typeof SaveSchema>;
@@ -64,6 +82,7 @@ export function emptySave(): SaveData {
     highestStage: 0,
     similarCounter: 0,
     settings: { language: 'auto', motion: 'system' },
+    customLevels: [],
   };
 }
 
@@ -108,7 +127,14 @@ function clean(save: SaveData): SaveData {
     highestStage: Math.min(STAGE_COUNT, save.highestStage),
     endless: { ...save.endless, highestStage: Math.min(STAGE_COUNT, save.endless.highestStage) },
     hold: { ...save.hold, stage: Math.min(STAGE_COUNT, save.hold.stage) },
+    customLevels: save.customLevels.slice(-CUSTOM_LEVEL_LIMIT),
   };
+}
+
+/** Naechste freie ID fuer ein eigenes Level ("c1", "c2", ...). */
+function nextCustomId(list: readonly CustomLevel[]): string {
+  const max = list.reduce((m, e) => Math.max(m, Number(e.id.slice(1))), 0);
+  return `c${max + 1}`;
 }
 
 /** Fuehrt zwei Staende zusammen (Import): bessere Sterne und Zuege, laengere Serie, hoechste Stufen. */
@@ -159,7 +185,22 @@ export function mergeSaves(base: SaveData, incoming: SaveData): SaveData {
     highestStage: Math.max(base.highestStage, incoming.highestStage),
     similarCounter: Math.max(base.similarCounter, incoming.similarCounter),
     settings: base.settings,
+    customLevels: mergeCustom(base.customLevels, incoming.customLevels),
   };
+}
+
+/** Eigene Level vereinigen (gleicher Code = gleiches Level), importierte bekommen neue IDs. */
+function mergeCustom(
+  base: readonly CustomLevel[],
+  incoming: readonly CustomLevel[],
+): CustomLevel[] {
+  const out = base.map((e) => ({ ...e }));
+  for (const inc of incoming) {
+    const same = out.find((e) => e.code === inc.code);
+    if (same) same.verified = same.verified || inc.verified;
+    else out.push({ ...inc, id: nextCustomId(out) });
+  }
+  return out;
 }
 
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -331,6 +372,41 @@ export class Progress {
     this.update((d) => {
       Object.assign(d, mergeSaves(d, incoming));
     });
+  }
+
+  /** Spielstand ersetzen (Import); Einstellungen (Sprache/Bewegung) bleiben. */
+  replace(incoming: SaveData): void {
+    this.update((d) => {
+      Object.assign(d, { ...structuredClone(incoming), settings: d.settings });
+    });
+  }
+
+  // --- Eigene Level ---
+
+  /** Speichert ein eigenes Level; gleicher Code ersetzt den Eintrag. Gibt die ID zurueck. */
+  saveCustom(entry: Omit<CustomLevel, 'id'>, id?: string): string {
+    let result = '';
+    this.update((d) => {
+      const existing = d.customLevels.find((e) => (id ? e.id === id : e.code === entry.code));
+      if (existing) {
+        Object.assign(existing, entry);
+        result = existing.id;
+        return;
+      }
+      result = nextCustomId(d.customLevels);
+      d.customLevels.push({ ...entry, id: result });
+    });
+    return result;
+  }
+
+  deleteCustom(id: string): void {
+    this.update((d) => {
+      d.customLevels = d.customLevels.filter((e) => e.id !== id);
+    });
+  }
+
+  customLevels(): readonly CustomLevel[] {
+    return this.data.customLevels;
   }
 
   /** Alles loeschen, Einstellungen (Sprache/Bewegung) bleiben. */

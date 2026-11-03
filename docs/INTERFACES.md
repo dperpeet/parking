@@ -8,6 +8,10 @@
 | Engine-Typen, Aktionen, Events, API-Signaturen | `src/engine/types.ts`                                                      |
 | Farbpalette, Symbole, Theme-Tokens             | `src/render/theme.ts`                                                      |
 | Beispiel-Content                               | `src/content/rulesets/classic.json`, `src/content/levels/pack-01/007.json` |
+| Share-Format (zod, Grenzen, Fehlercodes)       | `src/schema/share.ts`                                                      |
+| Share-Codec-API                                | `src/app/share.ts` (Signaturen; Rumpf gehoert Paket F1)                    |
+| Solver-Typen inkl. `GeneratorTuning`           | `src/solver/types.ts`                                                      |
+| Routen                                         | `src/app/router.ts` (`Route`, `PlayRoute`)                                 |
 
 ## Engine-API (`src/engine/index.ts`)
 
@@ -65,3 +69,30 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Undo nimmt nur Züge/Shuffles zurück: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
 - `createGame` bewertet sofort das Ergebnis; ein Level ohne möglichen ersten Zug startet als `lost`/`noMoves`.
 - Offen: `starMode` `moves`/`time` brauchen Par bzw. Zeit; die Engine kennt beides nicht. Bis zur Klärung bewertet `moves` die rohe Zugzahl und `time` immer mit 3 Sternen (App muss Zeit selbst bewerten). Default bleibt `powerupsUsed`.
+
+## Teilen per URL (M4)
+
+- URL: `#/play?l=<code>`, Editor: `#/editor` bzw. `#/editor?l=<code>` (Level bearbeiten).
+- `code = "1." + base64url(deflate(JSON(ShareLevel)))` ohne Padding, `fflate` (`deflateSync`/`inflateSync`, Level 9).
+- Format `ShareLevel` (`src/schema/share.ts`): `r` Ruleset, `o` Overrides, `g` [w, h], `c` Zellen, `v` Fahrzeuge
+  `[x, y, dir, typ, farbe(, keyIndex)]`, `k` Farbliste + `p` Fahrgaeste als Indizes, `t` Titel, `a` Autor, `u: 1` ungeprueft.
+  Fahrzeug-IDs werden beim Dekodieren als `v1..vn` (Array-Reihenfolge) neu vergeben; `keyIndex` setzt `locked` + `keyId`.
+- Grenzen: Code ≤ `SHARE_MAX_LENGTH` (2048) Zeichen, entpackt ≤ `SHARE_MAX_INFLATED` Bytes, Titel/Autor ≤ 40 Zeichen.
+- `decodeLevel` wirft nie. Fehlercodes in Pruefreihenfolge: `empty`, `tooLong`, `version`, `encoding`, `inflate`,
+  `json`, `schema`, `unknownRuleset`, `invalidLevel` (`validateLevel` meldet Probleme). Das dekodierte Level hat
+  `id = "shared"`, Titel `t` oder `SHARED_DEFAULT_TITLE`, `meta.author = a`.
+- Loesbarkeit prueft der Aufrufer per `SolverPort.analyze` (Worker). Ungepruefte Codes (`u`) werden trotzdem gespielt, mit Hinweis.
+- Texte aus geteilten Leveln nur per `textContent`, nie als HTML.
+- Round-Trip-Garantie: `decodeLevel(encodeLevel(L))` ergibt ein Level, das mit `L` bis auf Fahrzeug-IDs, `id`, `seed` und `meta` (ausser `author`) uebereinstimmt;
+  `hashState(createGame(...))` ist nach Umbenennung der IDs gleich.
+
+## Eigene Level (Spielstand)
+
+`parking.save.v1` hat additiv `customLevels: { id: "c<n>", code, title, verified }[]` (max. `CUSTOM_LEVEL_LIMIT` = 50,
+aelteste fallen raus). API in `Progress`: `saveCustom(entry, id?)`, `deleteCustom(id)`, `customLevels()`.
+Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellungen bleiben).
+
+## Solver-Port (App)
+
+`SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, neu `analyze(level, rules, { maxStates?, signal? })`.
+Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams & GeneratorTuning`).

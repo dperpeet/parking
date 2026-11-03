@@ -2,7 +2,7 @@
 // damit er das initiale Bundle nicht vergroessert. Tests ersetzen den Port durch ein Fake.
 import type { GameState } from '../engine/types';
 import type { Level, ResolvedRules } from '../schema';
-import type { GeneratorParams } from '../solver/types';
+import type { AnalyzeOptions, GeneratorParams, LevelAnalysis } from '../solver/types';
 
 /** Zeitlimit fuer die Level-Generierung; danach faellt die App auf eine Variante zurueck. */
 export const GENERATE_TIMEOUT_MS = 10_000;
@@ -22,6 +22,12 @@ export interface GenerateOptions {
 export interface SolverPort {
   /** Id des empfohlenen Fahrzeugs oder null, wenn es keine gewinnende Fortsetzung gibt. */
   hint(state: GameState, rules: ResolvedRules): Promise<string | null>;
+  /** Vollanalyse (Loesbarkeit, Par, Schwierigkeit). Bei `signal` wird der Worker-Auftrag abgebrochen (AbortError). */
+  analyze(
+    level: Level,
+    rules: ResolvedRules,
+    opts?: AnalyzeOptions & { signal?: AbortSignal },
+  ): Promise<LevelAnalysis>;
   /** Erzeugt ein Level; lehnt nach `timeoutMs` mit GenerateTimeoutError ab, bei `signal` mit AbortError. */
   generate(
     params: GeneratorParams,
@@ -40,6 +46,18 @@ export function createSolverPort(): SolverPort {
   return {
     async hint(state, rules) {
       return (await getClient()).hint(state, rules).promise;
+    },
+    async analyze(level, rules, opts = {}) {
+      const { signal, ...analyzeOpts } = opts;
+      const call = (await getClient()).analyze(level, rules, analyzeOpts);
+      const onAbort = (): void => call.abort();
+      if (signal?.aborted) onAbort();
+      signal?.addEventListener('abort', onAbort, { once: true });
+      try {
+        return await call.promise;
+      } finally {
+        signal?.removeEventListener('abort', onAbort);
+      }
     },
     async generate(params, rules, opts = {}) {
       const call = (await getClient()).generate(params, rules);
