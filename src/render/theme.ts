@@ -12,7 +12,7 @@ export interface ColorStyle {
 
 export const PALETTE: Record<string, ColorStyle> = {
   blue: { fill: '#3D7BFF', ink: '#FFFFFF', glyph: '●', nameDe: 'Blau', nameEn: 'blue' },
-  orange: { fill: '#FF9F1C', ink: '#1A1A1A', glyph: '▲', nameDe: 'Orange', nameEn: 'orange' },
+  orange: { fill: '#FF9F1C', ink: '#1A1A1A', glyph: '♣', nameDe: 'Orange', nameEn: 'orange' },
   green: { fill: '#2EC27E', ink: '#1A1A1A', glyph: '■', nameDe: 'Grün', nameEn: 'green' },
   yellow: { fill: '#FFD60A', ink: '#1A1A1A', glyph: '★', nameDe: 'Gelb', nameEn: 'yellow' },
   pink: { fill: '#FF6FB5', ink: '#1A1A1A', glyph: '◆', nameDe: 'Pink', nameEn: 'pink' },
