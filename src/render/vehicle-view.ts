@@ -28,8 +28,8 @@ const HINT_GLOW_WIDTH = 7;
 
 export class VehicleView extends Container {
   /** Ruheposition (obere linke Ecke des Rechtecks), Basis fuer Animationen. */
-  readonly restX: number;
-  readonly restY: number;
+  restX: number;
+  restY: number;
   private glow: Graphics | null = null;
   private decor: LockDecor | null = null;
   private decorKey = '';
@@ -93,6 +93,13 @@ export class VehicleView extends Container {
     glyph.anchor.set(0.5);
     glyph.position.set(...glyphCenter(dir, length, rect.w, rect.h, cell));
     this.addChild(glyph);
+  }
+
+  /** Setzt die Ruheposition neu (nach dem Ausweichen) und stellt das Fahrzeug dorthin. */
+  placeAt(rect: Rect): void {
+    this.restX = rect.x;
+    this.restY = rect.y;
+    this.position.set(rect.x, rect.y);
   }
 
   /** Setzt Schloss und Schluessel-Symbol; ohne Aenderung bleibt die Darstellung unveraendert. */

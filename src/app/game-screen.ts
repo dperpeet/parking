@@ -136,10 +136,10 @@ export function mountGameScreen(
       case 'vehicle': {
         const color =
           controller.getState().vehicles.find((v) => v.id === result.vehicleId)?.color ?? '';
-        const text = hintAnnouncement(color);
+        const text = hintAnnouncement(color, result.action);
         hud.announce(text);
         toast(text);
-        hud.setHint(result.vehicleId);
+        hud.setHint(result.vehicleId, result.action);
         board?.highlight(result.vehicleId, HINT_DISPLAY_MS);
         clearTimeout(hintTimer);
         hintTimer = setTimeout(() => hud?.setHint(null), HINT_DISPLAY_MS);
@@ -187,6 +187,7 @@ export function mountGameScreen(
       next: () => session.next(),
       similar: () => session.similar(),
       hint: () => void onHint(),
+      notify: (text) => toast(text),
       share: (text) => shareText(text, browserShareEnv()),
       back: opts.back,
       info: (state) => ({
@@ -223,6 +224,7 @@ export function mountGameScreen(
     controller.subscribe((u) => {
       clearHint();
       if (u.kind === 'new') {
+        hud?.cancelHonk();
         void player.reset(u.state);
         maybeShowIntro();
       } else void player.play(u.events, u.state);
@@ -231,6 +233,8 @@ export function mountGameScreen(
       moveFocus: hud.moveFocus,
       undo: () => controller.dispatch({ type: 'usePowerUp', powerUp: 'undo' }),
       restart: () => session.restart(),
+      honk: () => hud?.toggleHonk(),
+      cancel: () => hud?.cancelHonk() === true,
       isDialogOpen: () => hud?.isDialogOpen() === true || intro !== null,
     });
     controller.start();

@@ -153,3 +153,58 @@ describe('Tweener', () => {
     expect(t.size()).toBe(0);
   });
 });
+
+describe('EventPlayer: vehicleYielded', () => {
+  it('hupt zuerst, laesst dann den Blocker gleiten und gleicht danach ab', async () => {
+    const log: string[] = [];
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: () => Promise.resolve(),
+      honk: async (id) => {
+        log.push(`honk ${id}`);
+        await flush();
+        log.push(`honked ${id}`);
+      },
+      yield: (id, from, to) => {
+        log.push(`yield ${id} ${from.join(',')}->${to.join(',')}`);
+        return Promise.resolve();
+      },
+      sync: () => log.push('board.sync'),
+    };
+    const hud: HudSink = {
+      onEvent: (e) => log.push(`hud ${e.type}`),
+      render: () => log.push('hud.render'),
+    };
+    await new EventPlayer(board, hud).play(
+      [
+        { type: 'vehicleYielded', vehicleId: 'v2', byVehicleId: 'v1', from: [3, 2], to: [3, 3] },
+        { type: 'powerUpUsed', powerUp: 'honk', remaining: 0 },
+      ],
+      state,
+    );
+    expect(log).toEqual([
+      'hud vehicleYielded',
+      'honk v1',
+      'honked v1',
+      'yield v2 3,2->3,3',
+      'hud powerUpUsed',
+      'board.sync',
+      'hud.render',
+    ]);
+  });
+
+  it('kommt ohne optionale Brett-Animationen aus', async () => {
+    const log: string[] = [];
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: () => Promise.resolve(),
+      sync: () => log.push('board.sync'),
+    };
+    const hud: HudSink = { onEvent: (e) => log.push(`hud ${e.type}`), render: () => undefined };
+    await new EventPlayer(board, hud).play(
+      [{ type: 'vehicleYielded', vehicleId: 'v2', byVehicleId: 'v1', from: [3, 2], to: [3, 3] }],
+      state,
+    );
+    expect(log).toEqual(['hud vehicleYielded', 'board.sync']);
+  });
+});

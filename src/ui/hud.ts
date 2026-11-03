@@ -10,7 +10,7 @@ import { createPowerUps } from './components/powerups';
 import type { HintStatus } from './components/powerups';
 import { createQueue } from './components/queue';
 import type { Shell } from './shell';
-import { announce } from './strings';
+import { announce, honkErrorText } from './strings';
 import { h } from './dom';
 import { createVehicleButtons } from './vehicle-buttons';
 
@@ -33,6 +33,8 @@ export interface HudActions {
   next(): MaybeAsync;
   similar(): MaybeAsync;
   hint(): void;
+  /** Kurze sichtbare Meldung (Toast), z. B. wenn Hupen nicht moeglich ist. */
+  notify(text: string): void;
   /** Teilt den Text (Share-Dialog, Zwischenablage); wirft nie. */
   share(text: string): Promise<ShareResult>;
   back(): void;
@@ -48,8 +50,15 @@ export interface Hud {
   isDialogOpen(): boolean;
   /** Screenreader-Ansage ausserhalb der Engine-Events. */
   announce(text: string): void;
-  /** Markiert ein Fahrzeug als Tipp (null entfernt die Markierung). */
-  setHint(vehicleId: string | null): void;
+  /**
+   * Markiert ein Fahrzeug als Tipp (null entfernt die Markierung). Bei `honk` wird zusaetzlich
+   * der Hupen-Knopf hervorgehoben.
+   */
+  setHint(vehicleId: string | null, action?: 'tap' | 'honk'): void;
+  /** Schaltet den Hupen-Zielmodus um (Knopf, Taste H); wirkungslos, wenn die Hupe nicht nutzbar ist. */
+  toggleHonk(): void;
+  /** Beendet den Zielmodus; true, wenn er aktiv war. */
+  cancelHonk(): boolean;
 }
 
 export function createHud(shell: Shell, rules: () => ResolvedRules, actions: HudActions): Hud {
@@ -59,11 +68,58 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
   const header = createHeader(shell.header, actions.back);
   const passengers = createPassengers(shell.passengers);
   const queue = createQueue(shell.queue);
-  const buttons = createVehicleButtons(shell.vehicleLayer, (vehicleId) =>
-    actions.dispatch({ type: 'tapVehicle', vehicleId }),
-  );
+  let honkMode = false;
+  let last: GameState | null = null;
+  let pending: string[] = [];
+
+  const honkEnabled = (): boolean => rules().powerups.honk.enabled;
+  /** Hupe nutzbar: Zaehler offen, Spiel laeuft oder ist wegen `noMoves` verloren. */
+  const honkUsable = (state: GameState): boolean =>
+    honkEnabled() &&
+    state.powerUps.honk > 0 &&
+    (state.status === 'playing' || (state.status === 'lost' && state.loseReason === 'noMoves'));
+
+  const honkHint = h('div', {
+    class: 'honk-hint panel',
+    role: 'status',
+    'aria-live': 'polite',
+    'data-testid': 'honk-hint',
+  });
+  shell.boardWrap.append(honkHint);
+
+  const leaveHonkMode = (): void => {
+    honkMode = false;
+    honkHint.textContent = '';
+    shell.vehicleLayer.removeAttribute('data-honk-mode');
+  };
+
+  const setHonkMode = (on: boolean): void => {
+    if (honkMode === on) return;
+    if (on) {
+      honkMode = true;
+      honkHint.textContent = t('honkTarget');
+      shell.vehicleLayer.setAttribute('data-honk-mode', 'true');
+    } else leaveHonkMode();
+    if (last) paint(last);
+  };
+
+  const buttons = createVehicleButtons(shell.vehicleLayer, (vehicleId) => {
+    if (!honkMode) {
+      actions.dispatch({ type: 'tapVehicle', vehicleId });
+      return;
+    }
+    // Der Modus endet mit dem Tipp, auch wenn die Hupe abgelehnt wird. Gemalt wird nur der Knopf:
+    // ein Neuzeichnen des alten Zustands wuerde einen Verlust-Dialog waehrend der Animation zeigen.
+    leaveHonkMode();
+    if (last) paintPowerUps(last);
+    actions.dispatch({ type: 'usePowerUp', powerUp: 'honk', vehicleId });
+  });
   const powerUps = createPowerUps(shell.powerUps, {
     onPowerUp: usePowerUp,
+    onHonk: () => {
+      if (honkMode) setHonkMode(false);
+      else if (last && honkUsable(last)) setHonkMode(true);
+    },
     onHint: actions.hint,
     onRestart: actions.restart,
   });
@@ -72,22 +128,33 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     onAgain: actions.again,
     onSimilar: actions.similar,
     onUndo: () => usePowerUp('undo'),
+    onHonk: () => {
+      setHonkMode(true);
+      buttons.moveFocus(0, 0);
+    },
+    canHonk: honkUsable,
     onMenu: actions.back,
     info: (state) => actions.info(state).dialog,
   });
 
-  let pending: string[] = [];
-  let last: GameState | null = null;
+  const paintPowerUps = (state: GameState): void =>
+    powerUps.update(state, actions.info(state).hint, {
+      enabled: honkEnabled(),
+      usable: honkUsable(state),
+      active: honkMode,
+    });
 
   const paint = (state: GameState): void => {
     last = state;
+    // Wird die Hupe unbenutzbar (Sieg, Niederlage, Zaehler 0, neues Level), endet der Zielmodus.
+    if (honkMode && !honkUsable(state)) leaveHonkMode();
     const info = actions.info(state);
     header.update(info.title, state.moves);
     passengers.update(state, rules().passengers.visible);
     queue.update(state);
-    powerUps.update(state, info.hint);
+    paintPowerUps(state);
     buttons.update(state);
-    dialogs.update(state);
+    dialogs.update(state, honkMode);
     attachShare(state, info.share);
   };
 
@@ -141,6 +208,10 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     onEvent(event, state) {
       const text = announce(event, state);
       if (text) pending.push(text);
+      if (event.type === 'invalidAction') {
+        const message = honkErrorText(event.reason);
+        if (message) actions.notify(message);
+      }
     },
     render(state) {
       paint(state);
@@ -155,6 +226,18 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     moveFocus: buttons.moveFocus,
     isDialogOpen: dialogs.isOpen,
     announce: say,
-    setHint: buttons.setHint,
+    setHint(vehicleId, action = 'tap') {
+      buttons.setHint(vehicleId);
+      powerUps.setHonkHint(vehicleId !== null && action === 'honk');
+    },
+    toggleHonk() {
+      if (honkMode) setHonkMode(false);
+      else if (last && honkUsable(last) && !dialogs.isOpen()) setHonkMode(true);
+    },
+    cancelHonk() {
+      if (!honkMode) return false;
+      setHonkMode(false);
+      return true;
+    },
   };
 }
