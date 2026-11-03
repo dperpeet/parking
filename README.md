@@ -1,13 +1,19 @@
 # ParKing
 
-Ein kostenloses, regelbasiertes Parkplatz-Puzzle im Browser: Holzautos aus der Spielzeug-Werkstatt
-ausparken, Passagiere in passende Fahrzeuge einsteigen lassen. Ohne Werbung, Accounts und Tracking.
-Mobile-first, als PWA installierbar. Alle Regeln sind datengetrieben (JSON-Rulesets und JSON-Level).
+Ein kostenloses, regelbasiertes Parkplatz-Puzzle im Browser: Fahrzeuge im Comic-Stil ausparken, Passagiere in
+passende Fahrzeuge einsteigen lassen. Ohne Werbung, Accounts und Tracking. Mobile-first, läuft auch am Desktop.
+Alle Regeln sind datengetrieben (JSON-Rulesets und JSON-Level).
 
-Der vollstaendige Plan (Game Design, Architektur, Meilensteine) steht in [PLAN.md](PLAN.md).
-Leitplanken fuer Entwickler und Agents: [CLAUDE.md](CLAUDE.md).
+Funktionen:
 
-**Status:** M4 (Kampagne Welt 1 mit 30 Leveln, Tageslevel, Endlos, Level-Editor, Teilen per Link).
+- Kampagne mit zwei Welten (54 Level), Poller und Schlüssel ab Welt 2
+- Tageslevel, Endlos-Modus, "Stufe halten" und "Ähnliches Level"
+- Tipps, Undo, Shuffle und Extra-Slot
+- Level-Editor mit Lösbarkeitsprüfung und Teilen per Link
+- Fortschritt lokal im Browser, Deutsch und Englisch
+
+Weiterführend: [Design](docs/DESIGN.md), [Roadmap](docs/ROADMAP.md), [Schnittstellen](docs/INTERFACES.md),
+[Leitplanken für Beitragende](CLAUDE.md).
 
 ## Entwicklung
 
@@ -22,7 +28,11 @@ pnpm lint           # ESLint (inkl. Import-Grenzen)
 pnpm format         # Prettier schreiben (format:check prueft nur)
 pnpm typecheck      # tsc --noEmit
 pnpm test           # Vitest
+pnpm test:coverage  # Vitest mit Coverage (Engine)
 pnpm test:e2e       # Playwright (Chromium mobile + desktop)
+pnpm level:analyze  # Level-Dateien analysieren (lösbar, Par, Schwierigkeit)
+pnpm level:generate # Level-Pack aus tools/pack-XX.config.json erzeugen
+pnpm level:report   # Übersicht über ein Level-Pack
 ```
 
 Lokal mit vorinstalliertem Chromium: `PW_CHROMIUM_PATH=/pfad/zu/chromium pnpm test:e2e`.

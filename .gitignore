@@ -12,3 +12,7 @@ test-results/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+*.tsbuildinfo
+.eslintcache
+blob-report/
+playwright/.cache/
