@@ -1,6 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { GameState, VehicleState } from '../engine/types';
 import type { BoardAnimator } from './event-player';
+import { dashSegments, laneCells } from './direction';
 import { DIR_VECTOR, cellRect, computeBoardLayout, vehicleRect } from './layout';
 import type { BoardLayout } from './layout';
 import { THEME } from './theme';
@@ -22,6 +23,14 @@ const EXIT_MS_PER_CELL = 70;
 const EXIT_MIN_MS = 260;
 const HINT_PULSES = 3;
 const HINT_ALPHA_MIN = 0.55;
+/** Fahrspur-Vorschau: Dauer, Strichperiode (Anteil Zelle), Strichanteil, Staerken in px, Pfeilspitze (Anteil Zelle). */
+const LANE_PREVIEW_MS = 1400;
+const LANE_DASH_PERIOD = 0.34;
+const LANE_DASH_RATIO = 0.55;
+const LANE_WIDTH = 5;
+const LANE_ARROW = 0.2;
+const BLOCKER_GROW = 3;
+const BLOCKER_WIDTH = 5;
 
 export class BoardView implements BoardAnimator {
   private readonly root = new Container();
@@ -30,6 +39,9 @@ export class BoardView implements BoardAnimator {
   private state: GameState | null = null;
   private highlighted: string | null = null;
   private highlightToken = 0;
+  /** Wiederverwendete Vorschau-Grafik; wird nur pro Antippen gezeichnet, nie pro Frame. */
+  private lane: Graphics | null = null;
+  private laneToken = 0;
 
   constructor(private readonly host: BoardHost) {
     host.stage.addChild(this.root);
@@ -42,6 +54,8 @@ export class BoardView implements BoardAnimator {
   /** Baut Brett und Fahrzeuge komplett neu auf. */
   build(state: GameState): void {
     this.state = state;
+    this.laneToken += 1;
+    this.lane = null;
     this.root.removeChildren().forEach((c) => c.destroy({ children: true }));
     this.vehicles.clear();
     const { width, height } = this.host.size();
@@ -113,6 +127,61 @@ export class BoardView implements BoardAnimator {
     setTimeout(stop, durationMs);
   }
 
+  /** Markiert die Fahrspur in Blickrichtung bis zum Rand und das blockierende Fahrzeug. */
+  previewLane(vehicleId: string, blockerId: string | null): void {
+    const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
+    const layout = this.layout;
+    if (!veh || !layout) return;
+    this.clearLane();
+    const g = new Graphics();
+    const cells = laneCells(veh, layout.cols, layout.rows);
+    const last = cells[cells.length - 1];
+    if (last) {
+      const center = (c: readonly [number, number]): [number, number] => [
+        layout.originX + (c[0] + 0.5) * layout.cell,
+        layout.originY + (c[1] + 0.5) * layout.cell,
+      ];
+      const to = center(last);
+      const period = layout.cell * LANE_DASH_PERIOD;
+      for (const [a, b] of dashSegments(center([veh.x, veh.y]), to, period, LANE_DASH_RATIO)) {
+        g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
+      }
+      g.stroke({ width: LANE_WIDTH, color: THEME.accent, cap: 'round' });
+      const [dx, dy] = DIR_VECTOR[veh.dir];
+      const s = layout.cell * LANE_ARROW;
+      g.moveTo(to[0] - dx * s - dy * s, to[1] - dy * s + dx * s)
+        .lineTo(to[0] + dx * s, to[1] + dy * s)
+        .lineTo(to[0] - dx * s + dy * s, to[1] - dy * s - dx * s)
+        .stroke({ width: LANE_WIDTH, color: THEME.accent, cap: 'round', join: 'round' });
+    }
+    const blocker = blockerId ? this.state?.vehicles.find((v) => v.id === blockerId) : undefined;
+    if (blocker) {
+      const r = vehicleRect(layout, blocker);
+      g.roundRect(
+        r.x - BLOCKER_GROW,
+        r.y - BLOCKER_GROW,
+        r.w + 2 * BLOCKER_GROW,
+        r.h + 2 * BLOCKER_GROW,
+        THEME.vehicleRadius + BLOCKER_GROW,
+      ).stroke({ width: BLOCKER_WIDTH, color: THEME.accent });
+    }
+    // Statisch (auch ohne reduzierte Bewegung); nur der Timer blendet die Vorschau aus.
+    this.lane = g;
+    this.root.addChild(g);
+    this.host.requestRender();
+    const token = this.laneToken;
+    setTimeout(() => {
+      if (token === this.laneToken) this.clearLane();
+    }, LANE_PREVIEW_MS);
+  }
+
+  private clearLane(): void {
+    this.laneToken += 1;
+    this.lane?.destroy();
+    this.lane = null;
+    this.host.requestRender();
+  }
+
   shake(vehicleId: string): Promise<void> {
     const view = this.vehicles.get(vehicleId);
     if (!view) return Promise.resolve();
@@ -167,6 +236,7 @@ export class BoardView implements BoardAnimator {
       v.dir,
       v.color,
       this.layout.cell,
+      v.length,
     );
     this.vehicles.set(v.id, view);
     this.root.addChild(view);

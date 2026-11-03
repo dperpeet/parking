@@ -2,12 +2,23 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { Dir } from '../schema';
 import { PALETTE, THEME } from './theme';
 import type { Rect } from './layout';
+import {
+  CHEVRON_SIZE,
+  HEADLIGHT_RADIUS,
+  chevronCenters,
+  chevronPoints,
+  headlightCenters,
+} from './direction';
 
 /** Anteile der Zellgroesse fuer die Frontscheibe. */
 const WINDSHIELD_THICKNESS = 0.16;
 const WINDSHIELD_MARGIN = 0.14;
 const WINDSHIELD_SIDE_INSET = 0.2;
 const GLYPH_SIZE = 0.42;
+/** Chevron-Strichstaerke als Anteil der Zellgroesse; Mindeststaerke und Scheinwerferkontur in px. */
+const CHEVRON_STROKE = 0.085;
+const CHEVRON_MIN_STROKE = 2;
+const HEADLIGHT_OUTLINE = 1.5;
 /** Leuchtrahmen des Tipps: Abstand zum Fahrzeug und Strichstaerke in px. */
 const HINT_GLOW_GROW = 5;
 const HINT_GLOW_WIDTH = 7;
@@ -25,6 +36,7 @@ export class VehicleView extends Container {
     dir: Dir,
     colorId: string,
     cell: number,
+    length = 1,
   ) {
     super();
     const style = PALETTE[colorId] ?? { fill: '#CCCCCC', ink: THEME.ink, glyph: '?' };
@@ -44,6 +56,24 @@ export class VehicleView extends Container {
     const s = cell * WINDSHIELD_SIDE_INSET;
     const ws = windshield(dir, rect.w, rect.h, t, m, s);
     g.roundRect(ws.x, ws.y, ws.w, ws.h, t / 2).fill(THEME.windshield);
+    // Scheinwerfer an der Front (mit Kontur), Chevrons in Kontrastfarbe auf dem Dach.
+    for (const [lx, ly] of headlightCenters(dir, rect.w, rect.h, cell)) {
+      g.circle(lx, ly, cell * HEADLIGHT_RADIUS)
+        .fill(THEME.star)
+        .stroke({ width: HEADLIGHT_OUTLINE, color: THEME.outline });
+    }
+    for (const [cx, cy] of chevronCenters(dir, length, rect.w, rect.h, cell)) {
+      const [a, tip, b] = chevronPoints(dir, cx, cy, cell * CHEVRON_SIZE);
+      g.moveTo(a[0], a[1])
+        .lineTo(tip[0], tip[1])
+        .lineTo(b[0], b[1])
+        .stroke({
+          width: Math.max(CHEVRON_MIN_STROKE, cell * CHEVRON_STROKE),
+          color: style.ink,
+          cap: 'round',
+          join: 'round',
+        });
+    }
     this.addChild(g);
 
     const glyph = new Text({
