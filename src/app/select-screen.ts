@@ -83,12 +83,22 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
       progress.setHold(enabled, needsStage ? progress.reachedStage() : undefined);
     },
     onHoldStage: (stage) => progress.setHold(true, stage),
+    onEditor: () => router.navigate({ name: 'editor', code: null }),
+    onCustomPlay: (id) => {
+      const entry = progress.customLevels().find((e) => e.id === id);
+      if (entry) router.navigate({ name: 'shared', code: entry.code });
+    },
+    onCustomEdit: (id) => {
+      const entry = progress.customLevels().find((e) => e.id === id);
+      if (entry) router.navigate({ name: 'editor', code: entry.code });
+    },
+    onCustomDelete: (id) => progress.deleteCustom(id),
   });
 
   const refresh = (): void => {
     const today = localDateKey(now());
-    view.update(
-      buildSelectModel({
+    view.update({
+      ...buildSelectModel({
         campaign,
         save: progress.get(),
         today,
@@ -97,7 +107,10 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
         reachedStage: progress.reachedStage(),
         streak: progress.currentStreak(today),
       }),
-    );
+      customLevels: progress
+        .customLevels()
+        .map((c) => ({ id: c.id, title: c.title, verified: c.verified })),
+    });
   };
 
   root.replaceChildren(view.el, dialogLayer);
