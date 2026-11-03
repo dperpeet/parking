@@ -116,6 +116,12 @@ export interface GenerateResult {
   matched: boolean;
 }
 
+/** Tipp: Fahrzeug antippen oder mit diesem Fahrzeug hupen (Power-Up `honk`, siehe docs/INTERFACES.md). */
+export interface HintMove {
+  action: 'tap' | 'honk';
+  vehicleId: string;
+}
+
 export type SolveRequest =
   | { id: number; kind: 'analyze'; level: Level; rules: ResolvedRules; opts?: AnalyzeOptions }
   | { id: number; kind: 'hint'; state: GameState; rules: ResolvedRules }
@@ -123,6 +129,6 @@ export type SolveRequest =
 
 export type SolveResponse =
   | { id: number; ok: true; kind: 'analyze'; result: LevelAnalysis }
-  | { id: number; ok: true; kind: 'hint'; result: string | null }
+  | { id: number; ok: true; kind: 'hint'; result: HintMove | null }
   | { id: number; ok: true; kind: 'generate'; result: GenerateResult }
   | { id: number; ok: false; error: string };

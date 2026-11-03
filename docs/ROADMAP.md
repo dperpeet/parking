@@ -4,7 +4,6 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Regeln und Engine
 
-- Power-Up Hupe (`honk`): ein Blocker weicht aus.
 - Einbahnstraßen, Abbiegen (`turns`, `pathfinding`), Schranken und Mystery-Fahrzeuge.
 - Doppelfarb-Fahrzeuge (`vehicles.dualColor`) und `departOnFull = false` (volle Fahrzeuge blockieren).
 - Passagiere: `order` (`lookahead`, `free`), `boardPolicy` (`largestFree`, `playerChoice`) und `mysteryRate`.
