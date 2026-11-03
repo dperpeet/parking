@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   CHEVRON_ARM,
+  CHEVRON_SIZE,
   chevronCenters,
   chevronPoints,
   dashSegments,
+  glyphCenter,
   headlightCenters,
   laneCells,
 } from '../../src/render/direction';
@@ -50,18 +52,25 @@ describe('chevronPoints', () => {
 });
 
 describe('chevronCenters', () => {
-  it('setzt je einen Chevron in Kopf- und Heckzelle', () => {
+  it('haelt Abstand zur Windschutzscheibe und zum Symbol (Laenge 2)', () => {
     const cell = 40;
     const w = 2 * cell - 2 * VEHICLE_INSET;
     const h = cell - 2 * VEHICLE_INSET;
-    const [head, tail] = chevronCenters('E', 2, w, h, cell);
-    expect(head?.[0]).toBeGreaterThan(tail?.[0] ?? Infinity);
-    expect(head?.[1]).toBe(h / 2);
-    const [headW, tailW] = chevronCenters('W', 2, w, h, cell);
-    expect(headW?.[0]).toBeLessThan(tailW?.[0] ?? -Infinity);
+    const east = chevronCenters('E', 2, w, h, cell);
+    expect(east).toHaveLength(1);
+    const front = w - (east[0]?.[0] ?? 0);
+    const tip = front - cell * CHEVRON_SIZE * 0.5;
+    // Scheibe endet bei 0,14 + 0,16 Zelle; mindestens 0,15 Zelle Luft.
+    expect(tip).toBeGreaterThanOrEqual(cell * (0.3 + 0.15));
+    // Rueckseite des Chevrons liegt vor dem verschobenen Symbol.
+    const glyphX = glyphCenter('E', 2, w, h, cell)[0];
+    expect(glyphX).toBeLessThan(w / 2);
+    expect((east[0]?.[0] ?? 0) - glyphX).toBeGreaterThan(cell * (0.21 + CHEVRON_SIZE / 2));
+    const west = chevronCenters('W', 2, w, h, cell);
+    expect(west[0]?.[0]).toBeLessThan(w / 2);
   });
 
-  it('kennt senkrechte Richtungen und Laenge 1', () => {
+  it('setzt ab Laenge 3 einen zweiten Chevron in die Heckzelle', () => {
     const cell = 40;
     const w = cell - 2 * VEHICLE_INSET;
     const h = 3 * cell - 2 * VEHICLE_INSET;
@@ -70,6 +79,15 @@ describe('chevronCenters', () => {
     expect(north[0]?.[1]).toBeLessThan(north[1]?.[1] ?? -Infinity);
     expect(south[0]?.[1]).toBeGreaterThan(south[1]?.[1] ?? Infinity);
     expect(chevronCenters('E', 1, w, w, cell)).toHaveLength(1);
+  });
+});
+
+describe('glyphCenter', () => {
+  it('bleibt bei langen Fahrzeugen mittig, schiebt kurze Richtung Heck', () => {
+    expect(glyphCenter('N', 3, 32, 112, 40)).toEqual([16, 56]);
+    const [x, y] = glyphCenter('N', 2, 32, 72, 40);
+    expect(x).toBe(16);
+    expect(y).toBeGreaterThan(36);
   });
 });
 

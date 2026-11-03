@@ -27,10 +27,10 @@ const HINT_ALPHA_MIN = 0.55;
 const LANE_PREVIEW_MS = 1400;
 const LANE_DASH_PERIOD = 0.34;
 const LANE_DASH_RATIO = 0.55;
-const LANE_WIDTH = 5;
+const LANE_WIDTH_RATIO = 0.08;
+const LANE_MIN_WIDTH = 3;
 const LANE_ARROW = 0.2;
 const BLOCKER_GROW = 3;
-const BLOCKER_WIDTH = 5;
 
 export class BoardView implements BoardAnimator {
   private readonly root = new Container();
@@ -134,6 +134,7 @@ export class BoardView implements BoardAnimator {
     if (!veh || !layout) return;
     this.clearLane();
     const g = new Graphics();
+    const lineWidth = Math.max(LANE_MIN_WIDTH, layout.cell * LANE_WIDTH_RATIO);
     const cells = laneCells(veh, layout.cols, layout.rows);
     const last = cells[cells.length - 1];
     if (last) {
@@ -146,13 +147,13 @@ export class BoardView implements BoardAnimator {
       for (const [a, b] of dashSegments(center([veh.x, veh.y]), to, period, LANE_DASH_RATIO)) {
         g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
       }
-      g.stroke({ width: LANE_WIDTH, color: THEME.accent, cap: 'round' });
+      g.stroke({ width: lineWidth, color: THEME.accent, cap: 'round' });
       const [dx, dy] = DIR_VECTOR[veh.dir];
       const s = layout.cell * LANE_ARROW;
       g.moveTo(to[0] - dx * s - dy * s, to[1] - dy * s + dx * s)
         .lineTo(to[0] + dx * s, to[1] + dy * s)
         .lineTo(to[0] - dx * s + dy * s, to[1] - dy * s - dx * s)
-        .stroke({ width: LANE_WIDTH, color: THEME.accent, cap: 'round', join: 'round' });
+        .stroke({ width: lineWidth, color: THEME.accent, cap: 'round', join: 'round' });
     }
     const blocker = blockerId ? this.state?.vehicles.find((v) => v.id === blockerId) : undefined;
     if (blocker) {
@@ -163,7 +164,7 @@ export class BoardView implements BoardAnimator {
         r.w + 2 * BLOCKER_GROW,
         r.h + 2 * BLOCKER_GROW,
         THEME.vehicleRadius + BLOCKER_GROW,
-      ).stroke({ width: BLOCKER_WIDTH, color: THEME.accent });
+      ).stroke({ width: lineWidth, color: THEME.accent });
     }
     // Statisch (auch ohne reduzierte Bewegung); nur der Timer blendet die Vorschau aus.
     this.lane = g;

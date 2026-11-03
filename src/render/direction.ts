@@ -6,7 +6,12 @@ import type { VehicleGeom } from './layout';
 export type Point = readonly [number, number];
 
 /** Anteile der Zellgroesse fuer Chevron und Scheinwerfer. */
-export const CHEVRON_SIZE = 0.2;
+export const CHEVRON_SIZE = 0.17;
+/** Abstand des vorderen Chevrons zur Frontkante (hinter der Scheibe, mit Luft). */
+export const CHEVRON_FRONT_DIST = 0.58;
+/** Symbol bei kurzen Fahrzeugen um diesen Anteil Richtung Heck schieben. */
+export const GLYPH_SHIFT = 0.1;
+export const GLYPH_SHIFT_MAX_LENGTH = 2;
 export const CHEVRON_ARM = 0.6;
 export const HEADLIGHT_ALONG = 0.1;
 export const HEADLIGHT_ACROSS = 0.3;
@@ -22,9 +27,8 @@ export function laneCells(v: VehicleGeom, cols: number, rows: number): Array<[nu
   return out;
 }
 
-/** Mittelpunkt der k-ten Zelle ab dem Kopf, lokal im Fahrzeugrechteck. */
-function cellCenterLocal(dir: Dir, k: number, w: number, h: number, cell: number): Point {
-  const dist = (k + 0.5) * cell - VEHICLE_INSET;
+/** Punkt auf der Mittelachse im Abstand `dist` von der Frontkante, lokal im Fahrzeugrechteck. */
+function axisPoint(dir: Dir, dist: number, w: number, h: number): Point {
   switch (dir) {
     case 'E':
       return [w - dist, h / 2];
@@ -37,7 +41,7 @@ function cellCenterLocal(dir: Dir, k: number, w: number, h: number, cell: number
   }
 }
 
-/** Chevron-Mittelpunkte: Kopfzelle und Heckzelle (bei Laenge 1 nur einer). */
+/** Chevron-Mittelpunkte: einer hinter der Scheibe, ab Laenge 3 zusaetzlich in der Heckzelle. */
 export function chevronCenters(
   dir: Dir,
   length: number,
@@ -45,8 +49,16 @@ export function chevronCenters(
   h: number,
   cell: number,
 ): Point[] {
-  const ks = length > 1 ? [0, length - 1] : [0];
-  return ks.map((k) => cellCenterLocal(dir, k, w, h, cell));
+  const dists = [cell * CHEVRON_FRONT_DIST];
+  if (length > GLYPH_SHIFT_MAX_LENGTH) dists.push((length - 0.5) * cell - VEHICLE_INSET);
+  return dists.map((d) => axisPoint(dir, d, w, h));
+}
+
+/** Mitte des Farbsymbols: bei kurzen Fahrzeugen leicht Richtung Heck verschoben. */
+export function glyphCenter(dir: Dir, length: number, w: number, h: number, cell: number): Point {
+  const shift = length <= GLYPH_SHIFT_MAX_LENGTH ? cell * GLYPH_SHIFT : 0;
+  const [dx, dy] = DIR_VECTOR[dir];
+  return [w / 2 - dx * shift, h / 2 - dy * shift];
 }
 
 /** Polylinie (Arm, Spitze, Arm) eines Chevrons mit Spitze in Blickrichtung. */

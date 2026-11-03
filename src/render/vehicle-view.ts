@@ -7,6 +7,7 @@ import {
   HEADLIGHT_RADIUS,
   chevronCenters,
   chevronPoints,
+  glyphCenter,
   headlightCenters,
 } from './direction';
 
@@ -86,7 +87,7 @@ export class VehicleView extends Container {
       },
     });
     glyph.anchor.set(0.5);
-    glyph.position.set(rect.w / 2, rect.h / 2);
+    glyph.position.set(...glyphCenter(dir, length, rect.w, rect.h, cell));
     this.addChild(glyph);
   }
 
