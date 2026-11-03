@@ -2,6 +2,8 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { Dir } from '../schema';
 import { PALETTE, THEME } from './theme';
 import type { Rect } from './layout';
+import { LockDecor } from './lock-decor';
+import type { LockMark } from './lock-marks';
 import {
   CHEVRON_SIZE,
   HEADLIGHT_RADIUS,
@@ -29,14 +31,16 @@ export class VehicleView extends Container {
   readonly restX: number;
   readonly restY: number;
   private glow: Graphics | null = null;
+  private decor: LockDecor | null = null;
+  private decorKey = '';
   private readonly size: { w: number; h: number; radius: number };
 
   constructor(
     readonly vehicleId: string,
     rect: Rect,
-    dir: Dir,
+    private readonly dir: Dir,
     colorId: string,
-    cell: number,
+    private readonly cell: number,
     length = 1,
   ) {
     super();
@@ -89,6 +93,33 @@ export class VehicleView extends Container {
     glyph.anchor.set(0.5);
     glyph.position.set(...glyphCenter(dir, length, rect.w, rect.h, cell));
     this.addChild(glyph);
+  }
+
+  /** Setzt Schloss und Schluessel-Symbol; ohne Aenderung bleibt die Darstellung unveraendert. */
+  setLock(mark: LockMark, numbered: boolean): void {
+    const key = `${mark.lock ?? '-'}|${mark.key ?? '-'}|${numbered}`;
+    if (key === this.decorKey) return;
+    this.decorKey = key;
+    this.decor?.destroy({ children: true });
+    this.decor = null;
+    if (mark.lock === null && mark.key === null) return;
+    const { w, h, radius } = this.size;
+    this.decor = new LockDecor({
+      w,
+      h,
+      radius,
+      cell: this.cell,
+      dir: this.dir,
+      lock: mark.lock,
+      key: mark.key,
+      numbered,
+    });
+    this.addChild(this.decor);
+  }
+
+  /** Fortschritt 0..1 der Entsperr-Animation (Schloss springt auf und verschwindet). */
+  setUnlockProgress(p: number): void {
+    this.decor?.setUnlockProgress(p);
   }
 
   /** Leuchtrahmen fuer den Tipp. alpha 0 blendet ihn aus. */

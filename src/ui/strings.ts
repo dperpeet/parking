@@ -3,6 +3,7 @@ import type { Dir } from '../schema';
 import type { GameEvent, GameState, LoseReason, PowerUpId } from '../engine/types';
 import { getLanguage, t, tn } from '../i18n';
 import type { StringKey } from '../i18n';
+import type { LockMark } from '../render/lock-marks';
 import { PALETTE } from '../render/theme';
 
 const POWER_UP_KEYS: Record<PowerUpId, StringKey> = {
@@ -57,13 +58,32 @@ function passengerNoun(colorId: string): string {
   return `${capitalize(colorName(colorId))} passenger`;
 }
 
-export function vehicleLabel(v: { color: string; x: number; y: number; dir: Dir }): string {
-  return t('vehicleLabel', {
+/** Schloss-/Schluesselmarke eines Fahrzeugs und Anzahl der Schluessel im Level (Nummern nur bei mehreren). */
+export interface VehicleLockInfo {
+  mark: LockMark;
+  count: number;
+}
+
+export function vehicleLabel(
+  v: { color: string; x: number; y: number; dir: Dir },
+  lock?: VehicleLockInfo,
+): string {
+  const base = t('vehicleLabel', {
     vehicle: vehicleNoun(v.color),
     row: v.y + 1,
     col: v.x + 1,
     dir: t(DIR_KEYS[v.dir]),
   });
+  if (!lock) return base;
+  const numbered = lock.count > 1;
+  const parts = [base];
+  if (lock.mark.lock !== null) {
+    parts.push(numbered ? t('vehicleLockedN', { n: lock.mark.lock }) : t('vehicleLocked'));
+  }
+  if (lock.mark.key !== null) {
+    parts.push(numbered ? t('vehicleKeyN', { n: lock.mark.key }) : t('vehicleKey'));
+  }
+  return parts.join(', ');
 }
 
 /** Ansage fuer den Tipp. */
@@ -80,8 +100,12 @@ export function announce(event: GameEvent, state: GameState): string | null {
   switch (event.type) {
     case 'vehicleBlocked':
       if (event.reason === 'queueFull') return t('annBlockedQueue');
-      if (event.reason === 'locked')
-        return t('annBlockedLocked', { vehicle: veh(event.vehicleId) });
+      if (event.reason === 'locked') {
+        const keyId = state.vehicles.find((o) => o.id === event.vehicleId)?.keyId;
+        return keyId
+          ? t('annBlockedLockedKey', { vehicle: veh(event.vehicleId), key: veh(keyId) })
+          : t('annBlockedLocked', { vehicle: veh(event.vehicleId) });
+      }
       return t('annBlockedPath', { vehicle: veh(event.vehicleId) });
     case 'vehicleExited':
       return t('annExited', { vehicle: veh(event.vehicleId), n: event.slotIndex + 1 });
