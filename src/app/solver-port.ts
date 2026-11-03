@@ -2,7 +2,7 @@
 // damit er das initiale Bundle nicht vergroessert. Tests ersetzen den Port durch ein Fake.
 import type { GameState } from '../engine/types';
 import type { Level, ResolvedRules } from '../schema';
-import type { AnalyzeOptions, GeneratorParams, HintMove, LevelAnalysis } from '../solver/types';
+import type { AnalyzeOptions, GeneratorOptions, HintMove, LevelAnalysis } from '../solver/types';
 
 /** Zeitlimit fuer die Level-Generierung; danach faellt die App auf eine Variante zurueck. */
 export const GENERATE_TIMEOUT_MS = 10_000;
@@ -30,7 +30,7 @@ export interface SolverPort {
   ): Promise<LevelAnalysis>;
   /** Erzeugt ein Level; lehnt nach `timeoutMs` mit GenerateTimeoutError ab, bei `signal` mit AbortError. */
   generate(
-    params: GeneratorParams,
+    params: GeneratorOptions,
     rules: ResolvedRules,
     opts?: GenerateOptions,
   ): Promise<{ level: Level; matched: boolean }>;

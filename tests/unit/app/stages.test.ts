@@ -3,6 +3,7 @@ import {
   DAILY_STAGE_BY_WEEKDAY,
   ENDLESS_LEVELS_PER_STAGE,
   STAGE_COUNT,
+  STAGE_KEY_CHAIN_DEPTH,
   STAGE_SHAPES,
   clampStage,
   dailyStage,
@@ -96,5 +97,43 @@ describe('Endlos und Tageslevel', () => {
     // Mo..So nicht fallend
     const week = [1, 2, 3, 4, 5, 6, 0].map((d) => DAILY_STAGE_BY_WEEKDAY[d] ?? 0);
     expect([...week].sort((a, b) => a - b)).toEqual(week);
+  });
+});
+
+describe('Stufen-Mechaniken', () => {
+  const count = (c: number | [number, number]): [number, number] => (Array.isArray(c) ? c : [c, c]);
+
+  it('Stufe 1-2 classic ohne Mechaniken, ab Stufe 3 world2', () => {
+    expect(STAGE_SHAPES.map((s) => s.ruleset)).toEqual([
+      'classic',
+      'classic',
+      'world2',
+      'world2',
+      'world2',
+      'world2',
+    ]);
+    for (const stage of [1, 2]) {
+      expect(count(stageShape(stage).bollards)).toEqual([0, 0]);
+      expect(count(stageShape(stage).keys)).toEqual([0, 0]);
+    }
+  });
+
+  it('Poller ab Stufe 3 (1-2), Schluessel erst ab Stufe 5 (genau einer)', () => {
+    for (const stage of [3, 4, 5, 6]) {
+      const [lo, hi] = count(stageShape(stage).bollards);
+      expect(lo).toBeGreaterThanOrEqual(1);
+      expect(hi).toBeLessThanOrEqual(2);
+    }
+    expect(stageShape(4).bollards).toBe(2);
+    expect(stageShape(3).keys).toBe(0);
+    expect(stageShape(4).keys).toBe(0);
+    expect(stageShape(5).keys).toBe(1);
+    expect(stageShape(6).keys).toBe(1);
+    expect(STAGE_KEY_CHAIN_DEPTH).toBe(1);
+  });
+
+  it('Fahrzeugzahl waechst nicht ueber die Stufen hinweg rueckwaerts', () => {
+    const counts = STAGE_SHAPES.map((s) => s.vehicleCount);
+    expect(counts).toEqual([...counts].sort((a, b) => a - b));
   });
 });

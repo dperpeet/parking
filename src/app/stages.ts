@@ -29,15 +29,56 @@ export interface StageShape {
   height: number;
   vehicleCount: number;
   colorCount: number;
+  /** Ruleset der generierten Level: Stufe 1-2 `classic`, ab Stufe 3 `world2` (Poller, Schluessel). */
+  ruleset: StageRuleset;
+  /** Anzahl Poller, Zahl oder Bereich [min, max] (wie `GeneratorTuning.bollards`). */
+  bollards: number | [number, number];
+  /** Anzahl gesperrter Fahrzeuge, Zahl oder Bereich (wie `GeneratorTuning.keys`). */
+  keys: number | [number, number];
 }
 
+export type StageRuleset = 'classic' | 'world2';
+
+/** Maximale Schluesselkette fuer generierte Level (ein Schluessel sperrt hoechstens ein Fahrzeug). */
+export const STAGE_KEY_CHAIN_DEPTH = 1;
+
+/**
+ * Stufe 1-2 classic; 3-4 world2 mit Pollern; 5-6 world2 mit Pollern und einem Schluessel.
+ * Gemessen mit 20 Seeds (Node, GENERATE_MAX_ATTEMPTS): Generierzeit im Mittel < 0,6 s, schlimmster Fall
+ * Stufe 6 mit ca. 1,9 s; Trefferquote im Zielbereich 75-100 %, alle Level loesbar. Mehr Fahrzeuge in
+ * Stufe 5/6 (12 bis 14) sprengen mit Schluessel das Zeit- bzw. Zustandslimit des Generators.
+ */
 export const STAGE_SHAPES: readonly StageShape[] = [
-  { width: 5, height: 5, vehicleCount: 5, colorCount: 2 },
-  { width: 5, height: 5, vehicleCount: 6, colorCount: 3 },
-  { width: 6, height: 6, vehicleCount: 8, colorCount: 3 },
-  { width: 6, height: 6, vehicleCount: 10, colorCount: 4 },
-  { width: 6, height: 6, vehicleCount: 12, colorCount: 4 },
-  { width: 6, height: 6, vehicleCount: 14, colorCount: 5 },
+  { width: 5, height: 5, vehicleCount: 5, colorCount: 2, ruleset: 'classic', bollards: 0, keys: 0 },
+  { width: 5, height: 5, vehicleCount: 6, colorCount: 3, ruleset: 'classic', bollards: 0, keys: 0 },
+  {
+    width: 6,
+    height: 6,
+    vehicleCount: 8,
+    colorCount: 3,
+    ruleset: 'world2',
+    bollards: [1, 2],
+    keys: 0,
+  },
+  { width: 6, height: 6, vehicleCount: 10, colorCount: 4, ruleset: 'world2', bollards: 2, keys: 0 },
+  {
+    width: 6,
+    height: 6,
+    vehicleCount: 10,
+    colorCount: 4,
+    ruleset: 'world2',
+    bollards: [1, 2],
+    keys: 1,
+  },
+  {
+    width: 6,
+    height: 6,
+    vehicleCount: 11,
+    colorCount: 5,
+    ruleset: 'world2',
+    bollards: [1, 2],
+    keys: 1,
+  },
 ];
 
 /** Endlos ohne "Stufe halten": Die Stufe steigt alle N geloesten Level um 1 (bis zur Stufe 6). */
