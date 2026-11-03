@@ -3,6 +3,8 @@ import type { GameEvent, GameState } from '../engine/types';
 /** Was der Event-Player vom Pixi-Brett braucht (in Tests ersetzbar). */
 export interface BoardAnimator {
   shake(vehicleId: string): Promise<void>;
+  /** Optional: zeigt Fahrspur und Blocker (Geometrie; die Ursache kommt aus dem Event). */
+  previewLane?(vehicleId: string, blockerId: string | null): void;
   /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
   exit(vehicleId: string, path: Array<[number, number]>): Promise<void>;
   /** Gleicht die sichtbaren Fahrzeuge mit dem Zustand ab (z. B. nach Undo). */
@@ -46,6 +48,7 @@ export class EventPlayer {
       switch (event.type) {
         case 'vehicleBlocked':
           this.hud.onEvent(event, state);
+          this.board.previewLane?.(event.vehicleId, event.blockerId);
           await this.board.shake(event.vehicleId);
           break;
         case 'vehicleExited':

@@ -75,6 +75,22 @@ describe('EventPlayer', () => {
     expect(log.slice(0, 3)).toEqual(['hud vehicleBlocked', 'start shake v6', 'end shake v6']);
   });
 
+  it('zeigt bei vehicleBlocked die Fahrspur-Vorschau mit blockerId', async () => {
+    const previews: Array<[string, string | null]> = [];
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: () => Promise.resolve(),
+      sync: () => undefined,
+      previewLane: (id, blocker) => previews.push([id, blocker]),
+    };
+    const player = new EventPlayer(board, { onEvent: () => undefined, render: () => undefined });
+    await player.play(
+      [{ type: 'vehicleBlocked', vehicleId: 'v6', reason: 'path', blockerId: 'v3' }],
+      state,
+    );
+    expect(previews).toEqual([['v6', 'v3']]);
+  });
+
   it('reiht mehrere play()-Aufrufe hintereinander', async () => {
     const { log, gates, player } = setup();
     const a = player.play(
