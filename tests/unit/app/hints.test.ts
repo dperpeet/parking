@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HINTS_PER_LEVEL, HINT_STAR_CAP, HintTracker, displayStars } from '../../../src/app/hints';
 import { createGame, step } from '../../../src/engine';
+import type { GameState } from '../../../src/engine';
 import { WIN_ORDER, level, rules } from '../helpers';
 import { FakeSolver } from './fakes';
 
@@ -96,6 +97,40 @@ describe('HintTracker', () => {
     expect(tracker.left()).toBe(HINTS_PER_LEVEL);
     await tracker.request(get, rules);
     tracker.begin('other', false);
+    expect(tracker.left()).toBe(HINTS_PER_LEVEL);
+  });
+
+  it('erlaubt die Anfrage nach einer Niederlage durch fehlende Zuege, wenn eine Hupe uebrig ist', async () => {
+    const { tracker, solver, get } = setup();
+    solver.hintResult = { action: 'honk', vehicleId: 'v3' };
+    const base = get();
+    const stuck = (honk: number): GameState => ({
+      ...base,
+      status: 'lost',
+      loseReason: 'noMoves',
+      powerUps: { ...base.powerUps, honk },
+    });
+    expect(await tracker.request(() => stuck(0), rules)).toEqual({ kind: 'ignored' });
+    expect(await tracker.request(() => ({ ...stuck(1), loseReason: 'queueFull' }), rules)).toEqual({
+      kind: 'ignored',
+    });
+    expect(await tracker.request(() => stuck(1), rules)).toEqual({
+      kind: 'vehicle',
+      vehicleId: 'v3',
+      action: 'honk',
+    });
+  });
+
+  it('eine Hupe waehrend der Berechnung verwirft das Ergebnis (Zuege bleiben gleich)', async () => {
+    const { tracker, solver } = setup();
+    let release!: () => void;
+    solver.hintGate = new Promise<void>((r) => (release = r));
+    const before = createGame(level, rules);
+    let current = before;
+    const first = tracker.request(() => current, rules);
+    current = { ...before, powerUpsUsed: before.powerUpsUsed + 1 };
+    release();
+    expect(await first).toEqual({ kind: 'ignored' });
     expect(tracker.left()).toBe(HINTS_PER_LEVEL);
   });
 });
