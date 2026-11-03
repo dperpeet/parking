@@ -2,19 +2,37 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { Level, Ruleset, resolveRules } from '../src/schema';
-import classic from '../src/content/rulesets/classic.json';
 
 const PERCENT = 100;
+
+const RULESET_DIR = 'src/content/rulesets';
+
+/** Alle Rulesets unter src/content/rulesets, nach ID. */
+function loadRulesets(): Map<string, Ruleset> {
+  const map = new Map<string, Ruleset>();
+  for (const f of readdirSync(RULESET_DIR).filter((n) => n.endsWith('.json'))) {
+    const rs = Ruleset.parse(JSON.parse(readFileSync(`${RULESET_DIR}/${f}`, 'utf8')));
+    map.set(rs.id, rs);
+  }
+  return map;
+}
+
+function rulesetById(map: Map<string, Ruleset>, id: string): Ruleset {
+  const rs = map.get(id);
+  if (!rs) throw new Error(`unknown ruleset "${id}" (known: ${[...map.keys()].join(', ')})`);
+  return rs;
+}
 const dir = process.argv[2] ?? 'src/content/levels/pack-01';
+const rulesets = loadRulesets();
 const files = readdirSync(dir)
   .filter((f) => f.endsWith('.json') && f !== 'index.json')
   .sort();
 console.log(
-  'id      grid vehs cols slots vis  diff  rpw%    dead avgDepth  states   winningPaths  ms',
+  'id      grid vehs cols boll keys slots vis  diff  rpw%    dead avgDepth  states   winningPaths  ms',
 );
 for (const f of files) {
   const level = Level.parse(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')));
-  const rules = resolveRules(Ruleset.parse(classic), level.overrides);
+  const rules = resolveRules(rulesetById(rulesets, level.ruleset), level.overrides);
   const t0 = performance.now();
   const a = analyze(level, rules);
   const ms = performance.now() - t0;
@@ -25,6 +43,8 @@ for (const f of files) {
       `${level.grid.width}x${level.grid.height}`.padEnd(4),
       String(level.vehicles.length).padStart(4),
       String(cols).padStart(4),
+      String(level.grid.cells.filter((c) => c.type === 'fixed').length).padStart(4),
+      String(level.vehicles.filter((v) => v.locked).length).padStart(4),
       String(rules.queue.slots).padStart(5),
       String(rules.passengers.visible).padStart(3),
       a.difficulty.toFixed(1).padStart(5),
