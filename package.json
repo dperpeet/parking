@@ -13,6 +13,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "size": "node tools/check-bundle.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

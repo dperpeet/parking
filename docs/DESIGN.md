@@ -140,6 +140,7 @@ Die Schnittstellen zwischen den Schichten sind in [INTERFACES.md](INTERFACES.md)
 
 - Tests: `tests/unit` (Engine, Solver, App, Renderer), `tests/content` (Schemas, Level gültig und lösbar), `tests/e2e` (Playwright).
 - CI (`.github/workflows/ci.yml`, für Pull Requests und `main`): `lint` (ESLint und Prettier), `typecheck`, `test` (Vitest), danach `build` und `e2e`.
+- Bundle-Budget: `pnpm size` (`tools/check-bundle.mjs`) läuft im `build`-Job nach dem Build und summiert die gzip-Größe des Initial-JS (Skripte aus `dist/index.html`: `<script type="module">` und `modulepreload`; Lazy-Chunks wie Editor und Solver-Worker zählen nicht). Grenze 250 kB (250 000 Bytes, wie Vite kB zählt); darüber Exit 1.
 - Barrierefreiheit: Farbsymbole, Tastaturbedienung (Pfeiltasten, U für Undo, R für Neustart), `aria-live`-Meldungen, `prefers-reduced-motion` mit Schalter in den Einstellungen.
 - Sprachen: Deutsch und Englisch, Auswahl automatisch oder manuell.
 
