@@ -1,0 +1,133 @@
+{
+  "schema": "parking.level/1",
+  "id": "w2-18",
+  "title": {
+    "de": "Level 18",
+    "en": "Level 18"
+  },
+  "seed": 4072505409,
+  "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 4
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 2,
+        "y": 2,
+        "type": "fixed"
+      },
+      {
+        "x": 2,
+        "y": 5,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v2",
+      "pos": [3, 1],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [3, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v4",
+      "pos": [4, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [1, 4],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow",
+      "locked": true,
+      "keyId": "v2"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 4],
+      "dir": "W",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v7",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v5"
+    },
+    {
+      "id": "v9",
+      "pos": [1, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "yellow",
+    "orange",
+    "yellow",
+    "yellow",
+    "yellow",
+    "orange",
+    "orange",
+    "blue",
+    "yellow",
+    "blue",
+    "blue",
+    "yellow",
+    "blue",
+    "yellow",
+    "yellow"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 9
+    },
+    "difficulty": 6.2,
+    "solverVersion": "1.0"
+  }
+}

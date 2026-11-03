@@ -5,13 +5,22 @@
     "de": "Level 1",
     "en": "Level 1"
   },
+  "seed": 331908538,
   "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
     "cells": [
       {
-        "x": 2,
+        "x": 0,
         "y": 2,
         "type": "fixed"
       }
@@ -20,57 +29,75 @@
   "vehicles": [
     {
       "id": "v1",
-      "pos": [2, 0],
-      "dir": "N",
+      "pos": [0, 0],
+      "dir": "W",
       "type": "s",
-      "color": "blue"
+      "color": "green"
     },
     {
       "id": "v2",
-      "pos": [0, 2],
+      "pos": [2, 0],
       "dir": "W",
-      "type": "s",
+      "type": "m",
       "color": "orange"
     },
     {
       "id": "v3",
-      "pos": [4, 2],
-      "dir": "E",
+      "pos": [0, 4],
+      "dir": "S",
       "type": "s",
-      "color": "blue"
+      "color": "green"
     },
     {
       "id": "v4",
-      "pos": [2, 4],
-      "dir": "S",
-      "type": "s",
-      "color": "orange"
+      "pos": [1, 3],
+      "dir": "W",
+      "type": "m",
+      "color": "blue"
     },
     {
       "id": "v5",
-      "pos": [1, 4],
+      "pos": [4, 2],
       "dir": "E",
-      "type": "s",
+      "type": "m",
       "color": "blue"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 1],
+      "dir": "W",
+      "type": "m",
+      "color": "green"
     }
   ],
   "passengers": [
-    "blue",
-    "blue",
     "orange",
     "orange",
-    "blue",
-    "blue",
     "orange",
     "orange",
+    "green",
+    "green",
+    "blue",
+    "blue",
+    "green",
+    "blue",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "green",
+    "blue",
+    "green",
+    "green",
     "blue",
     "blue"
   ],
   "meta": {
-    "author": "placeholder",
+    "author": "generator",
     "par": {
-      "moves": 5
+      "moves": 6
     },
-    "difficulty": 1.4
+    "difficulty": 3.5,
+    "solverVersion": "1.0"
   }
 }

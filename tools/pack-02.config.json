@@ -1,0 +1,260 @@
+{
+  "pack": "02",
+  "world": 2,
+  "maxStates": 200000,
+  "maxAttempts": 200,
+  "defaults": {
+    "ruleset": "world2",
+    "slots": 5,
+    "visible": 8,
+    "shuffleWindow": 3,
+    "blockiness": 0.7,
+    "tolerance": 0.5,
+    "maxRandomPlayWin": 0.85,
+    "preferDeadEnds": true
+  },
+  "levels": [
+    {
+      "seed": 201,
+      "grid": 5,
+      "vehicles": 6,
+      "colors": 3,
+      "target": 3.5,
+      "bollards": 1,
+      "keys": 0,
+      "maxRandomPlayWin": 1,
+      "tolerance": 0.6
+    },
+    {
+      "seed": 202,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 3.8,
+      "bollards": 2,
+      "keys": 0
+    },
+    {
+      "seed": 203,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 4.1,
+      "bollards": 2,
+      "keys": 0
+    },
+    {
+      "seed": 204,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 4.5,
+      "bollards": 2,
+      "keys": 0
+    },
+    {
+      "seed": 205,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 3.6,
+      "bollards": 1,
+      "keys": 1
+    },
+    {
+      "seed": 206,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 4,
+      "target": 4,
+      "bollards": 1,
+      "keys": 1
+    },
+    {
+      "seed": 207,
+      "grid": 5,
+      "vehicles": 8,
+      "colors": 3,
+      "target": 4.5,
+      "bollards": 2,
+      "keys": 1
+    },
+    {
+      "seed": 208,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 4,
+      "target": 5,
+      "bollards": [1, 2],
+      "keys": 1,
+      "slots": 4
+    },
+    {
+      "seed": 209,
+      "grid": 5,
+      "vehicles": 7,
+      "colors": 3,
+      "target": 4.3,
+      "bollards": 2,
+      "keys": 1
+    },
+    {
+      "seed": 210,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 4,
+      "target": 4.8,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 211,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 5.3,
+      "bollards": 2,
+      "keys": [1, 2],
+      "slots": 4
+    },
+    {
+      "seed": 212,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 5.8,
+      "bollards": 2,
+      "keys": [1, 2],
+      "slots": 4
+    },
+    {
+      "seed": 213,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 4,
+      "target": 5.2,
+      "bollards": 2,
+      "keys": [1, 2]
+    },
+    {
+      "seed": 214,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 4,
+      "target": 5.8,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2
+    },
+    {
+      "seed": 215,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 6.3,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 216,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 6.8,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 217,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 6,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 218,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 6.5,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 219,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 7,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 220,
+      "grid": 7,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 7.3,
+      "bollards": 3,
+      "keys": 3,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 221,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 6.5,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 222,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 7,
+      "bollards": 2,
+      "keys": 2,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 223,
+      "grid": 7,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 7.3,
+      "bollards": 3,
+      "keys": 3,
+      "keyChainDepth": 2,
+      "slots": 4
+    },
+    {
+      "seed": 224,
+      "grid": 7,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 7.4,
+      "bollards": 3,
+      "keys": 3,
+      "keyChainDepth": 2,
+      "slots": 4
+    }
+  ]
+}

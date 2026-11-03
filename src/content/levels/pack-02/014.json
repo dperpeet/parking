@@ -1,0 +1,128 @@
+{
+  "schema": "parking.level/1",
+  "id": "w2-14",
+  "title": {
+    "de": "Level 14",
+    "en": "Level 14"
+  },
+  "seed": 3818232174,
+  "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 5,
+        "y": 4,
+        "type": "fixed"
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [4, 0],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 4],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [3, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "yellow",
+      "locked": true,
+      "keyId": "v2"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 3],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "green",
+      "locked": true,
+      "keyId": "v5"
+    },
+    {
+      "id": "v7",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v8",
+      "pos": [2, 3],
+      "dir": "S",
+      "type": "m",
+      "color": "orange"
+    }
+  ],
+  "passengers": [
+    "yellow",
+    "yellow",
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "blue",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "blue",
+    "orange"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 5.4,
+    "solverVersion": "1.0"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "schema": "parking.level/1",
+  "id": "w2-07",
+  "title": {
+    "de": "Level 7",
+    "en": "Level 7"
+  },
+  "seed": 1812830480,
+  "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 5,
+    "height": 5,
+    "cells": [
+      {
+        "x": 4,
+        "y": 0,
+        "type": "fixed"
+      },
+      {
+        "x": 4,
+        "y": 2,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [4, 4],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [3, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v1"
+    },
+    {
+      "id": "v4",
+      "pos": [2, 4],
+      "dir": "S",
+      "type": "l",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [1, 4],
+      "dir": "S",
+      "type": "l",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [1, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "blue",
+    "blue",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "green"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 4.4,
+    "solverVersion": "1.0"
+  }
+}
