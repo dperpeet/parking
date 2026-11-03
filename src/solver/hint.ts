@@ -2,6 +2,7 @@
 import type { GameState } from '../engine';
 import type { ResolvedRules } from '../schema';
 import { Searcher } from './analyze';
+import type { HintMove } from './types';
 
 /**
  * Legaler Tipp mit den meisten Gewinnfolgen; Gleichstand: hoehere Zufallsspiel-Siegchance,
@@ -22,4 +23,14 @@ export function hint(state: GameState, rules: ResolvedRules, maxStates?: number)
     }
   }
   return bestId;
+}
+
+/** Tipp fuer den Worker-Vertrag (`HintMove`). */
+export function hintMove(
+  state: GameState,
+  rules: ResolvedRules,
+  maxStates?: number,
+): HintMove | null {
+  const id = hint(state, rules, maxStates);
+  return id === null ? null : { action: 'tap', vehicleId: id };
 }

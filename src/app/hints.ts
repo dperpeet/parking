@@ -61,7 +61,8 @@ export class HintTracker {
     if (this.working || this.left() <= 0 || state.status !== 'playing') return { kind: 'ignored' };
     this.working = true;
     try {
-      const id = await this.port.hint(state, rules);
+      const move = await this.port.hint(state, rules);
+      const id = move?.vehicleId ?? null;
       const now = getState();
       const stale =
         now.levelId !== state.levelId ||

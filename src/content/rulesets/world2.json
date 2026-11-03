@@ -74,8 +74,8 @@
       "uses": 1
     },
     "honk": {
-      "enabled": false,
-      "uses": 0
+      "enabled": true,
+      "uses": 1
     },
     "earnRule": "byStars"
   }

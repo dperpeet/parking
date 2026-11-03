@@ -2,7 +2,7 @@
 // damit er das initiale Bundle nicht vergroessert. Tests ersetzen den Port durch ein Fake.
 import type { GameState } from '../engine/types';
 import type { Level, ResolvedRules } from '../schema';
-import type { AnalyzeOptions, GeneratorParams, LevelAnalysis } from '../solver/types';
+import type { AnalyzeOptions, GeneratorParams, HintMove, LevelAnalysis } from '../solver/types';
 
 /** Zeitlimit fuer die Level-Generierung; danach faellt die App auf eine Variante zurueck. */
 export const GENERATE_TIMEOUT_MS = 10_000;
@@ -21,7 +21,7 @@ export interface GenerateOptions {
 
 export interface SolverPort {
   /** Id des empfohlenen Fahrzeugs oder null, wenn es keine gewinnende Fortsetzung gibt. */
-  hint(state: GameState, rules: ResolvedRules): Promise<string | null>;
+  hint(state: GameState, rules: ResolvedRules): Promise<HintMove | null>;
   /** Vollanalyse (Loesbarkeit, Par, Schwierigkeit). Bei `signal` wird der Worker-Auftrag abgebrochen (AbortError). */
   analyze(
     level: Level,

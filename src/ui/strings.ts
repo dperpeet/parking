@@ -127,6 +127,7 @@ export function announce(event: GameEvent, state: GameState): string | null {
       return loseTitle(event.reason);
     case 'invalidAction':
     case 'powerUpUsed':
+    case 'vehicleYielded':
     case 'slotShifted':
       return null;
   }

@@ -5,6 +5,7 @@ import type {
   AnalyzeOptions,
   GenerateResult,
   GeneratorOptions,
+  HintMove,
   LevelAnalysis,
   SolveRequest,
   SolveResponse,
@@ -89,8 +90,8 @@ export class SolverClient {
     return this.call({ kind: 'analyze', level, rules, opts }, (r) => r.result as LevelAnalysis);
   }
 
-  hint(state: GameState, rules: ResolvedRules): SolverCall<string | null> {
-    return this.call({ kind: 'hint', state, rules }, (r) => r.result as string | null);
+  hint(state: GameState, rules: ResolvedRules): SolverCall<HintMove | null> {
+    return this.call({ kind: 'hint', state, rules }, (r) => r.result as HintMove | null);
   }
 
   generate(params: GeneratorOptions, rules: ResolvedRules): SolverCall<GenerateResult> {

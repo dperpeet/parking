@@ -53,7 +53,7 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 | Passagiere         | `order = strict`, `boardPolicy = firstMatch`, `visible`                               | `order` `lookahead`/`free`, `boardPolicy` `largestFree`/`playerChoice`, `mysteryRate > 0` |
 | Limits und Wertung | `limits.moves`, `limits.timeSec` (Aktion `timeUp` der App), `starMode` `powerupsUsed` | -                                                                                         |
 | Spezialobjekte     | `fixed` (Poller), `keyVehicles` (Schloss/Schlüssel)                                   | `oneWay`, `barriers`, `mysteryVehicles` (auch die Zelltypen `oneWay` und `barrier`)       |
-| Power-Ups          | `undo`, `shuffle`, `extraSlot`                                                        | `honk` (die Aktion wird mit `notImplemented` abgelehnt)                                   |
+| Power-Ups          | `undo`, `shuffle`, `extraSlot`, `honk`                                                | -                                                                                         |
 
 `starMode` `moves` und `time` sind zulässig, aber nur eingeschränkt umgesetzt: `moves` wertet die rohe Zugzahl ohne Par, `time` liefert in der Engine immer 3 Sterne.
 
@@ -61,7 +61,8 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 
 - Poller: Zellen vom Typ `fixed` im Raster. Sie blockieren Fahrzeuge und bewegen sich nie.
 - Schloss/Schlüssel: Ein Fahrzeug mit `locked: true` und `keyId` lässt sich erst antippen, wenn das Fahrzeug `keyId` ausgefahren ist. Schlüsselketten müssen azyklisch sein.
-- Ruleset `world2` (`src/content/rulesets/world2.json`): wie `classic`, mit `special.fixed` und `special.keyVehicles`. Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhängig davon.
+- Hupe (Power-Up `honk`): Ein Fahrzeug hupt, das erste Fahrzeug auf seinem Weg rutscht entlang seiner Achse so weit wie nötig zur Seite. Poller und gesperrte Fahrzeuge weichen nicht aus, Poller versperren auch die Ausweichstrecke. Zählt nicht als Zug; Undo nimmt es zurück. Regeln im Detail: [INTERFACES.md](INTERFACES.md).
+- Ruleset `world2` (`src/content/rulesets/world2.json`): wie `classic`, mit `special.fixed`, `special.keyVehicles` und einer Hupe. Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhängig davon.
 
 ## Level-Format und Validierung
 

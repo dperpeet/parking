@@ -9,7 +9,7 @@ export interface VehicleState {
   length: number;
   capacity: number;
   color: ColorId;
-  /** Kopfzelle und Blickrichtung (unveraenderlich bei movement.model "straight"). */
+  /** Kopfzelle und Blickrichtung. Die Blickrichtung ist bei "straight" fest; die Kopfzelle aendert nur die Hupe. */
   x: number;
   y: number;
   dir: Dir;
@@ -63,7 +63,11 @@ export interface GameState {
 
 export type Action =
   | { type: 'tapVehicle'; vehicleId: string }
-  | { type: 'usePowerUp'; powerUp: PowerUpId }
+  /**
+   * Power-Up nutzen. `vehicleId` braucht nur `honk`: das hupende Fahrzeug, dessen erster Blocker ausweicht
+   * (siehe docs/INTERFACES.md, Spielregeln 6). Bei anderen Power-Ups wird es ignoriert.
+   */
+  | { type: 'usePowerUp'; powerUp: PowerUpId; vehicleId?: string }
   /** Von der App gesendet, wenn limits.timeSec abgelaufen ist (die Engine kennt keine Uhr). */
   | { type: 'timeUp' };
 
@@ -76,6 +80,14 @@ export type GameEvent =
     }
   | { type: 'vehicleExited'; vehicleId: string; slotIndex: number; path: Array<[number, number]> }
   | { type: 'vehicleUnlocked'; vehicleId: string }
+  /** Hupe: `vehicleId` (Blocker) rutscht entlang seiner Achse von Kopfzelle `from` nach `to`; gehupt hat `byVehicleId`. */
+  | {
+      type: 'vehicleYielded';
+      vehicleId: string;
+      byVehicleId: string;
+      from: [number, number];
+      to: [number, number];
+    }
   | {
       type: 'passengerBoarded';
       passengerIndex: number;
