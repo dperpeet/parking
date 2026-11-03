@@ -7,7 +7,7 @@ Mobile-first, als PWA installierbar. Alle Regeln sind datengetrieben (JSON-Rules
 Der vollstaendige Plan (Game Design, Architektur, Meilensteine) steht in [PLAN.md](PLAN.md).
 Leitplanken fuer Entwickler und Agents: [CLAUDE.md](CLAUDE.md).
 
-**Status:** M0 (Projektgeruest). Die Seite zeigt nur einen Platzhalter.
+**Status:** M4 (Kampagne Welt 1 mit 30 Leveln, Tageslevel, Endlos, Level-Editor, Teilen per Link).
 
 ## Entwicklung
 

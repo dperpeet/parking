@@ -447,3 +447,60 @@
 .loading-layer .btn {
   min-width: 200px;
 }
+
+/* Eigene Level und Einstieg in den Editor */
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-editor {
+  min-height: 56px;
+  cursor: pointer;
+}
+
+.custom-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.custom-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--t-panel);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 14px;
+}
+
+.custom-title {
+  display: flex;
+  flex: 1 1 140px;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+
+.custom-tag {
+  font-size: 13px;
+  color: var(--t-sub);
+}
+
+.custom-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font-size: 16px;
+  font-weight: 800;
+  background: var(--t-slot-bg);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 12px;
+}

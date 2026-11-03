@@ -29,14 +29,51 @@ function boot(): void {
   let current: { dispose(): void } | null = null;
   const router: Router = createRouter(window, (route) => show(route));
 
+  // Code des Levels, das der Editor gerade im Spiel testet; "Zurueck" fuehrt dann in den Editor.
+  let editorReturn: string | null = null;
+  // Zaehler gegen veraltete lazy Imports, falls die Route vor dem Laden wechselt.
+  let showId = 0;
+
   const show = (route: Route): void => {
     current?.dispose();
     current = null;
-    if (route.name === 'select' || route.name === 'editor') {
-      // 'editor': Platzhalter bis zum Level-Editor (Paket F2).
+    showId += 1;
+    if (!(route.name === 'shared' && route.code === editorReturn)) editorReturn = null;
+    if (route.name === 'select') {
       current = mountSelectScreen(root, { progress, campaign, router, now });
       return;
     }
+    if (route.name === 'editor') {
+      const id = showId;
+      // Editor als eigener Chunk, damit das Initial-Bundle klein bleibt.
+      void Promise.all([import('./editor-screen'), import('./editor-rulesets')])
+        .then(([screen, sets]) => {
+          if (id !== showId) return;
+          current = screen.mountEditorScreen(root, {
+            progress,
+            solver,
+            router,
+            rulesets: sets.loadRulesets(),
+            code: route.code,
+            testPlay: (code) => {
+              editorReturn = code;
+              router.navigate({ name: 'shared', code });
+            },
+          });
+        })
+        .catch(() => {
+          // Chunk nicht ladbar (z. B. offline ohne Cache): zurueck zur Levelauswahl.
+          if (id === showId) current = mountSelectScreen(root, { progress, campaign, router, now });
+        });
+      return;
+    }
+    const leave = (): void => {
+      if (route.name === 'shared' && editorReturn === route.code) {
+        router.navigate({ name: 'editor', code: route.code });
+      } else {
+        router.navigate({ name: 'select' });
+      }
+    };
     const session = new GameSession(
       {
         engine,
@@ -45,12 +82,12 @@ function boot(): void {
         campaign,
         now,
         syncRoute: (r) => router.replace(r),
-        exit: () => router.navigate({ name: 'select' }),
+        exit: leave,
       },
       route,
     );
     current = mountGameScreen(root, session, {
-      back: () => router.navigate({ name: 'select' }),
+      back: leave,
       retry: () => show(route),
     });
   };

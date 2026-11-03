@@ -1,0 +1,255 @@
+/* Level-Editor: nur Tokens aus theme-vars (--t-*, --c-<id>-*). Tippziele >= 44 px. */
+.editor {
+  --ed-tap: 44px;
+}
+
+.ed-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+}
+
+.ed-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ed-heading {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ed-status {
+  margin: 0;
+  min-height: var(--ed-tap);
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 17px;
+  background: var(--t-panel);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: var(--t-panel-radius);
+  box-shadow: var(--t-shadow) var(--t-shadow) 0 var(--t-outline);
+}
+
+.ed-status[data-tone='ok'] {
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
+}
+
+.ed-status[data-tone='bad'],
+.ed-status[data-tone='warn'] {
+  border-style: dashed;
+}
+
+.ed-message {
+  margin: 0;
+  min-height: 1.3em;
+  font-size: 15px;
+  color: var(--t-sub);
+}
+
+.ed-board {
+  overflow: auto;
+  padding: 8px;
+  background: var(--t-board);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: var(--t-board-radius);
+}
+
+.ed-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(var(--ed-tap), 1fr));
+  gap: 2px;
+}
+
+.ed-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: var(--ed-tap);
+  min-height: var(--ed-tap);
+  padding: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink, var(--t-ink));
+  background: var(--fill, var(--t-slot-bg));
+  border: 2px solid var(--t-outline);
+  border-radius: 8px;
+}
+
+.ed-cell-empty {
+  opacity: 0.85;
+}
+
+.ed-cell-fixed {
+  background: var(--t-ink);
+  color: var(--t-panel);
+}
+
+.ed-head-cell {
+  border-width: var(--t-outline-w);
+}
+
+.ed-cell.ed-selected {
+  outline: 4px solid var(--t-accent);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px var(--t-ink);
+  z-index: 1;
+}
+
+.ed-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: 12px;
+}
+
+.ed-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--t-panel);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: var(--t-panel-radius);
+  box-shadow: var(--t-shadow) var(--t-shadow) 0 var(--t-outline);
+}
+
+.ed-h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.ed-hint {
+  margin: 0;
+  font-size: 15px;
+  color: var(--t-sub);
+}
+
+.ed-row,
+.ed-choices,
+.ed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-btn {
+  min-width: var(--ed-tap);
+  min-height: var(--ed-tap);
+  padding: 4px 14px;
+  font-size: 17px;
+  font-weight: 800;
+  background: var(--fill, var(--t-panel));
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 var(--t-outline);
+}
+
+.ed-btn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.ed-btn[aria-pressed='true'] {
+  background: var(--fill, var(--t-accent));
+  outline: 3px solid var(--t-ink);
+  outline-offset: 1px;
+  transform: translate(1px, 1px);
+}
+
+.ed-primary {
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
+}
+
+.ed-danger {
+  background: var(--t-star-off);
+}
+
+.ed-actions .ed-btn {
+  flex: 1 1 auto;
+}
+
+.ed-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-label {
+  flex: 1;
+  font-size: 16px;
+}
+
+.ed-step {
+  padding: 0;
+  font-size: 24px;
+}
+
+.ed-value {
+  min-width: 2ch;
+  text-align: center;
+  font-size: 20px;
+}
+
+.ed-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 16px;
+}
+
+.ed-input {
+  min-height: var(--ed-tap);
+  padding: 4px 10px;
+  font: inherit;
+  color: var(--t-ink);
+  background: var(--t-slot-bg);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 12px;
+}
+
+.ed-pax {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ed-chip {
+  width: var(--ed-tap);
+  height: var(--ed-tap);
+  padding: 0;
+  font-size: 18px;
+  color: var(--ink, var(--t-ink));
+  background: var(--fill, var(--t-panel));
+  border: 2px solid var(--t-outline);
+  border-radius: 10px;
+}
+
+.ed-chip[aria-pressed='true'] {
+  outline: 4px solid var(--t-accent);
+  box-shadow: 0 0 0 3px var(--t-ink);
+}
+
+.ed-share {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

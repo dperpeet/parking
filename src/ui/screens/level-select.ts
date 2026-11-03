@@ -27,6 +27,14 @@ export interface LevelSelectModel {
   tiles: TileModel[];
   /** false: Speicher nicht verfuegbar, Hinweis anzeigen. */
   persistent: boolean;
+  /** Eigene Level aus dem Editor (optional, Standard: keine). */
+  customLevels?: CustomLevelModel[];
+}
+
+export interface CustomLevelModel {
+  id: string;
+  title: string;
+  verified: boolean;
 }
 
 export interface LevelSelectHandlers {
@@ -36,6 +44,10 @@ export interface LevelSelectHandlers {
   onSettings(): void;
   onHold(enabled: boolean): void;
   onHoldStage(stage: number): void;
+  onEditor?(): void;
+  onCustomPlay?(id: string): void;
+  onCustomEdit?(id: string): void;
+  onCustomDelete?(id: string): void;
 }
 
 export interface LevelSelectView {
@@ -50,6 +62,12 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
   const inner = h('div', { class: 'select-inner' });
   const el = h('main', { class: 'screen select', 'data-testid': 'level-select' }, inner);
   let noticeDismissed = false;
+  /** Eigenes Level, dessen Loeschen gerade bestaetigt werden soll. */
+  let pendingDelete: string | null = null;
+  let lastModel: LevelSelectModel | null = null;
+  const rerender = (): void => {
+    if (lastModel) view.update(lastModel);
+  };
 
   const button = (
     cls: string,
@@ -187,6 +205,76 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
       ),
     );
 
+  const customList = (m: LevelSelectModel): HTMLElement => {
+    const list = m.customLevels ?? [];
+    const editor = button(
+      'card card-editor',
+      'editor',
+      () => handlers.onEditor?.(),
+      h('span', { class: 'card-title' }, t('editorTitle')),
+      h('span', { class: 'card-sub' }, t('editorOpenSub')),
+    );
+    editor.setAttribute('data-testid', 'card-editor');
+    const rows = h('ul', { class: 'custom-list', 'data-testid': 'custom-list' });
+    for (const c of list) {
+      const row = h('li', { class: 'custom-row', 'data-testid': `custom-${c.id}` });
+      // Titel stammt aus Nutzereingaben/Share-Codes: nur als Text einfuegen.
+      const name = h(
+        'span',
+        { class: 'custom-title' },
+        c.title || t('edDefaultTitle'),
+        h(
+          'span',
+          { class: 'custom-tag' },
+          c.verified ? t('customVerified') : t('customUnverified'),
+        ),
+      );
+      const act = (fid: string, label: string, fn: () => void): HTMLButtonElement =>
+        button('custom-btn', `${fid}-${c.id}`, fn, label);
+      if (pendingDelete === c.id) {
+        const yes = act('del-yes', t('customDelete'), () => {
+          pendingDelete = null;
+          handlers.onCustomDelete?.(c.id);
+        });
+        yes.setAttribute('data-testid', `custom-delete-yes-${c.id}`);
+        const no = act('del-no', t('cancel'), () => {
+          pendingDelete = null;
+          rerender();
+          el.querySelector<HTMLElement>(`[data-fid="del-${c.id}"]`)?.focus();
+        });
+        row.append(
+          h(
+            'span',
+            { class: 'custom-title', role: 'alert' },
+            t('customDeleteAsk', { title: c.title || t('edDefaultTitle') }),
+          ),
+          yes,
+          no,
+        );
+      } else {
+        const play = act('play', t('customPlay'), () => handlers.onCustomPlay?.(c.id));
+        play.setAttribute('data-testid', `custom-play-${c.id}`);
+        const edit = act('edit', t('customEdit'), () => handlers.onCustomEdit?.(c.id));
+        edit.setAttribute('data-testid', `custom-edit-${c.id}`);
+        const del = act('del', t('customDelete'), () => {
+          pendingDelete = c.id;
+          rerender();
+          el.querySelector<HTMLElement>(`[data-fid="del-no-${c.id}"]`)?.focus();
+        });
+        del.setAttribute('data-testid', `custom-delete-${c.id}`);
+        row.append(name, play, edit, del);
+      }
+      rows.append(row);
+    }
+    return h(
+      'section',
+      { class: 'custom' },
+      editor,
+      h('h2', { class: 'world-title' }, t('customHeading')),
+      list.length === 0 ? h('p', { class: 'hold-text' }, t('customEmpty')) : rows,
+    );
+  };
+
   const notice = (): HTMLElement => {
     const close = h(
       'button',
@@ -206,17 +294,19 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
     return box;
   };
 
-  return {
+  const view: LevelSelectView = {
     el,
     update(m) {
+      lastModel = m;
       const fid =
         document.activeElement instanceof HTMLElement ? document.activeElement.dataset.fid : null;
       const top = el.scrollTop;
-      inner.replaceChildren(header(), modeCards(m), holdCard(m), world(m), teaser());
+      inner.replaceChildren(header(), modeCards(m), holdCard(m), world(m), customList(m), teaser());
       el.querySelector('.notice')?.remove();
       if (!m.persistent && !noticeDismissed) el.append(notice());
       el.scrollTop = top;
       if (fid) el.querySelector<HTMLElement>(`[data-fid="${fid}"]`)?.focus();
     },
   };
+  return view;
 }
