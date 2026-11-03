@@ -300,10 +300,13 @@ export class BoardView implements BoardAnimator {
     const cy = r.y + r.h / 2;
     g.circle(cx + THEME.shadowOffset, cy + THEME.shadowOffset, c * POST_RADIUS).fill(THEME.outline);
     g.circle(cx, cy, c * POST_RADIUS)
-      .fill(THEME.accent)
+      .fill(THEME.bollardCap)
       .stroke({ width: THEME.outlineWidth, color: THEME.outline });
-    g.circle(cx, cy, c * POST_RING).stroke({ width: c * POST_RING_WIDTH, color: THEME.panel });
-    g.circle(cx, cy, c * POST_CORE).fill(THEME.outline);
+    g.circle(cx, cy, c * POST_RING).stroke({
+      width: c * POST_RING_WIDTH,
+      color: THEME.bollardRing,
+    });
+    g.circle(cx, cy, c * POST_CORE).fill(THEME.bollardCore);
   }
 
   private drawBoard(l: BoardLayout): Graphics {
