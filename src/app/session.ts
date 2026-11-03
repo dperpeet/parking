@@ -11,6 +11,7 @@ import { HintTracker, displayStars } from './hints';
 import type { Campaign, CampaignLevel } from './levels';
 import { Progress, localDateKey } from './progress';
 import type { PlayRoute, Route } from './router';
+import type { DailyShareData } from './daily-share';
 import { dailySeed, endlessSeed, hashString, similarSeed } from './seed';
 import { makeSimilarLevel } from './similar-level';
 import type { SolverPort } from './solver-port';
@@ -412,6 +413,18 @@ export class GameSession {
           level: t('titleEndlessLevel', { n: mode.run.number }),
         };
     }
+  }
+
+  /** Daten fuer "Ergebnis teilen": nur nach einem Sieg im Tageslevel. */
+  dailyShare(state: GameState): DailyShareData | null {
+    const mode = this.mode;
+    if (mode?.kind !== 'daily' || state.status !== 'won') return null;
+    return {
+      date: mode.date,
+      stars: displayStars(state.stars, this.hints.used()),
+      moves: state.moves,
+      streak: this.deps.progress.currentStreak(mode.date),
+    };
   }
 
   dialogInfo(state: GameState): SessionDialogInfo {

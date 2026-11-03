@@ -130,6 +130,17 @@ const de = {
   resetDo: 'Zurücksetzen',
   cancel: 'Abbrechen',
   close: 'Schließen',
+  importChoose: 'Wie soll die Datei eingespielt werden?',
+  importMerge: 'Zusammenführen',
+  importReplace: 'Ersetzen',
+  importReplaceWarn:
+    'Achtung: „Ersetzen“ überschreibt deinen aktuellen Fortschritt. Er geht verloren.',
+  shareResult: 'Ergebnis teilen',
+  shareCopied: 'Kopiert',
+  shareManual: 'Zum Kopieren markieren:',
+  shareDaily: 'ParKing {date}: {stars} in {n} Zügen',
+  shareDaily_one: 'ParKing {date}: {stars} in 1 Zug',
+  shareStreak: 'Serie {streak}',
 } as const;
 
 export type StringKey = keyof typeof de;
@@ -250,6 +261,16 @@ const en: Record<StringKey, string> = {
   resetDo: 'Reset',
   cancel: 'Cancel',
   close: 'Close',
+  importChoose: 'How should the file be imported?',
+  importMerge: 'Merge',
+  importReplace: 'Replace',
+  importReplaceWarn: 'Warning: "Replace" overwrites your current progress. It will be lost.',
+  shareResult: 'Share result',
+  shareCopied: 'Copied',
+  shareManual: 'Select to copy:',
+  shareDaily: 'ParKing {date}: {stars} in {n} moves',
+  shareDaily_one: 'ParKing {date}: {stars} in 1 move',
+  shareStreak: 'streak {streak}',
 };
 
 const DICTS: Record<Lang, Record<StringKey, string>> = { de, en };

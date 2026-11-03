@@ -413,6 +413,16 @@
   text-align: center;
 }
 
+.set-warn {
+  margin: 0;
+  padding: 8px 12px 4px;
+  font-size: 16px;
+  text-align: center;
+  background: var(--t-slot-bg);
+  border: var(--t-outline-w) solid var(--t-outline);
+  border-radius: 12px;
+}
+
 /* Laden / Fehler im Spiel */
 .loading-layer {
   position: absolute;

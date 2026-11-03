@@ -64,10 +64,12 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
             applyMotion(motion);
           },
           onExport: () => downloadJson(EXPORT_FILE, JSON.stringify(progress.get(), null, 2)),
-          onImport: (text) => {
+          validateImport: (text) => parseImport(text) !== null,
+          onImport: (text, mode) => {
             const incoming = parseImport(text);
             if (!incoming) return false;
-            progress.merge(incoming);
+            if (mode === 'replace') progress.replace(incoming);
+            else progress.merge(incoming);
             return true;
           },
           onReset: () => progress.reset(),
