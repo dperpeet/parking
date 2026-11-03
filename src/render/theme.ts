@@ -46,4 +46,10 @@ export const THEME = {
   star: '#FFB703',
   starOff: '#EFE6CC',
   overlay: 'rgba(26,26,26,0.5)',
+  /** Abdunklung gesperrter Fahrzeuge (liegt ueber der Fahrzeugflaeche). */
+  lockDim: 'rgba(26,26,26,0.3)',
+  /** Poller von oben: Kappe, Reflexring, Kern. */
+  bollardCap: '#FF5A5F',
+  bollardRing: '#FFFFFF',
+  bollardCore: '#1A1A1A',
 } as const;

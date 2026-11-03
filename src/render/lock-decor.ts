@@ -4,8 +4,6 @@ import type { Dir } from '../schema';
 import { dashSegments } from './direction';
 import { THEME } from './theme';
 
-/** Abdunklung des gesperrten Fahrzeugs (Deckkraft der Konturfarbe). */
-const DIM_ALPHA = 0.3;
 /** Gestrichelter Innenrahmen: Abstand zum Rand, Strichperiode (Anteil Zelle), Strichanteil, Staerke. */
 const DASH_INSET = 6;
 const DASH_PERIOD = 0.2;
@@ -145,7 +143,7 @@ export class LockDecor extends Container {
     this.lockNumber = numbered ? lock : null;
     if (lock !== null) {
       const dim = new Graphics();
-      dim.roundRect(0, 0, w, h, spec.radius).fill({ color: THEME.outline, alpha: DIM_ALPHA });
+      dim.roundRect(0, 0, w, h, spec.radius).fill(THEME.lockDim);
       const period = cell * DASH_PERIOD;
       const i = DASH_INSET;
       const corners: Array<[number, number]> = [
