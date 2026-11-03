@@ -1,5 +1,6 @@
 // Spielbildschirm: Shell + HUD + Pixi-Brett, verbunden mit einer GameSession.
 import { t } from '../i18n';
+import type { StringKey } from '../i18n';
 import type { GameState } from '../engine/types';
 import { BoardView, EventPlayer, createPixiApp } from '../render';
 import type { PixiHandle } from '../render';
@@ -9,11 +10,27 @@ import type { Hud } from '../ui';
 import { hintAnnouncement } from '../ui/strings';
 import { browserShareEnv, buildDailyShareText, pageUrl, shareText } from './daily-share';
 import { HINT_DISPLAY_MS } from './hints';
-import type { GameSession } from './session';
+import type { GameSession, SharedError } from './session';
 
 /** Wie lange die Schrift hoechstens geladen wird, bevor das Spiel startet. */
 const FONT_WAIT_MS = 1500;
 const TOAST_MS = 3000;
+/** Der Hinweis auf ein ungeprueftes Level bleibt etwas laenger stehen. */
+const NOTICE_MS = 6000;
+
+/** Fehlertext je Fehlergruppe eines geteilten Levels. */
+const SHARE_ERROR_TEXT: Record<SharedError, StringKey> = {
+  empty: 'shareErrBroken',
+  encoding: 'shareErrBroken',
+  inflate: 'shareErrBroken',
+  json: 'shareErrBroken',
+  tooLong: 'shareErrTooLong',
+  version: 'shareErrVersion',
+  schema: 'shareErrInvalid',
+  unknownRuleset: 'shareErrInvalid',
+  invalidLevel: 'shareErrInvalid',
+  unsolvable: 'shareErrUnsolvable',
+};
 
 let fontReady: Promise<void> | null = null;
 function loadFont(): Promise<void> {
@@ -72,6 +89,7 @@ export function mountGameScreen(
     shell.wrap.append(layer);
   };
   const showError = (): void => {
+    const reason = session.errorReason();
     const retry = el('button', 'btn btn-primary', t('retry'));
     retry.setAttribute('type', 'button');
     retry.setAttribute('data-testid', 'retry');
@@ -80,16 +98,23 @@ export function mountGameScreen(
     back.setAttribute('type', 'button');
     back.addEventListener('click', opts.back);
     layer.removeAttribute('role');
-    layer.replaceChildren(el('p', '', t('loadFailed')), retry, back);
+    if (reason) {
+      // Ein geteiltes Level wird beim Wiederholen nicht besser: nur Text und Rueckweg.
+      const message = el('p', '', t(SHARE_ERROR_TEXT[reason]));
+      message.setAttribute('data-testid', 'share-error');
+      layer.replaceChildren(message, back);
+    } else {
+      layer.replaceChildren(el('p', '', t('loadFailed')), retry, back);
+    }
     shell.wrap.append(layer);
   };
 
-  const toast = (text: string): void => {
+  const toast = (text: string, ms = TOAST_MS): void => {
     shell.boardWrap.querySelector('.toast')?.remove();
     const node = el('div', 'toast panel', text);
     shell.boardWrap.append(node);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => node.remove(), TOAST_MS);
+    toastTimer = setTimeout(() => node.remove(), ms);
   };
 
   const clearHint = (): void => {
@@ -192,6 +217,11 @@ export function mountGameScreen(
     });
     controller.start();
     layer.remove();
+    const shared = session.sharedInfo();
+    if (shared && (shared.unchecked || shared.truncated)) {
+      hud.announce(t('sharedUnchecked'));
+      toast(t('sharedUnchecked'), NOTICE_MS);
+    }
   };
 
   showLoading();

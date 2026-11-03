@@ -22,8 +22,8 @@ export interface Campaign {
   /** Naechstes Level in Pack-Reihenfolge. */
   after(entry: CampaignLevel): CampaignLevel | undefined;
   rulesFor(level: Level): ResolvedRules;
-  /** Regeln eines Rulesets ohne Overrides (fuer generierte Level). */
-  rulesOf(rulesetId: string): ResolvedRules;
+  /** Regeln eines Rulesets, optional mit Overrides (generierte/geteilte Level). Wirft bei unbekanntem Ruleset. */
+  rulesOf(rulesetId: string, overrides?: Level['overrides']): ResolvedRules;
 }
 
 type Modules = Record<string, unknown>;
@@ -96,7 +96,7 @@ export function buildCampaign(
       return next && next.pack === entry.pack ? next : undefined;
     },
     rulesFor,
-    rulesOf: (id) => rulesOf(id),
+    rulesOf,
   };
 }
 

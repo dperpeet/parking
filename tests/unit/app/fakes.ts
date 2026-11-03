@@ -29,7 +29,11 @@ export class FakeSolver implements SolverPort {
 
   analyzeCalls = 0;
   /** Standard: echte Analyse im selben Thread. */
-  async analyze(level: Level, rules: ResolvedRules, opts?: AnalyzeOptions): Promise<LevelAnalysis> {
+  async analyze(
+    level: Level,
+    rules: ResolvedRules,
+    opts?: AnalyzeOptions & { signal?: AbortSignal },
+  ): Promise<LevelAnalysis> {
     this.analyzeCalls += 1;
     return analyze(level, rules, opts);
   }
