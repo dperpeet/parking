@@ -1,4 +1,4 @@
-// Solver-Typen (gehoeren dem Solver-Paket).
+// Solver-Typen (siehe docs/INTERFACES.md).
 import type { GameState } from '../engine';
 import type { Level, ResolvedRules } from '../schema';
 

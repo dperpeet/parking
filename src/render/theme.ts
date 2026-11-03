@@ -1,4 +1,4 @@
-// Visueller Vertrag (ADR 0001: Comic-Stil). Aenderungen nur durch den Orchestrator.
+// Visueller Vertrag (ADR 0001: Comic-Stil), siehe docs/INTERFACES.md.
 
 /** Darstellung je Farb-ID: Fuellfarbe, Kontrastfarbe fuer Symbol/Text, Symbol (Farbenblind-Unterstuetzung). */
 export interface ColorStyle {
@@ -23,7 +23,7 @@ export const PALETTE: Record<string, ColorStyle> = {
   gray: { fill: '#8D99AE', ink: '#1A1A1A', glyph: '✱', nameDe: 'Grau', nameEn: 'gray' },
 };
 
-/** Comic-Theme-Tokens, uebernommen aus den Mockups (Reihe C). */
+/** Comic-Theme-Tokens. */
 export const THEME = {
   font: "'Baloo 2', system-ui, sans-serif",
   bg: '#FFE7A0',

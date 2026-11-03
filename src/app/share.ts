@@ -1,5 +1,5 @@
 // Teilen per URL-Fragment: Level <-> Share-Code ("1.<base64url(deflate(JSON(ShareLevel)))>").
-// Vertrag siehe docs/INTERFACES.md ("Teilen per URL"). Implementierung: Paket F1.
+// Vertrag siehe docs/INTERFACES.md ("Teilen per URL").
 import { deflateSync, inflateSync } from 'fflate';
 import { validateLevel } from '../engine';
 import {
