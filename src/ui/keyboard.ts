@@ -2,6 +2,10 @@ export interface KeyboardActions {
   moveFocus(dx: number, dy: number): void;
   undo(): void;
   restart(): void;
+  /** Taste H: Hupen-Zielmodus umschalten. */
+  honk(): void;
+  /** Esc: Zielmodus abbrechen; true, wenn die Taste verbraucht wurde. */
+  cancel(): boolean;
   isDialogOpen(): boolean;
 }
 
@@ -12,7 +16,7 @@ const ARROWS: Record<string, readonly [number, number]> = {
   ArrowRight: [1, 0],
 };
 
-/** Pfeile bewegen den Fokus ueber die Fahrzeuge, U = Undo, R = Neustart. Enter/Space tippen nativ per Button. */
+/** Pfeile bewegen den Fokus ueber die Fahrzeuge, U = Undo, R = Neustart, H = Hupen-Zielmodus, Esc = abbrechen. Enter/Space tippen nativ per Button. */
 export function bindKeyboard(actions: KeyboardActions): () => void {
   const onKey = (e: KeyboardEvent): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -23,10 +27,18 @@ export function bindKeyboard(actions: KeyboardActions): () => void {
       actions.moveFocus(arrow[0], arrow[1]);
       return;
     }
+    if (e.key === 'Escape') {
+      if (!actions.isDialogOpen() && actions.cancel()) e.preventDefault();
+      return;
+    }
     const key = e.key.toLowerCase();
     if (key === 'u') {
       e.preventDefault();
       actions.undo();
+    } else if (key === 'h') {
+      if (actions.isDialogOpen()) return;
+      e.preventDefault();
+      actions.honk();
     } else if (key === 'r') {
       e.preventDefault();
       actions.restart();

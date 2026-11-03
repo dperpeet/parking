@@ -140,7 +140,7 @@ Die Schnittstellen zwischen den Schichten sind in [INTERFACES.md](INTERFACES.md)
 
 - Tests: `tests/unit` (Engine, Solver, App, Renderer), `tests/content` (Schemas, Level gültig und lösbar), `tests/e2e` (Playwright).
 - CI (`.github/workflows/ci.yml`, für Pull Requests und `main`): `lint` (ESLint und Prettier), `typecheck`, `test` (Vitest), danach `build` und `e2e`.
-- Barrierefreiheit: Farbsymbole, Tastaturbedienung (Pfeiltasten, U für Undo, R für Neustart), `aria-live`-Meldungen, `prefers-reduced-motion` mit Schalter in den Einstellungen.
+- Barrierefreiheit: Farbsymbole, Tastaturbedienung (Pfeiltasten, U für Undo, R für Neustart, H für den Hupen-Zielmodus, Esc bricht ihn ab), `aria-live`-Meldungen, `prefers-reduced-motion` mit Schalter in den Einstellungen.
 - Sprachen: Deutsch und Englisch, Auswahl automatisch oder manuell.
 
 ## Deployment

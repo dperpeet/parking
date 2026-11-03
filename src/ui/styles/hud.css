@@ -260,8 +260,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: min(56px, 100%);
+  aspect-ratio: 1;
   background: var(--t-panel);
   border: var(--t-outline-w) solid var(--t-outline);
   border-radius: 18px;
@@ -312,8 +312,37 @@
   }
 }
 
+/* Hupe: Knopf nur bei aktivem Ruleset, im Zielmodus gedrueckt; als Tipp pulsiert er wie das Fahrzeug */
+.pu-btn[hidden] {
+  display: none;
+}
+
+.pu-btn[aria-pressed='true'] .pu-icon {
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--t-outline);
+}
+
+.pu-btn[data-hint] .pu-icon {
+  box-shadow:
+    0 0 0 4px var(--t-accent),
+    0 0 0 7px var(--t-outline);
+  animation: hint-pulse 650ms ease-in-out infinite alternate;
+}
+
+.vehicle-layer[data-honk-mode] .vehicle-btn {
+  outline: 3px dashed var(--t-accent);
+  outline-offset: 2px;
+}
+
+.honk-hint:empty {
+  display: none;
+}
+
 /* Kurzmeldung (Tipp): haengt am oberen Brettrand und ragt nach oben in die Luecke zu den Halteplaetzen, nie ins Brett */
-.toast {
+.toast,
+.honk-hint {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);

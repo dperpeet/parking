@@ -46,6 +46,14 @@ export function colorDefinite(colorId: string): string {
   return n.endsWith('a') || n.endsWith('e') ? n : `${n}e`;
 }
 
+/** Wie colorDefinite, aber Dativ (de): "mit dem blauen Fahrzeug". Lila bleibt, Orange -> "orangen". */
+export function colorDative(colorId: string): string {
+  if (getLanguage() !== 'de') return colorName(colorId).toLowerCase();
+  const n = (PALETTE[colorId]?.nameDe ?? colorId).toLowerCase();
+  if (n.endsWith('a')) return n;
+  return n.endsWith('e') ? `${n}n` : `${n}en`;
+}
+
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 function vehicleNoun(colorId: string): string {
@@ -86,9 +94,24 @@ export function vehicleLabel(
   return parts.join(', ');
 }
 
-/** Ansage fuer den Tipp. */
-export function hintAnnouncement(color: string): string {
+/** Ansage fuer den Tipp; bei `honk` soll mit dem Fahrzeug gehupt statt es angetippt werden. */
+export function hintAnnouncement(color: string, action: 'tap' | 'honk' = 'tap'): string {
+  if (action === 'honk') return t('hintHonk', { color: colorDative(color) });
   return t('hintVehicle', { color: colorDefinite(color) });
+}
+
+const HONK_ERROR_KEYS: Record<string, StringKey> = {
+  notBlocked: 'honkErrNotBlocked',
+  blockedByBollard: 'honkErrBollard',
+  blockerLocked: 'honkErrBlockerLocked',
+  cannotYield: 'honkErrCannotYield',
+  noTarget: 'honkErrNoTarget',
+};
+
+/** Verstaendliche Meldung zu einem abgelehnten Hupen (null: kein Hupen-Grund). */
+export function honkErrorText(reason: string): string | null {
+  const key = HONK_ERROR_KEYS[reason];
+  return key ? t(key) : null;
 }
 
 /** Ansagetext fuer ein Event (oder null, wenn es nichts anzusagen gibt). */
@@ -125,9 +148,13 @@ export function announce(event: GameEvent, state: GameState): string | null {
       return t('annWon', { stars: event.stars, moves: event.moves });
     case 'lost':
       return loseTitle(event.reason);
+    case 'vehicleYielded': {
+      const color = state.vehicles.find((o) => o.id === event.vehicleId)?.color;
+      return color ? t('annYielded', { color: colorDefinite(color) }) : null;
+    }
     case 'invalidAction':
+      return honkErrorText(event.reason);
     case 'powerUpUsed':
-    case 'vehicleYielded':
     case 'slotShifted':
       return null;
   }
