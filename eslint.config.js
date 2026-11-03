@@ -17,7 +17,9 @@ const forbiddenFromCore = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules'] },
+  {
+    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules', '.claude'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
