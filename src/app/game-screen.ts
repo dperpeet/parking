@@ -263,6 +263,7 @@ export function mountGameScreen(
       intro?.close();
       session.dispose();
       shell.dispose();
+      board?.dispose();
       pixi?.destroy();
       root.replaceChildren();
     },

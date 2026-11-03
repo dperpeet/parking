@@ -41,9 +41,12 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
 
   const resizeCallbacks: Array<() => void> = [];
   let active = 0;
+  // Timer und Promises aus dem Brett koennen nach destroy() noch feuern; dann wird nichts mehr gezeichnet.
+  let destroyed = false;
   const ticker = app.ticker;
   const scheduler = {
     add: (fn: (t: { deltaMS: number }) => void): void => {
+      if (destroyed) return;
       ticker.add(fn);
       active += 1;
       if (!document.hidden) ticker.start();
@@ -51,7 +54,7 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
     remove: (fn: (t: { deltaMS: number }) => void): void => {
       ticker.remove(fn);
       active = Math.max(0, active - 1);
-      if (active === 0) {
+      if (active === 0 && !destroyed) {
         ticker.stop();
         app.render();
       }
@@ -59,6 +62,7 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
   };
 
   const resize = (): void => {
+    if (destroyed) return;
     const { width, height } = dims();
     app.renderer.resize(width, height, dpr());
     resizeCallbacks.forEach((cb) => cb());
@@ -67,6 +71,7 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
   const ro = new ResizeObserver(resize);
   ro.observe(host);
   const onVisibility = (): void => {
+    if (destroyed) return;
     if (document.hidden) ticker.stop();
     else if (active > 0) ticker.start();
     else app.render();
@@ -78,12 +83,13 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
     stage: app.stage,
     tweener: new Tweener(scheduler, prefersReducedMotion),
     requestRender: () => {
-      if (!ticker.started) app.render();
+      if (!destroyed && !ticker.started) app.render();
     },
     size: dims,
     resize,
     onResize: (cb) => resizeCallbacks.push(cb),
     destroy: () => {
+      destroyed = true;
       ro.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       app.destroy(true, { children: true });
