@@ -5,52 +5,89 @@
     "de": "Level 2",
     "en": "Level 2"
   },
+  "seed": 1662123914,
   "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
   "grid": {
     "width": 5,
     "height": 5,
-    "cells": []
+    "cells": [
+      {
+        "x": 3,
+        "y": 0,
+        "type": "fixed"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "type": "fixed"
+      }
+    ]
   },
   "vehicles": [
     {
       "id": "v1",
-      "pos": [0, 0],
+      "pos": [0, 3],
       "dir": "W",
       "type": "s",
       "color": "blue"
     },
     {
       "id": "v2",
-      "pos": [4, 0],
-      "dir": "N",
+      "pos": [3, 1],
+      "dir": "E",
       "type": "s",
       "color": "orange"
     },
     {
       "id": "v3",
       "pos": [2, 2],
-      "dir": "S",
+      "dir": "N",
       "type": "s",
-      "color": "blue",
-      "locked": true,
-      "keyId": "v2"
+      "color": "green"
     },
     {
       "id": "v4",
-      "pos": [0, 4],
+      "pos": [0, 0],
       "dir": "W",
-      "type": "m",
-      "color": "orange"
+      "type": "s",
+      "color": "blue"
     },
     {
       "id": "v5",
-      "pos": [4, 3],
-      "dir": "E",
+      "pos": [1, 1],
+      "dir": "N",
       "type": "s",
-      "color": "blue"
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
     }
   ],
   "passengers": [
+    "green",
+    "green",
+    "blue",
+    "blue",
+    "orange",
     "orange",
     "orange",
     "blue",
@@ -59,16 +96,14 @@
     "orange",
     "orange",
     "orange",
-    "blue",
-    "blue",
-    "blue",
-    "blue"
+    "orange"
   ],
   "meta": {
-    "author": "placeholder",
+    "author": "generator",
     "par": {
-      "moves": 5
+      "moves": 7
     },
-    "difficulty": 1.4
+    "difficulty": 4.1,
+    "solverVersion": "1.0"
   }
 }

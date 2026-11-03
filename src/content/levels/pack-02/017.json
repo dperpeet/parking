@@ -1,0 +1,141 @@
+{
+  "schema": "parking.level/1",
+  "id": "w2-17",
+  "title": {
+    "de": "Level 17",
+    "en": "Level 17"
+  },
+  "seed": 4158244368,
+  "ruleset": "world2",
+  "overrides": {
+    "queue": {
+      "slots": 4
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 5,
+        "y": 5,
+        "type": "fixed"
+      },
+      {
+        "x": 1,
+        "y": 4,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [3, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v4",
+      "pos": [2, 5],
+      "dir": "S",
+      "type": "l",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 1],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v6",
+      "pos": [5, 0],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "green",
+      "locked": true,
+      "keyId": "v4"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v6"
+    },
+    {
+      "id": "v9",
+      "pos": [5, 2],
+      "dir": "N",
+      "type": "m",
+      "color": "yellow"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "blue",
+    "yellow",
+    "blue",
+    "yellow",
+    "yellow",
+    "yellow"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 9
+    },
+    "difficulty": 5.7,
+    "solverVersion": "1.0"
+  }
+}
