@@ -40,7 +40,6 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Qualitäts-Gates
 
-- Bundle-Budget (Initial-JS höchstens 250 kB gzip): derzeit nicht in der CI.
 - Coverage-Schwelle für die Engine (mindestens 90 %): derzeit nicht in der CI.
 
 ## Release v1.0.0

@@ -2,6 +2,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Dir } from '../schema';
 import { dashSegments } from './direction';
+import { NUMBER_WIDTH, layoutBadges } from './lock-layout';
 import { THEME } from './theme';
 
 /** Gestrichelter Innenrahmen: Abstand zum Rand, Strichperiode (Anteil Zelle), Strichanteil, Staerke. */
@@ -12,10 +13,7 @@ const DASH_WIDTH = 2.5;
 /** Marke: Radius als Anteil der Zelle (mindestens in px), Abstand zum Fahrzeugrand, Konturstaerke. */
 const BADGE_RADIUS = 0.23;
 const BADGE_MIN_RADIUS = 11;
-const BADGE_PAD = 3;
 const BADGE_OUTLINE = 2;
-/** Breite der Nummernflaeche rechts neben dem Symbol, in Radien. */
-const NUMBER_WIDTH = 0.9;
 /** Symbolgroesse (Anteil des Markenradius) und Mindeststrichstaerke. */
 const ICON_SIZE = 0.6;
 const ICON_MIN_STROKE = 1.5;
@@ -32,6 +30,8 @@ export interface DecorSpec {
   h: number;
   radius: number;
   cell: number;
+  /** Laenge in Zellen (bestimmt Lage von Symbol und Pfeilen). */
+  length: number;
   dir: Dir;
   /** Nummer des Schlosses (null: Fahrzeug ist nicht gesperrt). */
   lock: number | null;
@@ -42,32 +42,6 @@ export interface DecorSpec {
 }
 
 type Kind = 'lock' | 'key';
-
-/** Hinterer Rand des Fahrzeugs: zwei Ecken, in denen Marken sitzen (Front trägt die Scheinwerfer). */
-function rearCorners(dir: Dir): Array<{ left: boolean; top: boolean }> {
-  switch (dir) {
-    case 'E':
-      return [
-        { left: true, top: true },
-        { left: true, top: false },
-      ];
-    case 'W':
-      return [
-        { left: false, top: true },
-        { left: false, top: false },
-      ];
-    case 'N':
-      return [
-        { left: true, top: false },
-        { left: false, top: false },
-      ];
-    case 'S':
-      return [
-        { left: true, top: true },
-        { left: false, top: true },
-      ];
-  }
-}
 
 function drawLock(g: Graphics, u: number, open: boolean): void {
   const stroke = Math.max(ICON_MIN_STROKE, u * ICON_STROKE);
@@ -139,7 +113,6 @@ export class LockDecor extends Container {
     super();
     const { w, h, cell, lock, key, numbered } = spec;
     const radius = Math.max(BADGE_MIN_RADIUS, cell * BADGE_RADIUS);
-    this.radius = radius;
     this.lockNumber = numbered ? lock : null;
     if (lock !== null) {
       const dim = new Graphics();
@@ -164,31 +137,30 @@ export class LockDecor extends Container {
       this.dim = dim;
       this.addChild(dim);
     }
-    const slots = rearCorners(spec.dir);
-    let slot = 0;
-    const place = (b: Container, badgeWidth: number): void => {
-      const corner = slots[slot++] ?? slots[0];
-      if (!corner) return;
-      const half = badgeWidth / 2;
-      b.position.set(
-        corner.left ? BADGE_PAD + half : w - BADGE_PAD - half,
-        corner.top ? BADGE_PAD + radius : h - BADGE_PAD - radius,
-      );
-      this.addChild(b);
-    };
-    const width = (n: number | null): number =>
-      2 * radius + (n === null ? 0 : radius * NUMBER_WIDTH);
-    if (lock !== null) {
-      const n = numbered ? lock : null;
-      const b = badge('lock', n, radius);
-      place(b, width(n));
-      this.lockBadge = b;
-      this.lockHome = { x: b.x, y: b.y };
-    }
-    if (key !== null) {
-      const n = numbered ? key : null;
-      place(badge('key', n, radius), width(n));
-    }
+    const wanted: Array<{ kind: Kind; n: number | null }> = [];
+    if (lock !== null) wanted.push({ kind: 'lock', n: numbered ? lock : null });
+    if (key !== null) wanted.push({ kind: 'key', n: numbered ? key : null });
+    const fit = layoutBadges({
+      dir: spec.dir,
+      w,
+      h,
+      cell,
+      length: spec.length,
+      radius,
+      numbered: wanted.map((b) => b.n !== null),
+    });
+    this.radius = fit.radius;
+    wanted.forEach((b, i) => {
+      const spot = fit.spots[i];
+      if (!spot) return;
+      const view = badge(b.kind, b.n, fit.radius);
+      view.position.set(spot.x, spot.y);
+      this.addChild(view);
+      if (b.kind === 'lock') {
+        this.lockBadge = view;
+        this.lockHome = { x: spot.x, y: spot.y };
+      }
+    });
   }
 
   /** 0..1: Schloss springt auf, steigt und blendet aus; die Abdunklung verschwindet. */
