@@ -1,38 +1,9 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { encodeLevel } from '../../src/app/share';
-import { Level } from '../../src/schema';
+import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'json' };
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
 
 const SAVE_KEY = 'parking.save.v1';
-
-/** Geteiltes Level (Ruleset world2): v3 ist gesperrt, sein Schluessel ist v2. IDs werden v1..v5. */
-function lockedLevelCode(): string {
-  const car = (pos: [number, number], dir: string, type: string, color: string) => ({
-    pos,
-    dir,
-    type,
-    color,
-  });
-  const level = Level.parse({
-    schema: 'parking.level/1',
-    id: 'e2e-lock',
-    title: 'Schloss',
-    ruleset: 'world2',
-    grid: { width: 5, height: 5, cells: [] },
-    vehicles: [
-      { id: 'v1', ...car([0, 0], 'W', 's', 'blue') },
-      { id: 'v2', ...car([4, 0], 'N', 's', 'orange') },
-      { id: 'v3', ...car([2, 2], 'S', 's', 'blue'), locked: true, keyId: 'v2' },
-      { id: 'v4', ...car([0, 4], 'W', 'm', 'orange') },
-      { id: 'v5', ...car([4, 3], 'E', 's', 'blue') },
-    ],
-    passengers: ['orange', 'orange', 'blue', 'blue'],
-  });
-  const res = encodeLevel(level, { unchecked: true, title: 'Schloss' });
-  if (!res.ok) throw new Error(res.error);
-  return res.code;
-}
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
 function worldOneDone(): string {
@@ -106,11 +77,19 @@ test('Intro ist ueber die Levelauswahl erneut abrufbar', async ({ page }) => {
 });
 
 test('Gesperrtes Fahrzeug ist fuer Screenreader beschriftet', async ({ page }) => {
-  await page.goto(`/#/play?l=${lockedLevelCode()}`);
-  const locked = page.getByTestId('vehicle-v3');
+  // Schloss und Schluessel dynamisch aus dem Level lesen (Level 005 fuehrt die Schluessel ein).
+  const lockedVehicle = level005.vehicles.find((v) => 'locked' in v && v.locked);
+  if (!lockedVehicle || !('keyId' in lockedVehicle)) throw new Error('005 hat kein Schloss');
+  const lockedId = lockedVehicle.id;
+  const keyId = lockedVehicle.keyId as string;
+  const save = JSON.parse(worldOneDone()) as Record<string, unknown>;
+  save.seenIntros = ['bollards', 'keys'];
+  await seedSave(page, JSON.stringify(save));
+  await page.goto('/#/level/02/005');
+  const locked = page.getByTestId(`vehicle-${lockedId}`);
   await expect(locked).toBeVisible();
   await expect(locked).toHaveAccessibleName(/gesperrt/);
-  await expect(page.getByTestId('vehicle-v2')).toHaveAccessibleName(/Schlüssel/);
+  await expect(page.getByTestId(`vehicle-${keyId}`)).toHaveAccessibleName(/Schlüssel/);
   await expect(page.getByTestId('intro-dialog')).toHaveCount(0);
   await locked.click();
   await expect(page.getByTestId('live')).toContainText('gesperrt');
