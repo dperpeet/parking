@@ -53,9 +53,19 @@ export class BoardView implements BoardAnimator {
   private lane: Graphics | null = null;
   private laneToken = 0;
   private marks: LockMarks = computeLockMarks([]);
+  private disposed = false;
 
   constructor(private readonly host: BoardHost) {
     host.stage.addChild(this.root);
+  }
+
+  /** Beendet laufende Hervorhebungen und Vorschauen; ausstehende Timer zeichnen danach nicht mehr. */
+  dispose(): void {
+    this.disposed = true;
+    this.highlightToken += 1;
+    this.laneToken += 1;
+    this.highlighted = null;
+    this.lane = null;
   }
 
   getLayout(): BoardLayout | null {
@@ -107,6 +117,7 @@ export class BoardView implements BoardAnimator {
 
   /** Hebt ein Fahrzeug fuer `durationMs` mit pulsierendem Rahmen hervor (null: sofort entfernen). */
   highlight(vehicleId: string | null, durationMs = 0): void {
+    if (this.disposed) return;
     this.highlightToken += 1;
     const token = this.highlightToken;
     if (this.highlighted) {
@@ -163,6 +174,7 @@ export class BoardView implements BoardAnimator {
 
   /** Markiert die Fahrspur in Blickrichtung bis zum Rand und das blockierende Fahrzeug. */
   previewLane(vehicleId: string, blockerId: string | null): void {
+    if (this.disposed) return;
     const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
     const layout = this.layout;
     if (!veh || !layout) return;
