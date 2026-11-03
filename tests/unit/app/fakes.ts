@@ -5,7 +5,7 @@ import type { Level, ResolvedRules } from '../../../src/schema';
 import { analyze } from '../../../src/solver';
 import type {
   AnalyzeOptions,
-  GeneratorParams,
+  GeneratorOptions,
   HintMove,
   LevelAnalysis,
 } from '../../../src/solver/types';
@@ -13,7 +13,11 @@ import { level } from '../helpers';
 
 export const realEngine: EngineApi = { createGame, step };
 
-export type GenerateCall = { params: GeneratorParams; opts: GenerateOptions | undefined };
+export type GenerateCall = {
+  params: GeneratorOptions;
+  rules: ResolvedRules;
+  opts: GenerateOptions | undefined;
+};
 
 /** Solver-Port ohne Worker: Tipps und Generierung sind frei steuerbar. */
 export class FakeSolver implements SolverPort {
@@ -22,7 +26,7 @@ export class FakeSolver implements SolverPort {
   hintGate: Promise<void> | null = null;
   generateCalls: GenerateCall[] = [];
   /** Standard: liefert Level 007 unter einer eindeutigen Id. */
-  generateImpl: (params: GeneratorParams) => Promise<Level> = (params) =>
+  generateImpl: (params: GeneratorOptions) => Promise<Level> = (params) =>
     Promise.resolve({ ...level, id: params.id ?? 'gen-x', overrides: undefined });
 
   async hint(): Promise<HintMove | null> {
@@ -44,11 +48,11 @@ export class FakeSolver implements SolverPort {
   }
 
   async generate(
-    params: GeneratorParams,
-    _rules: ResolvedRules,
+    params: GeneratorOptions,
+    rules: ResolvedRules,
     opts?: GenerateOptions,
   ): Promise<{ level: Level; matched: boolean }> {
-    this.generateCalls.push({ params, opts });
+    this.generateCalls.push({ params, rules, opts });
     return { level: await this.generateImpl(params), matched: true };
   }
 }

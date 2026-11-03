@@ -3,7 +3,7 @@
 import type { Level, Mechanic, ResolvedRules, RulesetOverrides, ShareError } from '../schema';
 import type { GameState } from '../engine/types';
 import { getLanguage, t } from '../i18n';
-import type { GeneratorParams } from '../solver/types';
+import type { GeneratorOptions } from '../solver/types';
 import type { EngineApi } from './engine-port';
 import { formatDay, localizedText } from './format';
 import { GameController } from './game-controller';
@@ -19,6 +19,7 @@ import type { SolverPort } from './solver-port';
 import {
   GENERATE_MAX_ATTEMPTS,
   SIMILAR_DIFFICULTY_TOLERANCE,
+  STAGE_KEY_CHAIN_DEPTH,
   clampStage,
   dailyStage,
   difficultyRange,
@@ -27,7 +28,6 @@ import {
 } from './stages';
 import { nextCampaignLevel } from './unlock';
 
-const DEFAULT_RULESET = 'classic';
 /** Hoechste Schwierigkeit auf der 0-10-Skala. */
 const MAX_DIFFICULTY = 10;
 const RUN_SEED_MASK = 0xffffff;
@@ -97,6 +97,33 @@ function distinctColors(level: Level): string[] {
   return [...new Set(level.vehicles.map((v) => v.color))];
 }
 
+/** Laenge der laengsten Schluesselkette (Schloss -> Schluessel -> ...), mindestens 1. */
+function keyChainDepth(level: Level): number {
+  const keyOf = new Map(
+    level.vehicles.filter((v) => v.locked && v.keyId).map((v) => [v.id, v.keyId]),
+  );
+  let max = STAGE_KEY_CHAIN_DEPTH;
+  for (const id of keyOf.keys()) {
+    let depth = 0;
+    const seen = new Set<string>();
+    for (let cur: string | undefined = id; cur && keyOf.has(cur) && !seen.has(cur);) {
+      seen.add(cur);
+      depth += 1;
+      cur = keyOf.get(cur);
+    }
+    max = Math.max(max, depth);
+  }
+  return max;
+}
+
+/** Mechaniken, die ein Level einsetzt (Poller als `fixed`-Zellen, Schluessel als gesperrte Fahrzeuge). */
+export function mechanicsOf(level: Level): Mechanic[] {
+  const out: Mechanic[] = [];
+  if (level.grid.cells.some((c) => c.type === 'fixed')) out.push('bollards');
+  if (level.vehicles.some((v) => v.locked)) out.push('keys');
+  return out;
+}
+
 export class GameSession {
   readonly hints: HintTracker;
   private controllerRef: GameController | null = null;
@@ -158,8 +185,7 @@ export class GameSession {
         case 'daily': {
           const date = localDateKey(this.deps.now());
           this.mode = { kind: 'daily', date };
-          const rules = this.deps.campaign.rulesOf(DEFAULT_RULESET);
-          const level = await this.generateDaily(date, rules);
+          const { level, rules } = await this.generateDaily(date);
           this.install(level, rules, true);
           break;
         }
@@ -308,8 +334,19 @@ export class GameSession {
 
   /** Mechanik, deren Intro-Karte vor dem aktuellen Level noch nicht gezeigt wurde. */
   pendingIntro(): Mechanic | null {
-    const intro = this.mode?.kind === 'campaign' ? this.mode.entry.intro : undefined;
-    return intro && !this.deps.progress.hasSeenIntro(intro) ? intro : null;
+    const mode = this.mode;
+    if (mode?.kind === 'campaign') {
+      const intro = mode.entry.intro;
+      return intro && !this.deps.progress.hasSeenIntro(intro) ? intro : null;
+    }
+    // Generierte Level (Tageslevel, Endlos, Aehnliches Level) zeigen die Karte bei der ersten Mechanik.
+    if (mode?.kind === 'daily' || mode?.kind === 'endless' || mode?.kind === 'similar') {
+      const level = this.controllerRef?.getLevel();
+      return level
+        ? (mechanicsOf(level).find((m) => !this.deps.progress.hasSeenIntro(m)) ?? null)
+        : null;
+    }
+    return null;
   }
 
   markIntroSeen(mechanic: Mechanic): void {
@@ -333,48 +370,56 @@ export class GameSession {
     const mode = this.mode;
     if (!mode || (mode.kind !== 'campaign' && mode.kind !== 'similar')) return;
     const cur = this.controller.getLevel();
-    const rules = this.controller.getRules();
     const { progress } = this.deps;
     const counter = progress.nextSimilarCounter();
     const hold = progress.get().hold;
 
     const difficulty = cur.meta?.difficulty ?? 0;
-    const shape = hold.enabled
-      ? stageShape(hold.stage)
-      : {
-          width: cur.grid.width,
-          height: cur.grid.height,
-          vehicleCount: cur.vehicles.length,
-          colorCount: distinctColors(cur).length,
-        };
-    const colors = hold.enabled
-      ? rules.vehicles.colors.slice(0, shape.colorCount)
-      : distinctColors(cur);
-    const target: [number, number] = hold.enabled
-      ? difficultyRange(hold.stage)
-      : [
+    let params: GeneratorOptions;
+    let rules = this.controller.getRules();
+    let overrides = cur.overrides;
+    if (hold.enabled) {
+      const shape = stageShape(hold.stage);
+      // Wechselt die Stufe das Ruleset, gelten dessen Regeln ohne die Overrides des Ausgangslevels.
+      if (shape.ruleset !== cur.ruleset) {
+        rules = this.deps.campaign.rulesOf(shape.ruleset);
+        overrides = undefined;
+      }
+      params = this.stageParams(clampStage(hold.stage), rules, {
+        seed: similarSeed(cur.id, counter),
+        id: `${baseId(cur.id)}-s${counter}`,
+        title: cur.title,
+      });
+    } else {
+      // Mechanik und Ruleset des Ausgangslevels bleiben erhalten (Anzahl Poller/Schluessel wie dort).
+      const bollards = cur.grid.cells.filter((c) => c.type === 'fixed').length;
+      const keys = cur.vehicles.filter((v) => v.locked).length;
+      params = {
+        seed: similarSeed(cur.id, counter),
+        width: cur.grid.width,
+        height: cur.grid.height,
+        vehicleCount: cur.vehicles.length,
+        colors: distinctColors(cur),
+        targetDifficulty: [
           Math.max(0, difficulty - SIMILAR_DIFFICULTY_TOLERANCE),
           Math.min(MAX_DIFFICULTY, difficulty + SIMILAR_DIFFICULTY_TOLERANCE),
-        ];
-    const params: GeneratorParams = {
-      seed: similarSeed(cur.id, counter),
-      width: shape.width,
-      height: shape.height,
-      vehicleCount: shape.vehicleCount,
-      colors,
-      targetDifficulty: target,
-      maxAttempts: GENERATE_MAX_ATTEMPTS,
-      id: `${baseId(cur.id)}-s${counter}`,
-      ruleset: cur.ruleset,
-      title: cur.title,
-    };
-
+        ],
+        maxAttempts: GENERATE_MAX_ATTEMPTS,
+        id: `${baseId(cur.id)}-s${counter}`,
+        ruleset: cur.ruleset,
+        title: cur.title,
+        bollards,
+        keys,
+        ...(keys > 0 ? { keyChainDepth: keyChainDepth(cur) } : {}),
+      };
+    }
     let level: Level;
     try {
       const res = await this.deps.solver.generate(params, rules, { signal: this.abort.signal });
-      level = cur.overrides ? { ...res.level, overrides: cur.overrides } : res.level;
+      level = overrides ? { ...res.level, overrides } : res.level;
     } catch {
       if (this.disposed) return;
+      rules = this.controller.getRules();
       level = makeSimilarLevel(cur, rules.vehicles.colors, counter);
     }
     if (this.disposed) return;
@@ -385,27 +430,44 @@ export class GameSession {
 
   // --- Tageslevel ---
 
-  private async generateDaily(date: string, rules: ResolvedRules): Promise<Level> {
+  /** Generator-Parameter einer Stufe: Form, Zielbereich, Ruleset sowie Poller und Schluessel. */
+  private stageParams(
+    stage: number,
+    rules: ResolvedRules,
+    extra: { seed: number; id: string; title: Level['title'] },
+  ): GeneratorOptions {
+    const shape = stageShape(stage);
+    return {
+      ...extra,
+      width: shape.width,
+      height: shape.height,
+      vehicleCount: shape.vehicleCount,
+      colors: rules.vehicles.colors.slice(0, shape.colorCount),
+      targetDifficulty: difficultyRange(stage),
+      maxAttempts: GENERATE_MAX_ATTEMPTS,
+      ruleset: shape.ruleset,
+      bollards: shape.bollards,
+      keys: shape.keys,
+      ...(shape.keys ? { keyChainDepth: STAGE_KEY_CHAIN_DEPTH } : {}),
+    };
+  }
+
+  // --- Tageslevel ---
+
+  private async generateDaily(date: string): Promise<{ level: Level; rules: ResolvedRules }> {
     const [y, m, d] = date.split('-').map(Number) as [number, number, number];
     const stage = dailyStage(new Date(y, m - 1, d));
-    const shape = stageShape(stage);
+    const rules = this.deps.campaign.rulesOf(stageShape(stage).ruleset);
     const res = await this.deps.solver.generate(
-      {
+      this.stageParams(stage, rules, {
         seed: dailySeed(date),
-        width: shape.width,
-        height: shape.height,
-        vehicleCount: shape.vehicleCount,
-        colors: rules.vehicles.colors.slice(0, shape.colorCount),
-        targetDifficulty: difficultyRange(stage),
-        maxAttempts: GENERATE_MAX_ATTEMPTS,
         id: `daily-${date.replaceAll('-', '')}`,
-        ruleset: DEFAULT_RULESET,
         title: { de: `Tageslevel ${date}`, en: `Daily level ${date}` },
-      },
+      }),
       rules,
       { signal: this.abort.signal },
     );
-    return res.level;
+    return { level: res.level, rules };
   }
 
   // --- Endlos ---
@@ -420,52 +482,50 @@ export class GameSession {
       previousBest: this.deps.progress.get().endless.best,
     };
     this.mode = { kind: 'endless', run };
-    const rules = this.deps.campaign.rulesOf(DEFAULT_RULESET);
-    const level = await this.generateEndless(run, rules, null);
+    const { level, rules } = await this.generateEndless(run, null);
     if (this.disposed) return;
     this.install(level, rules, true);
   }
 
   private async nextEndless(run: EndlessRun): Promise<void> {
     run.number += 1;
-    const prev = this.controller.getLevel();
-    const rules = this.controller.getRules();
-    const level = await this.generateEndless(run, rules, prev);
+    const { level, rules } = await this.generateEndless(run, {
+      level: this.controller.getLevel(),
+      rules: this.controller.getRules(),
+    });
     if (this.disposed) return;
     this.install(level, rules, true);
   }
 
-  /** Ohne `fallbackFrom` wirft ein Fehler; sonst wird eine Variante des Vorgaengers gespielt. */
+  /**
+   * Das Ruleset folgt der Stufe. Ohne `fallbackFrom` wirft ein Fehler; sonst wird eine Variante des
+   * Vorgaengers (mit dessen Regeln) gespielt.
+   */
   private async generateEndless(
     run: EndlessRun,
-    rules: ResolvedRules,
-    fallbackFrom: Level | null,
-  ): Promise<Level> {
+    fallbackFrom: { level: Level; rules: ResolvedRules } | null,
+  ): Promise<{ level: Level; rules: ResolvedRules }> {
     const hold = this.deps.progress.get().hold;
     const stage = hold.enabled ? clampStage(hold.stage) : endlessStage(run.number);
     run.stage = stage;
-    const shape = stageShape(stage);
+    const rules = this.deps.campaign.rulesOf(stageShape(stage).ruleset);
     try {
       const res = await this.deps.solver.generate(
-        {
+        this.stageParams(stage, rules, {
           seed: endlessSeed(run.seed, run.number),
-          width: shape.width,
-          height: shape.height,
-          vehicleCount: shape.vehicleCount,
-          colors: rules.vehicles.colors.slice(0, shape.colorCount),
-          targetDifficulty: difficultyRange(stage),
-          maxAttempts: GENERATE_MAX_ATTEMPTS,
           id: `e-${run.seed.toString(36)}-${run.number}`,
-          ruleset: DEFAULT_RULESET,
           title: { de: `Endlos ${run.number}`, en: `Endless ${run.number}` },
-        },
+        }),
         rules,
         { signal: this.abort.signal },
       );
-      return res.level;
+      return { level: res.level, rules };
     } catch (err) {
       if (!fallbackFrom || this.disposed) throw err;
-      return makeSimilarLevel(fallbackFrom, rules.vehicles.colors, run.number);
+      return {
+        level: makeSimilarLevel(fallbackFrom.level, fallbackFrom.rules.vehicles.colors, run.number),
+        rules: fallbackFrom.rules,
+      };
     }
   }
 

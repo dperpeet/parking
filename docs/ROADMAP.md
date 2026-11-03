@@ -15,7 +15,6 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Modi
 
-- Tageslevel, Endlos und Stufen kennen nur das Ruleset `classic`.
 - Hover-Spurvorschau am Desktop.
 
 ## Editor
