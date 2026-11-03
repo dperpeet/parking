@@ -1,10 +1,11 @@
 // CLI: pnpm level:generate [--pack 01] [--config tools/pack-01.config.json] [--only 3,5] [--dry]
 // Erzeugt ein Level-Pack deterministisch aus einer Konfigurationsdatei (feste Seeds pro Level).
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
 import type { GeneratorOptions } from '../src/solver/types';
-import { PackIndex, Ruleset, resolveRules } from '../src/schema';
+import { PackIndex, resolveRules } from '../src/schema';
+import { loadRulesets, rulesetById } from './lib/rulesets';
 
 const PAD = 3;
 const PERCENT = 100;
@@ -12,24 +13,6 @@ const DEFAULT_TOLERANCE = 0.3;
 const DEFAULT_MAX_STATES = 200_000;
 const DEFAULT_MAX_ATTEMPTS = 120;
 const DEFAULT_RULESET = 'classic';
-
-const RULESET_DIR = 'src/content/rulesets';
-
-/** Alle Rulesets unter src/content/rulesets, nach ID. */
-function loadRulesets(): Map<string, Ruleset> {
-  const map = new Map<string, Ruleset>();
-  for (const f of readdirSync(RULESET_DIR).filter((n) => n.endsWith('.json'))) {
-    const rs = Ruleset.parse(JSON.parse(readFileSync(`${RULESET_DIR}/${f}`, 'utf8')));
-    map.set(rs.id, rs);
-  }
-  return map;
-}
-
-function rulesetById(map: Map<string, Ruleset>, id: string): Ruleset {
-  const rs = map.get(id);
-  if (!rs) throw new Error(`unknown ruleset "${id}" (known: ${[...map.keys()].join(', ')})`);
-  return rs;
-}
 
 /** Eintrag pro Level; fehlende Felder kommen aus `defaults`. */
 interface LevelConfig {

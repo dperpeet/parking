@@ -1,27 +1,10 @@
 // CLI: pnpm level:analyze <file.json> [...]
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
-import { Level, Ruleset, resolveRules } from '../src/schema';
+import { Level, resolveRules } from '../src/schema';
+import { loadRulesets, rulesetById } from './lib/rulesets';
 
 const PERCENT = 100;
-
-const RULESET_DIR = 'src/content/rulesets';
-
-/** Alle Rulesets unter src/content/rulesets, nach ID. */
-function loadRulesets(): Map<string, Ruleset> {
-  const map = new Map<string, Ruleset>();
-  for (const f of readdirSync(RULESET_DIR).filter((n) => n.endsWith('.json'))) {
-    const rs = Ruleset.parse(JSON.parse(readFileSync(`${RULESET_DIR}/${f}`, 'utf8')));
-    map.set(rs.id, rs);
-  }
-  return map;
-}
-
-function rulesetById(map: Map<string, Ruleset>, id: string): Ruleset {
-  const rs = map.get(id);
-  if (!rs) throw new Error(`unknown ruleset "${id}" (known: ${[...map.keys()].join(', ')})`);
-  return rs;
-}
 
 function pct(x: number): string {
   return `${(x * PERCENT).toFixed(2)} %`;

@@ -21,7 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "level:analyze": "tsx tools/level-analyze.ts",
-    "level:generate": "tsx tools/level-generate.ts"
+    "level:generate": "tsx tools/level-generate.ts",
+    "level:report": "tsx tools/pack-report.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
