@@ -20,7 +20,15 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile',
-      use: { ...devices['Pixel 7'], defaultBrowserType: 'chromium', launchOptions },
+      // deviceScaleFactor 1: Headless-Chromium rendert WebGL ohne GPU in Software; die Kosten pro Frame
+      // wachsen mit der Pixelzahl (Pixel 7: DPR 2,625). Bei voller DPR braucht jeder Frame ~150 ms und das
+      // Tempo der Tests haengt am Frame-Durchsatz. Die Spiellogik ist von der DPR unabhaengig.
+      use: {
+        ...devices['Pixel 7'],
+        deviceScaleFactor: 1,
+        defaultBrowserType: 'chromium',
+        launchOptions,
+      },
     },
     {
       name: 'desktop',

@@ -17,7 +17,8 @@ test('Mit Tipp gewonnen zaehlt hoechstens 2 Sterne', async ({ page }) => {
   await page.goto('/#/level/01/007');
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
   await page.getByTestId('hint').click();
-  await expect(page.locator('.vehicle-btn[data-hint]')).toHaveCount(1, { timeout: 15_000 });
+  // Die Markierung ist nur kurz sichtbar; das Badge zeigt dauerhaft, dass der Tipp gezaehlt wurde.
+  await expect(page.getByTestId('hint').locator('.badge')).toHaveText('2', { timeout: 15_000 });
   await tapAll(page, WIN_ORDER);
   await expect(page.getByTestId('win-dialog')).toBeVisible();
   await expect(page.getByRole('img', { name: '2 von 3 Sternen' })).toBeVisible();
