@@ -11,7 +11,7 @@ import {
   tn,
 } from '../../../src/i18n';
 import { announce, colorDefinite, hintAnnouncement, vehicleLabel } from '../../../src/ui/strings';
-import { fakeEngine } from '../../../src/app/fake-engine';
+import { fakeEngine } from '../../support/fake-engine';
 import { level, rules } from '../helpers';
 
 afterEach(() => setLanguage('de'));

@@ -1,0 +1,32 @@
+import { expect, test } from '@playwright/test';
+
+test('Einstellungen: Sprache auf Englisch stellen aendert Beschriftungen und bleibt erhalten', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByText('Tageslevel')).toBeVisible();
+  await page.getByTestId('settings').click();
+  await expect(page.getByTestId('settings-dialog')).toBeVisible();
+  await page.getByTestId('lang-en').click();
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await page.getByTestId('settings-close').click();
+  await expect(page.getByText('Daily level')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+  await page.reload();
+  await expect(page.getByText('Daily level')).toBeVisible();
+});
+
+test('Einstellungen: Zuruecksetzen fragt nach und loescht den Fortschritt', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('hold-switch').click();
+  await expect(page.getByTestId('hold-switch')).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('settings').click();
+  await page.getByTestId('reset').click();
+  await page.getByTestId('reset-cancel').click();
+  await expect(page.getByTestId('reset')).toBeVisible();
+  await page.getByTestId('reset').click();
+  await page.getByTestId('reset-confirm').click();
+  await page.getByTestId('settings-close').click();
+  await expect(page.getByTestId('hold-switch')).toHaveAttribute('aria-checked', 'false');
+});

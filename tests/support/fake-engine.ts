@@ -1,5 +1,5 @@
-// Nur fuer Unit-Tests: minimale Nachbildung der M1-Regeln. Die App nutzt die echte Engine (main.ts).
-import type { ColorId, Dir, Level, ResolvedRules } from '../schema';
+// Minimale Test-Engine fuer Controller-, Renderer- und Layout-Tests.
+import type { ColorId, Dir, Level, ResolvedRules } from '../../src/schema';
 import type {
   Action,
   GameEvent,
@@ -9,8 +9,8 @@ import type {
   Snapshot,
   StepResult,
   VehicleState,
-} from '../engine/types';
-import type { EngineApi } from './engine-port';
+} from '../../src/engine/types';
+import type { EngineApi } from '../../src/app/engine-port';
 
 const STEP: Record<Dir, [number, number]> = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
 const POWER_UPS: PowerUpId[] = ['undo', 'shuffle', 'extraSlot', 'honk'];
@@ -283,4 +283,3 @@ function step(prev: GameState, action: Action, rules: ResolvedRules): StepResult
 }
 
 export const fakeEngine: EngineApi = { createGame, step };
-export { legalMoves as fakeLegalMoves };

@@ -1,7 +1,6 @@
-import classicJson from '../../../src/content/rulesets/classic.json';
 import { createGame, step } from '../../../src/engine';
 import type { Action, GameEvent, GameState } from '../../../src/engine';
-import { Ruleset, resolveRules } from '../../../src/schema';
+import { resolveRules } from '../../../src/schema';
 import type {
   Dir,
   Level,
@@ -10,7 +9,9 @@ import type {
   RulesetOverrides,
 } from '../../../src/schema';
 
-export const classic = Ruleset.parse(classicJson);
+import { classicRuleset } from '../helpers';
+
+export const classic = classicRuleset;
 
 export function rulesWith(overrides: RulesetOverrides = {}): ResolvedRules {
   return resolveRules(classic, overrides);

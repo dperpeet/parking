@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeBoardLayout, vehicleCellBox } from '../../src/render/layout';
 import { announce, colorAdjective } from '../../src/ui/strings';
-import { fakeEngine } from '../../src/app/fake-engine';
+import { fakeEngine } from '../support/fake-engine';
 import { level, rules } from './helpers';
 
 describe('layout', () => {

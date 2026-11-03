@@ -4,8 +4,8 @@ import { createGame, step } from '../../../src/engine';
 import { Level } from '../../../src/schema';
 import { analyze, analyzeState, analyzeStateReference } from '../../../src/solver/analyze';
 import { generate } from '../../../src/solver/generator';
-import { level as level007, rules as rules007 } from '../helpers';
-import { deadlock, doubleFree, oneOrder, rulesFor } from './fixtures';
+import { level as level007, rules as rules007, rulesFor } from '../helpers';
+import { deadlock, doubleFree, oneOrder } from './fixtures';
 
 const PACK = 'src/content/levels/pack-01';
 

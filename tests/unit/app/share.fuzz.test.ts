@@ -1,16 +1,13 @@
 import { deflateSync } from 'fflate';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import classicJson from '../../../src/content/rulesets/classic.json';
-import world2Json from '../../../src/content/rulesets/world2.json';
 import { getCampaign } from '../../../src/app/levels';
 import { decodeLevel, encodeLevel } from '../../../src/app/share';
 import type { RulesLookup } from '../../../src/app/share';
-import { Level, Ruleset, SHARE_MAX_LENGTH, SHARE_PREFIX, resolveRules } from '../../../src/schema';
+import { Level, SHARE_MAX_LENGTH, SHARE_PREFIX, resolveRules } from '../../../src/schema';
 import type { ShareError } from '../../../src/schema';
+import { classicRuleset as classic, world2Ruleset as world2 } from '../helpers';
 
-const classic = Ruleset.parse(classicJson);
-const world2 = Ruleset.parse(world2Json);
 const RULESETS = new Map([classic, world2].map((r) => [r.id, r]));
 const lookup: RulesLookup = (id, overrides) => {
   const ruleset = RULESETS.get(id);

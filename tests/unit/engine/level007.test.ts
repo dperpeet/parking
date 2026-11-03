@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, legalMoves, step } from '../../../src/engine';
-import { Level, Ruleset, resolveRules } from '../../../src/schema';
-import classic from '../../../src/content/rulesets/classic.json';
-import level007 from '../../../src/content/levels/pack-01/007.json';
+import { level, rules } from '../helpers';
 import { run, taps } from './helpers';
-
-const level = Level.parse(level007);
-const rules = resolveRules(Ruleset.parse(classic), level.overrides);
 
 describe('level 007', () => {
   it('has no validation issues and starts playing', () => {
