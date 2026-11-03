@@ -28,23 +28,30 @@ pnpm test:e2e       # Playwright (Chromium mobile + desktop)
 Lokal mit vorinstalliertem Chromium: `PW_CHROMIUM_PATH=/pfad/zu/chromium pnpm test:e2e`.
 Sonst einmalig `pnpm exec playwright install chromium`.
 
-## Deployment (eigener Server)
+## Deployment
 
-Push auf `main` -> CI -> Docker-Image nach `ghcr.io/dperpeet/parking` -> SSH-Deploy.
+### GitHub Pages (Standard)
 
-### Server einrichten
+Push auf `main` -> CI -> Workflow `pages.yml` baut mit `VITE_BASE=/parking/` und veroeffentlicht auf
+https://dperpeet.github.io/parking/. Einmalig im Repo: Settings -> Pages -> Source: **GitHub Actions**.
+Manuell anstossen: Actions -> Pages -> Run workflow.
 
-1. Server mit Docker und Docker Compose, Ports 80 und 443 offen, DNS-A-Record der (Sub-)Domain auf den Server.
-2. Deploy-Nutzer anlegen (in der Gruppe `docker`) und den oeffentlichen SSH-Schluessel hinterlegen.
-3. Auf dem Server `~/parking/` anlegen und `deploy/docker/compose.yml` als `compose.yml` dorthin kopieren.
-4. In `~/parking/.env` die Domain setzen: `PARKING_DOMAIN=spiel.example.org`.
-   Ohne Domain (leer/nicht gesetzt) lauscht Caddy auf `:80` ohne TLS (nur zum Testen).
-5. Falls das Paket privat ist: `docker login ghcr.io` mit einem Token mit `read:packages`.
-6. Erster Start: `cd ~/parking && docker compose pull && docker compose up -d`.
-7. GitHub-Secrets im Repo setzen: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`.
-   Ist `DEPLOY_HOST` leer, wird der SSH-Deploy-Schritt uebersprungen (das Image wird trotzdem gebaut).
+### Eigener Server mit podman (optional)
 
-Caddy holt das TLS-Zertifikat automatisch (Daten im Volume `caddy_data`).
+`image.yml` baut nach jeder erfolgreichen CI auf `main` das Image `ghcr.io/dperpeet/parking` (Caddy, Basis-Pfad `/`).
+Dateien liegen in `deploy/container/`. Voraussetzung: podman, DNS-A-Record der (Sub-)Domain auf den Server.
+Ist das Paket privat: `podman login ghcr.io` mit einem Token mit `read:packages`.
+
+- **Quadlet (empfohlen):** `parking.container` und die beiden `.volume`-Dateien nach `~/.config/containers/systemd/`
+  kopieren, `PARKING_DOMAIN` in der Unit setzen, dann `systemctl --user daemon-reload && systemctl --user start parking`
+  und `loginctl enable-linger $USER`. Updates: `systemctl --user enable --now podman-auto-update.timer`
+  (Label `io.containers.autoupdate=registry`).
+- **podman compose:** `deploy/container/compose.yml` nach `~/parking/compose.yml`, `PARKING_DOMAIN=spiel.example.org`
+  in `~/parking/.env`, dann `podman compose pull && podman compose up -d`.
+- **Rootless-Ports:** 80/443 sind gesperrt. Entweder `sysctl net.ipv4.ip_unprivileged_port_start=80` setzen
+  oder 8080:80 / 8443:443 mappen und einen Reverse-Proxy davorsetzen.
+
+Ohne Domain lauscht Caddy auf `:80` ohne TLS (nur zum Testen). Das TLS-Zertifikat holt Caddy automatisch (Volume `caddy_data`).
 
 ## Lizenz
 

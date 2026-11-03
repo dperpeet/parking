@@ -15,12 +15,12 @@
 | Architektur | Headless, deterministische Engine (`step(state, action) → {state, events}`) ↔ Renderer spielt nur Events ab |
 | Regeln | Ruleset-JSON + Level-JSON mit `overrides`, validiert per zod |
 | Content | Solver + Generator (Web Worker), Level-Editor, Teilen per URL-Fragment (kein Server nötig) |
-| Hosting | **Eigener Server** (Docker + Caddy, statische Dateien). GitHub Pages wäre nur mit öffentlichem Repo oder kostenpflichtigem GitHub-Plan gratis |
+| Hosting | **GitHub Pages** (`/parking/`, öffentliches Repo); optional eigener Server (podman + Caddy, Image aus GHCR) |
 | Umsetzung | Claude Code als Orchestrator, Arbeitspakete parallel an **Sonnet-Subagents**, CI als hartes Gate |
 
 **Getroffene Entscheidungen:**
 1. Name: **ParKing**. Setting: Spielzeug-Werkstatt-Optik.
-2. Hosting: **eigener Server** (Docker + Caddy). GitHub Pages für private Repos setzt einen kostenpflichtigen Plan voraus (GitHub Pro/Team). Auf GitHub Free gibt es Pages nur für öffentliche Repos.
+2. Hosting: **GitHub Pages** (Repo ist öffentlich, Basis-Pfad `/parking/`). Optional eigener Server mit podman + Caddy.
 3. Tageslevel: **lokale Zeit** (Wechsel um Mitternacht des Spielers).
 4. Lizenzen: Code **MIT**, Level/Inhalte **CC BY 4.0**.
 5. Fortschritt: Freigespielte Level werden lokal im Browser gespeichert. Man kann jederzeit **auf der aktuellen Schwierigkeitsstufe bleiben** (siehe 1.8).
@@ -177,9 +177,9 @@ ui/ + render/  ──►  app/ (Orchestrierung, Routing, Persistenz)  ──► 
 **Repo-Struktur**
 ```
 parking/
-├─ .github/workflows/ (ci.yml, deploy.yml, release.yml), CODEOWNERS, pull_request_template.md
+├─ .github/workflows/ (ci.yml, pages.yml, image.yml, release.yml), CODEOWNERS, pull_request_template.md
 ├─ docs/ (ARCHITECTURE.md, INTERFACES.md, RULESETS.md, LEVEL-FORMAT.md, adr/)
-├─ deploy/docker/ (Dockerfile, Caddyfile, nginx.conf, compose.yml)
+├─ deploy/container/ (Containerfile, Caddyfile, compose.yml, Quadlet)
 ├─ public/ (icons/, audio/, og-image.png)
 ├─ src/
 │  ├─ schema/   (ruleset, level, share, migrations)
@@ -213,7 +213,9 @@ parking/
 - **i18n:** de/en mit typisierten Keys (der Build bricht bei fehlenden Keys), `Intl.PluralRules`.
 
 ### 2.4 Hosting & Deployment
-**Eigener Server (gewählt):** Multi-Stage-Docker (Node-Build → `caddy:2-alpine`), Vite-`base` = `/`, Hash-Routing (keine Rewrites nötig).
+**GitHub Pages (gewählt):** `pages.yml` baut nach grüner CI auf `main` mit `VITE_BASE=/parking/` und deployt per `actions/deploy-pages` nach https://dperpeet.github.io/parking/. Hash-Routing, daher keine Rewrites nötig.
+
+**Optional eigener Server (podman):** Multi-Stage-Container (Node-Build → `caddy:2-alpine`), Vite-`base` = `/`, Hash-Routing (keine Rewrites nötig).
 ```dockerfile
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -223,7 +225,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build --base=/
 FROM caddy:2-alpine
-COPY deploy/docker/Caddyfile /etc/caddy/Caddyfile
+COPY deploy/container/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist /srv
 ```
 ```caddyfile
@@ -244,18 +246,16 @@ spiel.example.org {
 ```
 Caddy holt das TLS-Zertifikat automatisch (Domain + DNS-A-Record auf den Server nötig).
 
-**Deploy-Weg (Empfehlung):** Die CI baut bei Push auf `main` ein Image und pusht es nach GHCR. Für private Repos ist GHCR im Rahmen des Free-Kontingents kostenlos, und ein kleines statisches Image passt locker hinein. Der Server zieht das Image per Deploy-Job über SSH (`docker compose pull && up -d`). Die Zugangsdaten liegen als GitHub-Secrets: SSH-Key, Host und Nutzer.
-- Einfachere Alternative: per SSH `git pull && docker compose up -d --build` direkt auf dem Server.
-- Später möglich: das Repo öffentlich machen und kostenlos auf GitHub Pages ausweichen. Der Build ist dafür schon vorbereitet (`base` konfigurierbar).
+**Deploy-Weg Server:** `image.yml` baut nach grüner CI auf `main` ein Image und pusht es nach `ghcr.io/dperpeet/parking`. Der Server zieht es mit podman (Quadlet `parking.container` mit `AutoUpdate=registry`, oder `podman compose`). Kein SSH-Deploy, keine Deploy-Secrets.
 
-**Server-Voraussetzungen:** Docker + Compose, Ports 80/443 offen, eine (Sub-)Domain.
+**Server-Voraussetzungen:** podman, Ports 80/443 (rootless: `ip_unprivileged_port_start=80` oder Reverse-Proxy), eine (Sub-)Domain.
 
 **CI-Pipeline** (`ci.yml`, für PRs und `main`):
 1. install
 2. lint ‖ typecheck ‖ unit + content tests (Engine-Coverage ≥ 90 %, alle Level lösbar)
 3. build + Bundle-Size-Check
 4. Playwright E2E (Mobile + Desktop)
-5. deploy (nur `main`): Image → GHCR → SSH-Deploy auf deinen Server
+5. deploy (nur `main`): GitHub Pages (`pages.yml`); Image → GHCR (`image.yml`)
 
 ---
 
@@ -263,13 +263,13 @@ Caddy holt das TLS-Zertifikat automatisch (Domain + DNS-A-Record auf den Server 
 
 | M | Inhalt | Deliverables | Definition of Done |
 |---|---|---|---|
-| **M0 Setup** | Gerüst | Vite/TS/Lint/Tests, Ordnerstruktur, `CLAUDE.md`, `docs/INTERFACES.md`, zod-Schemas v1 (Entwurf), CI, Docker/Caddy-Deploy, leere Seite live auf deinem Server | `main` deployt automatisch, Import-Grenzen werden per Lint erzwungen |
+| **M0 Setup** | Gerüst | Vite/TS/Lint/Tests, Ordnerstruktur, `CLAUDE.md`, `docs/INTERFACES.md`, zod-Schemas v1 (Entwurf), CI, Pages-Deploy (optional Container/Caddy), leere Seite live | `main` deployt automatisch, Import-Grenzen werden per Lint erzwungen |
 | **M1 Engine** | Spiellogik headless | `step`, RNG, Klassik-Ruleset, Events, Replay-Format, 10 handgebaute Testlevel | Coverage ≥ 90 %; Determinismus-Test (gleiche Aktionen → gleicher Hash); Property-Tests |
 | **M2 Prototyp** | Spielbar | Pixi-Board, Touch, Event-Player, HUD, Sieg/Niederlage, einfache Levelauswahl | Auf iOS Safari + Android Chrome flüssig spielbar; E2E „gewinnen" und „verlieren" grün |
 | **M3 Regeln + 30 Level** | Datengetrieben | ≥ 3 Rulesets, Power-Ups (Undo/Shuffle/Extra-Slot), Fortschrittsspeicher (Freischalten + freie Levelwahl), 30 Level in 3 Packs, Regel-Doku | Ruleset-Wechsel ohne Codeänderung; alle Level CI-verifiziert; Fortschritt übersteht Reload |
 | **M4 Solver/Generator/Editor/Share** | Content-Tools | Worker-Solver (Par + Hint), Generator mit Seed + Schwierigkeit, Tageslevel (lokale Zeit), Endlos mit „Stufe halten“, „Ähnliches Level“, Editor, Share-URLs | Editor-Level → URL → anderes Gerät spielt identisch; Fuzz-Test: kaputte URLs verursachen nie einen Crash |
 | **M5 Polish** | Qualität | Sound, Animationen/Partikel, Spezialobjekte (Einbahn, Schlüssel, Schranken, Mystery), i18n, A11y, PWA | Lighthouse PWA/A11y ≥ 90, Offline-E2E grün, Budgets eingehalten |
-| **M6 Release** | Launch | ≥ 60 Level, README/Anleitung, Datenschutzhinweis (keine Cookies), Social-Preview, `v1.0.0`, optional Docker-Image | Release-Checkliste erledigt, Cross-Browser-Smoke, Deployment verifiziert |
+| **M6 Release** | Launch | ≥ 60 Level, README/Anleitung, Datenschutzhinweis (keine Cookies), Social-Preview, `v1.0.0`, optional Container-Image | Release-Checkliste erledigt, Cross-Browser-Smoke, Deployment verifiziert |
 
 **MVP = M0–M3** (straight-Bewegung, strikte Passagiere, Undo, 30 Level). `turns`/`pathfinding` und Ähnliches kommen danach.
 
@@ -294,7 +294,7 @@ Diese Dateien ändert nur der Orchestrator (CODEOWNERS).
 | B Renderer/UI | `render/`, `ui/`, Input; arbeitet gegen Event-Fixtures (Mock-Engine) | M0 |
 | C Level-Content | Level-JSONs + Pack-Index, Prüfung per CLI | Schemas (M0) |
 | D Solver/Generator | `solver/` + Worker + CLI | Engine `step` stabil (Ende M1) |
-| E CI/Deploy | Workflows, Docker/Caddy, Bundle-Check | M0 |
+| E CI/Deploy | Workflows, Pages, Container/Caddy, Bundle-Check | M0 |
 | F Editor/Share | Editor-UI, URL-Codec | A + D |
 | G i18n/A11y/Audio | kleine Pakete | B |
 
@@ -332,5 +332,5 @@ Diese Dateien ändert nur der Orchestrator (CODEOWNERS).
 
 ## 6. Nächste Schritte
 1. Repo-Zugriff für Claude Code einrichten (Claude GitHub App für `dperpeet/parking`), dann diesen Plan nach `main` pushen.
-2. Server-Infos bereitstellen: (Sub-)Domain, Docker vorhanden? SSH-Deploy-Nutzer anlegen, Secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` im Repo hinterlegen.
+2. Pages aktivieren: Settings → Pages → Source: GitHub Actions. Eigener Server nur optional (podman, Domain).
 3. M0 starten: Orchestrator legt Gerüst, Interfaces und CI an. Danach laufen die Pakete A, B, C und E parallel als Sonnet-Subagents.

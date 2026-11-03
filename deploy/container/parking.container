@@ -1,0 +1,29 @@
+# Quadlet-Unit fuer systemd + podman (>= 4.4).
+# Rootless: nach ~/.config/containers/systemd/ kopieren (zusammen mit den beiden .volume-Dateien), dann
+#   systemctl --user daemon-reload && systemctl --user start parking.service
+#   loginctl enable-linger $USER   # Start ohne Login
+# Rootful: nach /etc/containers/systemd/, `systemctl` ohne --user.
+# Auto-Update: systemctl --user enable --now podman-auto-update.timer
+# Rootless-Ports 80/443 brauchen `sysctl net.ipv4.ip_unprivileged_port_start=80`;
+# sonst 8080:80 / 8443:443 mappen und einen Reverse-Proxy davorsetzen.
+[Unit]
+Description=ParKing (Caddy + statische Dateien)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/dperpeet/parking:latest
+ContainerName=parking
+AutoUpdate=registry
+PublishPort=80:80
+PublishPort=443:443
+# Domain fuer automatisches TLS; ohne Zeile lauscht Caddy auf :80 (nur Test).
+Environment=PARKING_DOMAIN=spiel.example.org
+Volume=parking-caddy-data.volume:/data
+Volume=parking-caddy-config.volume:/config
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

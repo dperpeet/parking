@@ -1,8 +1,13 @@
+# Fuer `podman compose` / podman-compose (auch docker compose kompatibel).
 # Auf dem Server nach ~/parking/compose.yml kopieren; PARKING_DOMAIN in ~/parking/.env setzen.
+# Rootless: Ports < 1024 sind gesperrt. Entweder `net.ipv4.ip_unprivileged_port_start=80` setzen
+# oder unten 8080:80 / 8443:443 mappen und einen Reverse-Proxy davorsetzen.
 services:
   parking:
     image: ghcr.io/dperpeet/parking:latest
     restart: unless-stopped
+    labels:
+      io.containers.autoupdate: registry
     ports:
       - '80:80'
       - '443:443'
