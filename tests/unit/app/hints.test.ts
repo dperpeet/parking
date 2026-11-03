@@ -31,7 +31,7 @@ describe('HintTracker', () => {
     expect(tracker.left()).toBe(HINTS_PER_LEVEL);
     expect(tracker.used()).toBe(false);
     const r = await tracker.request(get, rules);
-    expect(r).toEqual({ kind: 'vehicle', vehicleId: 'v1' });
+    expect(r).toEqual({ kind: 'vehicle', vehicleId: 'v1', action: 'tap' });
     expect(tracker.left()).toBe(HINTS_PER_LEVEL - 1);
     expect(tracker.used()).toBe(true);
   });

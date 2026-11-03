@@ -19,7 +19,8 @@ export function displayStars(engineStars: number, hintUsed: boolean): number {
 }
 
 export type HintResult =
-  | { kind: 'vehicle'; vehicleId: string }
+  /** `action` `honk`: mit diesem Fahrzeug hupen statt es anzutippen. */
+  | { kind: 'vehicle'; vehicleId: string; action: 'tap' | 'honk' }
   | { kind: 'none' }
   | { kind: 'error' }
   /** Nicht moeglich (keine Tipps uebrig, laeuft schon, Spiel zu Ende) oder der Zustand hat sich geaendert. */
@@ -62,7 +63,6 @@ export class HintTracker {
     this.working = true;
     try {
       const move = await this.port.hint(state, rules);
-      const id = move?.vehicleId ?? null;
       const now = getState();
       const stale =
         now.levelId !== state.levelId ||
@@ -71,7 +71,9 @@ export class HintTracker {
         now.status !== 'playing';
       if (stale) return { kind: 'ignored' };
       this.usedCount += 1;
-      return id === null ? { kind: 'none' } : { kind: 'vehicle', vehicleId: id };
+      return move === null
+        ? { kind: 'none' }
+        : { kind: 'vehicle', vehicleId: move.vehicleId, action: move.action };
     } catch {
       return { kind: 'error' };
     } finally {
