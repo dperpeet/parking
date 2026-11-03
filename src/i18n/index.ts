@@ -121,7 +121,7 @@ const de = {
   worldLockedHint: 'Schaffe alle Level von Welt {n}',
   introBollardsTitle: 'Poller',
   introBollardsText:
-    'Poller stehen fest im Weg. Kein Fahrzeug kommt hindurch, plane deine Fahrspur also drumherum.',
+    'Poller stehen fest und bewegen sich nie. Sie machen den Parkplatz enger: Schau genau, welches Fahrzeug wann freie Fahrt hat.',
   introKeysTitle: 'Schlüssel & Schlösser',
   introKeysText:
     'Ein Fahrzeug mit Schloss rührt sich nicht, bis sein Schlüssel-Fahrzeug das Feld verlassen hat. Gleiche Nummern gehören zusammen.',
@@ -360,7 +360,7 @@ const en: Record<StringKey, string> = {
   worldLockedHint: 'Finish all levels of world {n}',
   introBollardsTitle: 'Bollards',
   introBollardsText:
-    'Bollards are fixed in place. No vehicle can pass through them, so plan your lane around them.',
+    'Bollards are fixed and never move. They make the lot tighter: look closely at which vehicle has a clear lane, and when.',
   introKeysTitle: 'Locks & keys',
   introKeysText:
     'A locked vehicle will not budge until its key vehicle has left the board. Matching numbers belong together.',
