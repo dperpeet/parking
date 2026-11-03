@@ -1,10 +1,27 @@
 // CLI: pnpm level:analyze <file.json> [...]
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { Level, Ruleset, resolveRules } from '../src/schema';
-import classic from '../src/content/rulesets/classic.json';
 
 const PERCENT = 100;
+
+const RULESET_DIR = 'src/content/rulesets';
+
+/** Alle Rulesets unter src/content/rulesets, nach ID. */
+function loadRulesets(): Map<string, Ruleset> {
+  const map = new Map<string, Ruleset>();
+  for (const f of readdirSync(RULESET_DIR).filter((n) => n.endsWith('.json'))) {
+    const rs = Ruleset.parse(JSON.parse(readFileSync(`${RULESET_DIR}/${f}`, 'utf8')));
+    map.set(rs.id, rs);
+  }
+  return map;
+}
+
+function rulesetById(map: Map<string, Ruleset>, id: string): Ruleset {
+  const rs = map.get(id);
+  if (!rs) throw new Error(`unknown ruleset "${id}" (known: ${[...map.keys()].join(', ')})`);
+  return rs;
+}
 
 function pct(x: number): string {
   return `${(x * PERCENT).toFixed(2)} %`;
@@ -16,9 +33,10 @@ if (files.length === 0) {
   process.exit(1);
 }
 
+const rulesets = loadRulesets();
 for (const file of files) {
   const level = Level.parse(JSON.parse(readFileSync(file, 'utf8')));
-  const rules = resolveRules(Ruleset.parse(classic), level.overrides);
+  const rules = resolveRules(rulesetById(rulesets, level.ruleset), level.overrides);
   const t0 = performance.now();
   const a = analyze(level, rules);
   const ms = performance.now() - t0;

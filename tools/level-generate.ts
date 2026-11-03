@@ -1,17 +1,35 @@
 // CLI: pnpm level:generate [--pack 01] [--config tools/pack-01.config.json] [--only 3,5] [--dry]
 // Erzeugt ein Level-Pack deterministisch aus einer Konfigurationsdatei (feste Seeds pro Level).
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
 import type { GeneratorOptions } from '../src/solver/types';
-import { Ruleset, resolveRules } from '../src/schema';
-import classic from '../src/content/rulesets/classic.json';
+import { PackIndex, Ruleset, resolveRules } from '../src/schema';
 
 const PAD = 3;
 const PERCENT = 100;
 const DEFAULT_TOLERANCE = 0.3;
 const DEFAULT_MAX_STATES = 200_000;
 const DEFAULT_MAX_ATTEMPTS = 120;
+const DEFAULT_RULESET = 'classic';
+
+const RULESET_DIR = 'src/content/rulesets';
+
+/** Alle Rulesets unter src/content/rulesets, nach ID. */
+function loadRulesets(): Map<string, Ruleset> {
+  const map = new Map<string, Ruleset>();
+  for (const f of readdirSync(RULESET_DIR).filter((n) => n.endsWith('.json'))) {
+    const rs = Ruleset.parse(JSON.parse(readFileSync(`${RULESET_DIR}/${f}`, 'utf8')));
+    map.set(rs.id, rs);
+  }
+  return map;
+}
+
+function rulesetById(map: Map<string, Ruleset>, id: string): Ruleset {
+  const rs = map.get(id);
+  if (!rs) throw new Error(`unknown ruleset "${id}" (known: ${[...map.keys()].join(', ')})`);
+  return rs;
+}
 
 /** Eintrag pro Level; fehlende Felder kommen aus `defaults`. */
 interface LevelConfig {
@@ -36,10 +54,19 @@ interface LevelConfig {
   minDeadEndDepth?: number;
   maxRandomPlayWin?: number;
   maxAttempts?: number;
+  /** Ruleset-ID (Datei unter src/content/rulesets), Default classic. */
+  ruleset?: string;
+  /** Poller: Zahl oder [min, max]. */
+  bollards?: number | [number, number];
+  /** Gesperrte Fahrzeuge: Zahl oder [min, max]. */
+  keys?: number | [number, number];
+  keyChainDepth?: number;
 }
 
 interface PackConfig {
   pack: string;
+  /** Weltnummer fuer das Level-ID-Praefix `w<world>-` und index.json (Default: Pack-Nummer). */
+  world?: number;
   maxStates?: number;
   maxAttempts?: number;
   defaults: Partial<LevelConfig>;
@@ -57,8 +84,8 @@ const only = arg('only', '').split(',').filter(Boolean).map(Number);
 const dry = process.argv.includes('--dry');
 const config = JSON.parse(readFileSync(configPath, 'utf8')) as PackConfig;
 const dir = `src/content/levels/pack-${pack}`;
-const rules = resolveRules(Ruleset.parse(classic));
-const colorIds = rules.vehicles.colors;
+const rulesets = loadRulesets();
+const world = config.world ?? Number(pack);
 mkdirSync(dir, { recursive: true });
 
 const ids: string[] = [];
@@ -73,17 +100,19 @@ config.levels.forEach((entry, index) => {
     return;
   }
   const c = { ...config.defaults, ...entry } as LevelConfig;
+  const rules = resolveRules(rulesetById(rulesets, c.ruleset ?? DEFAULT_RULESET));
   const tol = c.tolerance ?? DEFAULT_TOLERANCE;
   const params: GeneratorOptions = {
     seed: c.seed,
     width: c.grid,
     height: c.grid,
     vehicleCount: c.vehicles,
-    colors: colorIds.slice(0, c.colors),
+    colors: rules.vehicles.colors.slice(0, c.colors),
     targetDifficulty: [c.target - tol, c.target + tol],
     maxAttempts: c.maxAttempts ?? config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
     maxStates: config.maxStates ?? DEFAULT_MAX_STATES,
-    id: `w${Number(pack)}-${String(n).padStart(2, '0')}`,
+    id: `w${world}-${String(n).padStart(2, '0')}`,
+    ruleset: rules.id,
     title: { de: `Level ${n}`, en: `Level ${n}` },
     ...(c.slots !== undefined && { slots: c.slots }),
     ...(c.visible !== undefined && { visiblePassengers: c.visible }),
@@ -93,6 +122,9 @@ config.levels.forEach((entry, index) => {
     ...(c.preferDeadEnds !== undefined && { preferDeadEnds: c.preferDeadEnds }),
     ...(c.minDeadEndDepth !== undefined && { minDeadEndDepth: c.minDeadEndDepth }),
     ...(c.maxRandomPlayWin !== undefined && { maxRandomPlayWin: c.maxRandomPlayWin }),
+    ...(c.bollards !== undefined && { bollards: c.bollards }),
+    ...(c.keys !== undefined && { keys: c.keys }),
+    ...(c.keyChainDepth !== undefined && { keyChainDepth: c.keyChainDepth }),
   };
   let g;
   try {
@@ -122,8 +154,18 @@ config.levels.forEach((entry, index) => {
     ].join(' '),
   );
 });
-if (!dry && !existsSync(`${dir}/index.json`)) mkdirSync(dir, { recursive: true });
-if (!dry) writeFileSync(`${dir}/index.json`, JSON.stringify({ levels: ids }, null, 2) + '\n');
+
+/** Schreibt `levels` und laesst vorhandene Felder (world, name, intros) unveraendert. */
+function writeIndex(): void {
+  const path = `${dir}/index.json`;
+  const existing = existsSync(path)
+    ? (JSON.parse(readFileSync(path, 'utf8')) as object)
+    : { world, name: { de: `Welt ${world}`, en: `World ${world}` }, intros: {} };
+  const merged = { ...existing, levels: ids };
+  PackIndex.parse(merged);
+  writeFileSync(path, JSON.stringify(merged, null, 2) + '\n');
+}
+if (!dry) writeIndex();
 if (!dry) execFileSync('pnpm', ['exec', 'prettier', '--write', dir], { stdio: 'ignore' });
 if (failures > 0) {
   console.error(`${failures} level(s) not matched`);

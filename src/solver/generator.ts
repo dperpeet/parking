@@ -3,6 +3,17 @@ import { createRng, nextRandom, validateLevel } from '../engine';
 import type { Dir, Level, ResolvedRules } from '../schema';
 import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
+import {
+  DEFAULT_KEY_CHAIN_DEPTH,
+  assignKeys,
+  bollardHasRole,
+  chooseBollards,
+  pick,
+  rand,
+  randInt,
+  resolveCount,
+} from './generator-special';
+import type { Pos, Rng } from './generator-special';
 import type { GenerateResult, GeneratorOptions, GeneratorTuning, LevelAnalysis } from './types';
 
 const DEFAULT_MAX_ATTEMPTS = 40;
@@ -24,22 +35,6 @@ const DEFAULT_LENGTH_WEIGHT_BASE = 3;
 
 const DIRS: Dir[] = ['N', 'E', 'S', 'W'];
 const STEP: Record<Dir, [number, number]> = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
-
-type Rng = { state: number };
-
-function rand(r: Rng): number {
-  const [v, next] = nextRandom(r.state);
-  r.state = next;
-  return v;
-}
-
-function randInt(r: Rng, n: number): number {
-  return Math.floor(rand(r) * n);
-}
-
-function pick<T>(r: Rng, items: T[]): T {
-  return items[randInt(r, items.length)]!;
-}
 
 function weightedPick<T>(r: Rng, items: Array<[T, number]>): T {
   const total = items.reduce((a, [, w]) => a + w, 0);
@@ -108,11 +103,12 @@ function placeVehicles(
   r: Rng,
   types: string[],
   colors: string[],
+  bollards: Pos[],
 ): Placed[] | null {
   const n = types.length;
   const blockiness = p.blockiness ?? DEFAULT_BLOCKINESS;
   const placed: Placed[] = [];
-  const occupied = new Set<number>();
+  const occupied = new Set<number>(bollards.map(([bx, by]) => key(bx, by)));
   const paths: Array<Set<number>> = [];
 
   for (let k = n - 1; k >= 0; k--) {
@@ -237,8 +233,16 @@ function buildAttempt(
   }
   shuffleInPlace(r, colors);
 
-  const placed = placeVehicles(p, rules, r, types, colors);
+  const bollards = chooseBollards(r, p.width, p.height, resolveCount(r, p.bollards));
+  const placed = placeVehicles(p, rules, r, types, colors, bollards);
   if (!placed) return null;
+  if (!bollardHasRole(bollards, placed)) return null;
+  const lockCount = resolveCount(r, p.keys);
+  const keyOf =
+    lockCount > 0
+      ? assignKeys(r, placed, lockCount, p.keyChainDepth ?? DEFAULT_KEY_CHAIN_DEPTH)
+      : null;
+  if (lockCount > 0 && !keyOf) return null;
 
   const maxWindow = Math.max(
     MIN_SHUFFLE,
@@ -255,13 +259,18 @@ function buildAttempt(
     seed: attemptSeed,
     ruleset: p.ruleset ?? 'classic',
     ...overridesFor(p),
-    grid: { width: p.width, height: p.height, cells: [] },
-    vehicles: placed.map((v) => ({
+    grid: {
+      width: p.width,
+      height: p.height,
+      cells: bollards.map(([x, y]) => ({ x, y, type: 'fixed' as const })),
+    },
+    vehicles: placed.map((v, i) => ({
       id: v.id,
       pos: v.head,
       dir: v.dir,
       type: v.type,
       color: v.color,
+      ...(keyOf?.has(i) && { locked: true, keyId: placed[keyOf.get(i)!]!.id }),
     })),
     passengers,
     meta: { author: 'generator', solverVersion: SOLVER_VERSION },
