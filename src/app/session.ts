@@ -1,6 +1,7 @@
 // Spiel-Session: verbindet Controller, Modus (Kampagne, Tageslevel, Endlos, Aehnliches Level),
 // Fortschritt, Tipps und Level-Generierung. Kennt kein DOM und keinen Renderer.
-import type { Level, ResolvedRules } from '../schema';
+import { resolveRules } from '../schema';
+import type { Level, ResolvedRules, RulesetOverrides, ShareError } from '../schema';
 import type { GameState } from '../engine/types';
 import { getLanguage, t } from '../i18n';
 import type { GeneratorParams } from '../solver/types';
@@ -12,6 +13,7 @@ import type { Campaign, CampaignLevel } from './levels';
 import { Progress, localDateKey } from './progress';
 import type { PlayRoute, Route } from './router';
 import { dailySeed, endlessSeed, hashString, similarSeed } from './seed';
+import { decodeLevel } from './share';
 import { makeSimilarLevel } from './similar-level';
 import type { SolverPort } from './solver-port';
 import {
@@ -55,7 +57,19 @@ type Mode =
   | { kind: 'campaign'; entry: CampaignLevel }
   | { kind: 'similar'; origin: CampaignLevel | null }
   | { kind: 'daily'; date: string }
-  | { kind: 'endless'; run: EndlessRun };
+  | { kind: 'endless'; run: EndlessRun }
+  | { kind: 'shared'; info: SharedInfo };
+
+/** Fehlerursache eines geteilten Levels. */
+export type SharedError = ShareError | 'unsolvable';
+
+export interface SharedInfo {
+  /** Mit `u: 1` geteilt, also vom Absender nicht als loesbar bestaetigt. */
+  unchecked: boolean;
+  /** Die Analyse hat ihr Zustandslimit erreicht, Loesbarkeit unbekannt. */
+  truncated: boolean;
+  author: string | null;
+}
 
 export interface SessionTitle {
   world: string;
@@ -74,6 +88,10 @@ function baseId(id: string): string {
   return id.replace(/(-s\d+)+$/, '');
 }
 
+function localized(text: Level['title']): string {
+  return typeof text === 'string' ? text : text[getLanguage()];
+}
+
 function distinctColors(level: Level): string[] {
   return [...new Set(level.vehicles.map((v) => v.color))];
 }
@@ -84,6 +102,7 @@ export class GameSession {
   private mode: Mode | null = null;
   private status: SessionStatus = 'loading';
   private recorded = false;
+  private shareError: SharedError | null = null;
   private disposed = false;
   private readonly abort = new AbortController();
   private readonly statusListeners = new Set<(s: SessionStatus) => void>();
@@ -147,16 +166,61 @@ export class GameSession {
           await this.startRun();
           break;
         case 'shared':
-          // Platzhalter bis zum Share-Codec (Paket F1).
-          this.setStatus('notFound');
-          return this.status;
+          await this.startShared(this.route.code);
+          break;
       }
     } catch {
       if (!this.disposed) this.setStatus('error');
       return this.status;
     }
-    if (!this.disposed) this.setStatus('ready');
+    if (!this.disposed) this.setStatus(this.shareError ? 'error' : 'ready');
     return this.status;
+  }
+
+  // --- Geteiltes Level ---
+
+  /** Dekodiert den Code und laesst den Solver die Loesbarkeit pruefen. Fehler stehen in `errorReason()`. */
+  private async startShared(code: string): Promise<void> {
+    const res = decodeLevel(code, (id, overrides) => this.rulesWithOverrides(id, overrides));
+    if (!res.ok) {
+      this.shareError = res.error;
+      return;
+    }
+    const analysis = await this.deps.solver.analyze(res.level, res.rules, {
+      signal: this.abort.signal,
+    });
+    if (this.disposed) return;
+    if (!analysis.solvable && !analysis.truncated) {
+      this.shareError = 'unsolvable';
+      return;
+    }
+    this.mode = {
+      kind: 'shared',
+      info: { unchecked: res.unchecked, truncated: analysis.truncated, author: res.author },
+    };
+    this.install(res.level, res.rules, true);
+  }
+
+  /** Regeln eines Rulesets mit Overrides; null bei unbekanntem Ruleset. */
+  private rulesWithOverrides(id: string, overrides?: RulesetOverrides): ResolvedRules | null {
+    let base: ResolvedRules;
+    try {
+      base = this.deps.campaign.rulesOf(id);
+    } catch {
+      return null;
+    }
+    if (!overrides) return base;
+    return resolveRules({ ...base, schema: 'parking.ruleset/1', id, name: id }, overrides);
+  }
+
+  /** Warum das geteilte Level nicht gespielt werden kann (Status `error`); sonst null. */
+  errorReason(): SharedError | null {
+    return this.shareError;
+  }
+
+  /** Hinweise zum geteilten Level (null in allen anderen Modi). */
+  sharedInfo(): SharedInfo | null {
+    return this.mode?.kind === 'shared' ? this.mode.info : null;
   }
 
   // --- Level installieren ---
@@ -197,6 +261,8 @@ export class GameSession {
         break;
       case 'similar':
         break; // Generierte Level zaehlen nicht zum Kampagnenfortschritt.
+      case 'shared':
+        break; // Geteilte Level zaehlen nicht zum Fortschritt.
     }
   }
 
@@ -227,6 +293,7 @@ export class GameSession {
       case 'similar':
         return this.goCampaign(mode.origin ? this.deps.campaign.after(mode.origin) : undefined);
       case 'daily':
+      case 'shared':
         this.deps.exit();
         return;
       case 'endless':
@@ -411,6 +478,13 @@ export class GameSession {
           world: `${t('titleEndless')} · ${t('stageLabel', { n: mode.run.stage })}`,
           level: t('titleEndlessLevel', { n: mode.run.number }),
         };
+      case 'shared':
+        return {
+          world: mode.info.author
+            ? t('titleSharedBy', { author: mode.info.author })
+            : t('titleShared'),
+          level: localized(level.title),
+        };
     }
   }
 
@@ -421,7 +495,7 @@ export class GameSession {
     let hasNext = true;
     if (mode?.kind === 'campaign') hasNext = campaign.after(mode.entry) !== undefined;
     else if (mode?.kind === 'similar') hasNext = !!mode.origin && !!campaign.after(mode.origin);
-    else if (mode?.kind === 'daily') hasNext = false;
+    else if (mode?.kind === 'daily' || mode?.kind === 'shared') hasNext = false;
     return {
       stars,
       nextLabel: hasNext ? t('next') : t('toMenu'),

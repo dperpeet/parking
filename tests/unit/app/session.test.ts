@@ -5,8 +5,10 @@ import type { StorageLike } from '../../../src/app/progress';
 import type { PlayRoute, Route } from '../../../src/app/router';
 import { dailySeed, similarSeed } from '../../../src/app/seed';
 import { GameSession } from '../../../src/app/session';
+import { encodeLevel } from '../../../src/app/share';
 import { difficultyRange, stageShape } from '../../../src/app/stages';
 import { analyze } from '../../../src/solver';
+import type { LevelAnalysis } from '../../../src/solver/types';
 import { LOSE_ORDER, WIN_ORDER, level, rules } from '../helpers';
 import { FakeSolver, realEngine } from './fakes';
 
@@ -377,5 +379,109 @@ describe('Session: Endlos', () => {
   it('schlaegt schon das erste Level fehl, ist der Status error', async () => {
     h.solver.generateImpl = () => Promise.reject(new Error('timeout'));
     expect(await h.make({ name: 'endless' }).start()).toBe('error');
+  });
+});
+
+describe('Session: geteiltes Level', () => {
+  const share = (opts: Parameters<typeof encodeLevel>[1] = { unchecked: false }, lv = level) => {
+    const res = encodeLevel(lv, opts);
+    if (!res.ok) throw new Error('encode failed');
+    return { name: 'shared', code: res.code } as const;
+  };
+  const realAnalysis = (): LevelAnalysis => analyze(level, rules);
+
+  it('spielt einen gueltigen Code und prueft ihn mit dem Solver', async () => {
+    const s = h.make(share({ unchecked: false, title: 'Mein Level', author: 'Ada' }));
+    expect(await s.start()).toBe('ready');
+    expect(h.solver.analyzeCalls).toBe(1);
+    expect(s.errorReason()).toBeNull();
+    expect(s.sharedInfo()).toEqual({ unchecked: false, truncated: false, author: 'Ada' });
+    expect(s.title()).toEqual({ world: 'Geteilt von Ada', level: 'Mein Level' });
+    expect(s.controller.getLevel().id).toBe('shared');
+  });
+
+  it('wendet Overrides des Codes an', async () => {
+    const lv = { ...level, overrides: { queue: { slots: 7 } } };
+    const s = h.make(share({ unchecked: false }, lv));
+    expect(await s.start()).toBe('ready');
+    expect(s.controller.getRules().queue.slots).toBe(7);
+  });
+
+  it('meldet ungeprueft und truncated als Hinweis, spielt aber', async () => {
+    const unchecked = h.make(share({ unchecked: true }));
+    expect(await unchecked.start()).toBe('ready');
+    expect(unchecked.sharedInfo()).toMatchObject({ unchecked: true, truncated: false });
+
+    h.solver.analyze = async () => ({ ...realAnalysis(), solvable: false, truncated: true });
+    const cut = h.make(share());
+    expect(await cut.start()).toBe('ready');
+    expect(cut.sharedInfo()).toMatchObject({ unchecked: false, truncated: true });
+    expect(cut.title().world).toBe('Geteiltes Level');
+  });
+
+  it('kaputter Code ergibt error mit Ursache und ohne Solver-Aufruf', async () => {
+    const cases: Array<[string, string]> = [
+      ['', 'empty'],
+      ['2.abcd', 'version'],
+      ['1.ab+/', 'encoding'],
+      ['1.AAAA', 'inflate'],
+    ];
+    for (const [code, reason] of cases) {
+      const s = h.make({ name: 'shared', code });
+      expect(await s.start()).toBe('error');
+      expect(s.errorReason()).toBe(reason);
+      expect(s.sharedInfo()).toBeNull();
+    }
+    expect(h.solver.analyzeCalls).toBe(0);
+  });
+
+  it('nicht loesbares Level ergibt error "unsolvable"', async () => {
+    h.solver.analyze = async () => ({ ...realAnalysis(), solvable: false, truncated: false });
+    const s = h.make(share());
+    expect(await s.start()).toBe('error');
+    expect(s.errorReason()).toBe('unsolvable');
+  });
+
+  it('Solver-Fehler ergibt error ohne Ursache', async () => {
+    h.solver.analyze = () => Promise.reject(new Error('worker'));
+    const s = h.make(share());
+    expect(await s.start()).toBe('error');
+    expect(s.errorReason()).toBeNull();
+  });
+
+  it('Sieg zaehlt nicht zum Fortschritt; Dialog ohne Weiter und Aehnliches', async () => {
+    const before = JSON.stringify(h.progress.get());
+    const s = h.make(share());
+    await s.start();
+    play(s, WIN_ORDER);
+    expect(s.controller.getState().status).toBe('won');
+    expect(JSON.stringify(h.progress.get())).toBe(before);
+    const info = s.dialogInfo(s.controller.getState());
+    expect(info.nextLabel).toBe('Zum Menü');
+    expect(info.showSimilar).toBe(false);
+    expect(info.endless).toBeNull();
+    s.next();
+    expect(h.exits).toBe(1);
+  });
+
+  it('Nochmal startet das geteilte Level neu', async () => {
+    const s = h.make(share());
+    await s.start();
+    play(s, WIN_ORDER);
+    s.again();
+    expect(s.controller.getState().status).toBe('playing');
+    expect(s.controller.getState().moves).toBe(0);
+  });
+
+  it('Abbruch waehrend der Analyse ueber dispose', async () => {
+    let signal: AbortSignal | undefined;
+    h.solver.analyze = (_l, _r, opts) => {
+      signal = opts?.signal;
+      return new Promise(() => undefined);
+    };
+    const s = h.make(share());
+    void s.start();
+    s.dispose();
+    expect(signal?.aborted).toBe(true);
   });
 });
