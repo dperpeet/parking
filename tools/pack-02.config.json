@@ -239,22 +239,24 @@
       "grid": 7,
       "vehicles": 11,
       "colors": 5,
-      "target": 7.3,
-      "bollards": 3,
-      "keys": 3,
-      "keyChainDepth": 2,
-      "slots": 4
-    },
-    {
-      "seed": 224,
-      "grid": 7,
-      "vehicles": 11,
-      "colors": 5,
       "target": 7.4,
       "bollards": 3,
       "keys": 3,
       "keyChainDepth": 2,
-      "slots": 4
+      "slots": 4,
+      "tolerance": 0.2
+    },
+    {
+      "seed": 1224,
+      "grid": 7,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 7.6,
+      "bollards": 3,
+      "keys": 3,
+      "keyChainDepth": 2,
+      "slots": 4,
+      "tolerance": 0.2
     }
   ]
 }
