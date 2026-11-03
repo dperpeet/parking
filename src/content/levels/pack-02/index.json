@@ -1,0 +1,6 @@
+{
+  "world": 2,
+  "name": { "de": "Poller & Schlüssel", "en": "Bollards & Keys" },
+  "levels": ["001", "002"],
+  "intros": { "001": "bollards", "002": "keys" }
+}

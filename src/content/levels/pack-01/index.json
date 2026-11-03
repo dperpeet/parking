@@ -1,4 +1,9 @@
 {
+  "world": 1,
+  "name": {
+    "de": "Werkstatt",
+    "en": "Workshop"
+  },
   "levels": [
     "001",
     "002",

@@ -2,12 +2,20 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import classic from '../../src/content/rulesets/classic.json';
+import world2 from '../../src/content/rulesets/world2.json';
 import { validateLevel } from '../../src/engine';
-import { Level, Ruleset, resolveRules } from '../../src/schema';
+import { Level, PackIndex, Ruleset, resolveRules } from '../../src/schema';
 import { analyze } from '../../src/solver/analyze';
 import type { LevelAnalysis } from '../../src/solver/types';
 
 const ROOT = 'src/content/levels';
+const RULESETS = new Map([classic, world2].map((r) => [r.id, Ruleset.parse(r)]));
+
+function rulesetOf(level: Level): Ruleset {
+  const ruleset = RULESETS.get(level.ruleset);
+  if (!ruleset) throw new Error(`unknown ruleset ${level.ruleset}`);
+  return ruleset;
+}
 
 function levelFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -26,7 +34,7 @@ describe('level content', () => {
 
   it.each(files)('%s is valid and solvable', (file) => {
     const level = Level.parse(JSON.parse(readFileSync(file, 'utf8')));
-    const rules = resolveRules(Ruleset.parse(classic), level.overrides);
+    const rules = resolveRules(rulesetOf(level), level.overrides);
     expect(validateLevel(level, rules)).toEqual([]);
     const a = analyze(level, rules);
     expect(a.truncated).toBe(false);
@@ -39,10 +47,12 @@ describe('level content', () => {
       .filter((p) => existsSync(p));
     expect(indexes.length).toBeGreaterThan(0);
     for (const index of indexes) {
-      const { levels } = JSON.parse(readFileSync(index, 'utf8')) as { levels: string[] };
+      const { levels } = PackIndex.parse(JSON.parse(readFileSync(index, 'utf8')));
       expect(levels.length).toBeGreaterThan(0);
       for (const id of levels) expect(existsSync(join(index, '..', `${id}.json`))).toBe(true);
     }
+    const worlds = indexes.map((p) => PackIndex.parse(JSON.parse(readFileSync(p, 'utf8'))).world);
+    expect(new Set(worlds).size).toBe(worlds.length);
   });
 });
 
