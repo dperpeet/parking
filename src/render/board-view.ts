@@ -23,6 +23,9 @@ const SHAKE_AMPLITUDE = 5;
 const SHAKE_CYCLES = 3;
 const EXIT_MS_PER_CELL = 70;
 const EXIT_MIN_MS = 260;
+/** Ausfahren: Ab diesem Fortschritt blendet das Fahrzeug ueber die Spanne EXIT_FADE_SPAN aus. */
+const EXIT_FADE_FROM = 0.7;
+const EXIT_FADE_SPAN = 0.3;
 const HINT_PULSES = 3;
 const HINT_ALPHA_MIN = 0.55;
 /** Fahrspur-Vorschau: Dauer, Strichperiode (Anteil Zelle), Strichanteil, Staerken in px, Pfeilspitze (Anteil Zelle). */
@@ -265,7 +268,7 @@ export class BoardView implements BoardAnimator {
         onUpdate: (p) => {
           view.x = view.restX + dx * distance * p;
           view.y = view.restY + dy * distance * p;
-          view.alpha = 1 - Math.max(0, p - 0.7) / 0.3;
+          view.alpha = 1 - Math.max(0, p - EXIT_FADE_FROM) / EXIT_FADE_SPAN;
           this.host.requestRender();
         },
       })

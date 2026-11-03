@@ -11,7 +11,7 @@ import { GameSession } from './session';
 import { applyLanguage, applyMotion } from './settings-apply';
 import { createSolverPort } from './solver-port';
 
-// ENGINE-WEICHE: einzige Stelle, an der die Engine gewaehlt wird (Tests nutzen app/fake-engine.ts).
+// Einzige Stelle, an der die Engine gewaehlt wird: die echte Engine.
 const engine: EngineApi = { createGame, step };
 
 function boot(): void {

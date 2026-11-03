@@ -6,7 +6,7 @@ function unsupported(message: string): LevelIssue {
   return { code: 'unsupportedRule', message };
 }
 
-/** Regeln, die M1 nicht abdeckt. */
+/** Regel-Varianten und Zelltypen, die die Engine nicht unterstützt. */
 function unsupportedRules(level: Level, rules: ResolvedRules): LevelIssue[] {
   const issues: LevelIssue[] = [];
   if (rules.movement.model !== 'straight') {

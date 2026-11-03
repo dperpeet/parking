@@ -1,5 +1,5 @@
-// Poller und Schluessel fuer den Generator (Welt 2). Zieht nur dann Zufall, wenn etwas gesetzt ist,
-// damit Level ohne Poller/Schluessel byte-gleich zu frueher bleiben.
+// Poller und Schluessel fuer den Generator (Welt 2). Ohne Poller und Schluessel wird kein zusaetzlicher
+// Zufall gezogen; die Ausgabe haengt dann nur vom Seed ab, wie beim klassischen Generator.
 import { nextRandom } from '../engine';
 import type { Dir } from '../schema';
 
