@@ -2,7 +2,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Dir } from '../schema';
 import { dashSegments } from './direction';
-import { NUMBER_WIDTH, layoutBadges } from './lock-layout';
+import { badgeSize, layoutBadges } from './lock-layout';
 import { THEME } from './theme';
 
 /** Gestrichelter Innenrahmen: Abstand zum Rand, Strichperiode (Anteil Zelle), Strichanteil, Staerke. */
@@ -69,17 +69,22 @@ function drawKey(g: Graphics, u: number): void {
 }
 
 /** Eine Marke (Pille mit Schloss oder Schluessel und optionaler Nummer). */
-function badge(kind: Kind, number: number | null, radius: number, open = false): Container {
+function badge(
+  kind: Kind,
+  number: number | null,
+  radius: number,
+  compact: boolean,
+  open = false,
+): Container {
   const c = new Container();
-  const numberW = number === null ? 0 : radius * NUMBER_WIDTH;
-  const width = 2 * radius + numberW;
+  const { width, height } = badgeSize(radius, number !== null, compact);
   const g = new Graphics();
-  g.roundRect(-width / 2, -radius, width, 2 * radius, radius)
+  g.roundRect(-width / 2, -height / 2, width, height, radius)
     .fill(kind === 'lock' ? THEME.panel : THEME.star)
     .stroke({ width: BADGE_OUTLINE, color: THEME.outline });
   c.addChild(g);
   const icon = new Graphics();
-  icon.position.set(-width / 2 + radius, 0);
+  icon.position.set(compact ? 0 : -width / 2 + radius, compact ? -height / 2 + radius : 0);
   const u = radius * ICON_SIZE * 2;
   if (kind === 'lock') drawLock(icon, u / 2, open);
   else drawKey(icon, u / 2);
@@ -95,7 +100,8 @@ function badge(kind: Kind, number: number | null, radius: number, open = false):
       },
     });
     text.anchor.set(0.5);
-    text.position.set(width / 2 - radius * 0.62, radius * 0.08);
+    if (compact) text.position.set(0, height / 2 - radius * 0.52);
+    else text.position.set(width / 2 - radius * 0.62, radius * 0.08);
     c.addChild(text);
   }
   return c;
@@ -106,6 +112,7 @@ export class LockDecor extends Container {
   private lockBadge: Container | null = null;
   private lockHome = { x: 0, y: 0 };
   private readonly radius: number;
+  private readonly compact: boolean;
   private opened = false;
   private readonly lockNumber: number | null;
 
@@ -150,10 +157,11 @@ export class LockDecor extends Container {
       numbered: wanted.map((b) => b.n !== null),
     });
     this.radius = fit.radius;
+    this.compact = fit.compact;
     wanted.forEach((b, i) => {
       const spot = fit.spots[i];
       if (!spot) return;
-      const view = badge(b.kind, b.n, fit.radius);
+      const view = badge(b.kind, b.n, fit.radius, fit.compact);
       view.position.set(spot.x, spot.y);
       this.addChild(view);
       if (b.kind === 'lock') {
@@ -170,7 +178,7 @@ export class LockDecor extends Container {
     if (!lockBadge) return;
     if (p >= OPEN_AT && !this.opened) {
       this.opened = true;
-      const fresh = badge('lock', this.lockNumber, this.radius, true);
+      const fresh = badge('lock', this.lockNumber, this.radius, this.compact, true);
       fresh.position.copyFrom(lockBadge.position);
       this.removeChild(lockBadge);
       lockBadge.destroy({ children: true });
