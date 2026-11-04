@@ -37,10 +37,6 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 - Installierbarkeit und Offline-Betrieb.
 
-## Qualitäts-Gates
-
-- Coverage-Schwelle für die Engine (mindestens 90 %): derzeit nicht in der CI.
-
 ## Release v1.0.0
 
 - Mindestens 60 Level.
