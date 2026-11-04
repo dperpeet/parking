@@ -7,10 +7,12 @@ import { h, icon } from '../dom';
 const TITLE_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsTitle',
   keys: 'introKeysTitle',
+  honk: 'introHonkTitle',
 };
 const TEXT_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsText',
   keys: 'introKeysText',
+  honk: 'introHonkText',
 };
 
 export const mechanicTitle = (mechanic: Mechanic): string => t(TITLE_KEYS[mechanic]);

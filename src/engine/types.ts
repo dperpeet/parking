@@ -105,7 +105,8 @@ export type GameEvent =
   | { type: 'slotAdded'; slotIndex: number }
   | { type: 'won'; moves: number; stars: number }
   | { type: 'lost'; reason: LoseReason }
-  | { type: 'invalidAction'; reason: string };
+  /** `vehicleId`: betroffenes Fahrzeug, wenn die Aktion eins nennt (z. B. hupendes Fahrzeug). */
+  | { type: 'invalidAction'; reason: string; vehicleId?: string };
 
 export interface StepResult {
   state: GameState;

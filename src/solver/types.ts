@@ -5,6 +5,13 @@ import type { Level, ResolvedRules } from '../schema';
 export interface AnalyzeOptions {
   /** Obergrenze fuer verschiedene Zustaende (Default 2_000_000). */
   maxStates?: number;
+  /**
+   * Hupe (`usePowerUp` honk, je parked Fahrzeug) als zusaetzliche Aktion im Zustandsraum
+   * (Zaehler `powerUps.honk` begrenzt). Default false: nur Tipps (pack-01/02 und Schwierigkeit
+   * unveraendert). Mit true beziehen sich alle Zaehlungen, `solution` und `difficulty` auf
+   * Tipps und Hupen; Hupen stehen in `solution` als `honk:<vehicleId>`.
+   */
+  allowHonk?: boolean;
 }
 
 export interface FirstMoveInfo {
@@ -103,6 +110,12 @@ export interface GeneratorTuning {
   keys?: number | [number, number];
   /** Maximale Laenge einer Schluesselkette (A sperrt B sperrt C ... ), Default 1. */
   keyChainDepth?: number;
+  /**
+   * Pflicht-Hupe (Default false): nur Kandidaten, die mit reinen Tipps unloesbar und mit Hupe
+   * (`analyze` mit `allowHonk`, Zaehler aus den Regeln, mindestens 1) loesbar sind. Die
+   * Schwierigkeit kommt dann aus der Analyse mit Hupe. Erfordert `powerups.honk` in den Regeln.
+   */
+  requireHonk?: boolean;
 }
 
 /** Generator-Eingabe inklusive Tuning. */

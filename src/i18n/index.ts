@@ -136,6 +136,9 @@ const de = {
   introKeysTitle: 'Schlüssel & Schlösser',
   introKeysText:
     'Ein Fahrzeug mit Schloss rührt sich nicht, bis sein Schlüssel-Fahrzeug das Feld verlassen hat. Gleiche Nummern gehören zusammen.',
+  introHonkTitle: 'Hupe',
+  introHonkText:
+    'Steckt ein Fahrzeug fest, lass es hupen: Das erste Fahrzeug auf seinem Weg rutscht ein Stück zur Seite. Poller und Fahrzeuge mit Schloss weichen nicht aus. In dieser Welt brauchst du die Hupe.',
   introStart: 'Los geht’s',
   introReplay: 'Einführung ansehen: {name}',
   noStorage: 'Fortschritt wird in diesem Browser nicht gespeichert',
@@ -386,6 +389,9 @@ const en: Record<StringKey, string> = {
   introKeysTitle: 'Locks & keys',
   introKeysText:
     'A locked vehicle will not budge until its key vehicle has left the board. Matching numbers belong together.',
+  introHonkTitle: 'Horn',
+  introHonkText:
+    'If a vehicle is stuck, let it honk: the first vehicle in its way slides aside a little. Bollards and locked vehicles do not move. In this world you need the horn.',
   introStart: 'Let’s go',
   introReplay: 'Show introduction: {name}',
   noStorage: 'Progress is not saved in this browser',

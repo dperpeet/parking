@@ -70,6 +70,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 
 - `vehicleExited.path`: Zellen **vor** der Kopfzelle bis zur letzten Zelle im Raster (ohne Kopfzelle; leer, wenn der Kopf schon am Rand steht).
 - `passengersShuffled.to` ist exklusiv.
+- `invalidAction.vehicleId` (optional): das in der Aktion genannte Fahrzeug, wenn es eins gibt (bei `tapVehicle` und `honk`, auch `unknownVehicle` traegt die genannte ID); der Renderer laesst ein vorhandenes Fahrzeug wackeln.
 - `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `noTarget`, `notBlocked`, `blockedByBollard`, `blockerLocked`, `cannotYield`.
 - `vehicleYielded`: `vehicleId` = ausweichender Blocker, `byVehicleId` = hupendes Fahrzeug, `from`/`to` = Kopfzelle vorher/nachher.
 - Undo nimmt nur Züge/Shuffles zurück: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
@@ -101,15 +102,16 @@ Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellunge
 ## Solver-Port (App)
 
 `SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, `analyze(level, rules, { maxStates?, signal? })`.
-`hint` liefert `HintMove | null` (`src/solver/types.ts`): `{ action: 'tap' | 'honk', vehicleId }`. `analyze` und die Schwierigkeit kennen nur Tipps; ein Hupen-Tipp kommt nur, wenn kein Tipp mehr gewinnt und noch eine Hupe uebrig ist.
+`hint` liefert `HintMove | null` (`src/solver/types.ts`): `{ action: 'tap' | 'honk', vehicleId }`. `analyze` und die Schwierigkeit kennen per Default nur Tipps; mit `AnalyzeOptions.allowHonk` gehoeren Hupen (begrenzt durch `powerUps.honk`) zum Zustandsraum, `solution` enthaelt sie als `honk:<vehicleId>`. `hint` bevorzugt einen Tipp, der ohne Hupe gewinnt; sonst (Hupe uebrig) den Tipp oder die Hupe mit den meisten Gewinnfolgen in der Suche mit Hupe.
 Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams & GeneratorTuning`).
 
 ## Welten und Packs
 
 - Pack-Index `src/content/levels/pack-XX/index.json` = `PackIndex` (`src/schema/pack.ts`):
   `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet
-  einer Datei-ID eine `Mechanic` (`bollards` | `keys`) zu: vor diesem Level erscheint die Intro-Karte.
-- Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed`, `special.keyVehicles` und Hupe `powerups.honk` mit 1 Nutzung).
+  einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk`) zu: vor diesem Level erscheint die Intro-Karte.
+- Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed`, `special.keyVehicles` und Hupe `powerups.honk` mit 1 Nutzung),
+  `world3` (= `world2` mit Sterne-Schwellen `three: 1`, `two: 3`, damit die Pflicht-Hupe keinen Stern kostet).
   Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine
   verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhaengig davon.
 - Kampagne (`src/app/levels.ts`): `Campaign.worlds: CampaignWorld[]` (aufsteigend), `CampaignLevel.world`,
@@ -121,4 +123,4 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
 - Intro-Karte: einmal pro Mechanik vor dem ersten Start des Levels mit `intro`; gesehen wird im
   Spielstand gemerkt (additiv, `seenIntros: Mechanic[]`), ueber die Levelauswahl erneut abrufbar.
 - Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
-  (Default 1). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.
+  (Default 1), `requireHonk` (nur Level, die mit Tipps allein unloesbar und mit Hupe loesbar sind). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.

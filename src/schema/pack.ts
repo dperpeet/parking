@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { LocalizedText } from './ruleset';
 
 /** Spielmechanik, die eine Welt einfuehrt (Intro-Karte beim ersten Level mit dieser Mechanik). */
-export const Mechanic = z.enum(['bollards', 'keys']);
+export const Mechanic = z.enum(['bollards', 'keys', 'honk']);
 export type Mechanic = z.infer<typeof Mechanic>;
 
 /**
