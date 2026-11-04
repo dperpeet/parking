@@ -3,15 +3,17 @@ import type { Dir } from '../../src/schema';
 import { CELL_GAP } from '../../src/render/layout';
 import {
   BADGE_PAD,
-  badgeWidth,
+  badgeSize,
   boxesOverlap,
   keepClear,
   layoutBadges,
 } from '../../src/render/lock-layout';
 import type { Box } from '../../src/render/lock-layout';
 
+const MIN_CELL = 40;
 const DIRS: Dir[] = ['N', 'E', 'S', 'W'];
-const CELLS = [44, 52, 76];
+/** Kleinste real vorkommende Zellgroesse (7 Spalten bei 360 px Breite) bis zu grossen Desktop-Zellen. */
+const CELLS = [MIN_CELL, 44, 52, 76];
 const LENGTHS = [2, 3, 4];
 
 function size(dir: Dir, length: number, cell: number): { w: number; h: number } {
@@ -37,11 +39,6 @@ describe('layoutBadges', () => {
     for (const length of LENGTHS) {
       for (const cell of CELLS) {
         for (const c of CASES) {
-          // Zwei nummerierte Marken nebeneinander auf einem kurzen, schmalen Fahrzeug brauchen mehr Platz:
-          // dort ist unter ~52 px Zellgroesse eine Ueberlappung der Marken untereinander bekannt (Ausnahmefall).
-          const tight =
-            c.numbered.length === 2 && c.numbered[0] === true && length === 2 && cell < 52;
-          if (tight && (dir === 'N' || dir === 'S')) continue;
           it(`laesst Symbol und Pfeile frei: ${dir}, Laenge ${length}, Zelle ${cell}, ${c.label}`, () => {
             const { w, h } = size(dir, length, cell);
             const want = radiusFor(cell);
@@ -61,8 +58,8 @@ describe('layoutBadges', () => {
             const boxes: Box[] = fit.spots.map((s, i) => ({
               cx: s.x,
               cy: s.y,
-              hw: badgeWidth(fit.radius, c.numbered[i] === true) / 2,
-              hh: fit.radius,
+              hw: badgeSize(fit.radius, c.numbered[i] === true, fit.compact).width / 2,
+              hh: badgeSize(fit.radius, c.numbered[i] === true, fit.compact).height / 2,
             }));
             for (const b of boxes) {
               for (const k of keep) expect(boxesOverlap(b, k)).toBe(false);
