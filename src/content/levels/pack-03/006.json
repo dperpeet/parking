@@ -1,0 +1,129 @@
+{
+  "schema": "parking.level/1",
+  "id": "w3-06",
+  "title": {
+    "de": "Level 6",
+    "en": "Level 6"
+  },
+  "seed": 2848107827,
+  "ruleset": "world3",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 2,
+        "y": 5,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [1, 4],
+      "dir": "S",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [2, 4],
+      "dir": "W",
+      "type": "l",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [2, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [5, 3],
+      "dir": "E",
+      "type": "l",
+      "color": "blue"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 2],
+      "dir": "S",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [4, 2],
+      "dir": "E",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 3],
+      "dir": "N",
+      "type": "m",
+      "color": "green"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "orange",
+    "blue",
+    "orange",
+    "blue",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "blue",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 4.1,
+    "solverVersion": "1.0"
+  }
+}
