@@ -44,6 +44,16 @@ function art(mechanic: Mechanic): HTMLElement {
       h('span', { class: 'art-detour' }, '↷'),
     );
   }
+  if (mechanic === 'honk') {
+    return h(
+      'div',
+      { class: 'intro-art art-honk', 'aria-hidden': 'true' },
+      h('span', { class: 'art-bubble' }, t('honkBubble')),
+      car('green'),
+      h('span', { class: 'art-detour' }, '→'),
+      car('blue'),
+    );
+  }
   const lock = h('span', { class: 'art-badge art-badge-lock' }, icon('lock'), h('b', {}, '1'));
   const key = h('span', { class: 'art-badge art-badge-key' }, icon('key'), h('b', {}, '1'));
   return h(
