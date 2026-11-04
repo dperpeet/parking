@@ -159,10 +159,12 @@ describe('tap: blocking', () => {
   it('rejects unknown and non-parked vehicles', () => {
     const { state, rules } = setup(BASIC);
     expect(step(state, tap('nope'), rules).events).toEqual([
-      { type: 'invalidAction', reason: 'unknownVehicle' },
+      { type: 'invalidAction', reason: 'unknownVehicle', vehicleId: 'nope' },
     ]);
     const queued = step(state, tap('b'), rules).state;
-    expect(step(queued, tap('b'), rules).events[0]).toMatchObject({ type: 'invalidAction' });
+    expect(step(queued, tap('b'), rules).events).toEqual([
+      { type: 'invalidAction', reason: 'notParked', vehicleId: 'b' },
+    ]);
   });
 });
 
@@ -315,7 +317,8 @@ describe('win and stars', () => {
       { type: 'timeUp' as const },
     ]) {
       const res = step(won, action, rules);
-      expect(res.events).toEqual([{ type: 'invalidAction', reason: 'gameWon' }]);
+      const named = action.type === 'tapVehicle' ? { vehicleId: 'a' } : {};
+      expect(res.events).toEqual([{ type: 'invalidAction', reason: 'gameWon', ...named }]);
       expect(res.state).toBe(won);
     }
   });
@@ -380,7 +383,7 @@ describe('losing', () => {
     const { state, rules } = setup(DEADLOCK);
     const lost = step(state, tap('z'), rules).state;
     expect(step(lost, tap('x'), rules).events).toEqual([
-      { type: 'invalidAction', reason: 'gameLost' },
+      { type: 'invalidAction', reason: 'gameLost', vehicleId: 'x' },
     ]);
     expect(step(lost, { type: 'timeUp' }, rules).events[0]).toMatchObject({
       type: 'invalidAction',

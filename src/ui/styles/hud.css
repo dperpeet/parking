@@ -306,6 +306,32 @@
   animation: hint-pulse 650ms ease-in-out infinite alternate;
 }
 
+/* Hupen-Tipp: Sprechblase mit Hupen-Symbol am Fahrzeug (hier hupen, nicht tippen) */
+.vehicle-btn[data-hint='honk'] {
+  overflow: visible;
+}
+
+.hint-bubble {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--t-accent-ink);
+  pointer-events: none;
+  background: var(--t-accent);
+  border: 3px solid var(--t-outline);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.hint-bubble svg {
+  width: 20px;
+  height: 20px;
+}
+
 @keyframes hint-pulse {
   from {
     opacity: 0.55;

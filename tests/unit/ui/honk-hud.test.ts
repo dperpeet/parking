@@ -195,9 +195,11 @@ describe('Tipp mit Hupe', () => {
     const { hud } = mount();
     hud.setHint('V', 'honk');
     expect(byId('vehicle-V').hasAttribute('data-hint')).toBe(true);
+    expect(byId('vehicle-V').querySelector('.hint-bubble')).not.toBeNull();
     expect(honkBtn().hasAttribute('data-hint')).toBe(true);
     hud.setHint(null);
     expect(byId('vehicle-V').hasAttribute('data-hint')).toBe(false);
+    expect(byId('vehicle-V').querySelector('.hint-bubble')).toBeNull();
     expect(honkBtn().hasAttribute('data-hint')).toBe(false);
   });
 
@@ -205,6 +207,7 @@ describe('Tipp mit Hupe', () => {
     const { hud } = mount();
     hud.setHint('B', 'tap');
     expect(byId('vehicle-B').hasAttribute('data-hint')).toBe(true);
+    expect(byId('vehicle-B').querySelector('.hint-bubble')).toBeNull();
     expect(honkBtn().hasAttribute('data-hint')).toBe(false);
   });
 

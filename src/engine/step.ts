@@ -10,8 +10,13 @@ import { evaluateOutcome, loseGame } from './rules/outcome';
 import { applyExit, checkTap } from './rules/tap';
 import type { Action, GameEvent, GameState, PowerUpId, StepResult } from './types';
 
-function invalid(state: GameState, reason: string): StepResult {
-  return { state, events: [{ type: 'invalidAction', reason }] };
+/** `vehicleId` = das in der Aktion genannte Fahrzeug (falls vorhanden), damit der Renderer es zeigen kann. */
+function invalid(state: GameState, reason: string, vehicleId?: string): StepResult {
+  const event: GameEvent =
+    vehicleId === undefined
+      ? { type: 'invalidAction', reason }
+      : { type: 'invalidAction', reason, vehicleId };
+  return { state, events: [event] };
 }
 
 /** Einsteigen und Sieg/Niederlage nach einer Zustandsaenderung. */
@@ -22,8 +27,8 @@ function settle(s: GameState, rules: ResolvedRules, events: GameEvent[]): void {
 
 function tap(state: GameState, vehicleId: string, rules: ResolvedRules): StepResult {
   const vehicle = state.vehicles.find((v) => v.id === vehicleId);
-  if (!vehicle) return invalid(state, 'unknownVehicle');
-  if (vehicle.status !== 'parked') return invalid(state, 'notParked');
+  if (!vehicle) return invalid(state, 'unknownVehicle', vehicleId);
+  if (vehicle.status !== 'parked') return invalid(state, 'notParked', vehicleId);
 
   const check = checkTap(state, vehicle);
   if (!check.ok) {
@@ -53,8 +58,9 @@ function usePowerUp(
   // Nach Niederlage erlaubt: Undo immer, Hupe nur bei noMoves.
   const allowedWhenLost =
     powerUp === 'undo' || (powerUp === 'honk' && state.loseReason === 'noMoves');
-  if (state.status === 'lost' && !allowedWhenLost) return invalid(state, 'gameLost');
-  if (state.powerUps[powerUp] <= 0) return invalid(state, 'noUsesLeft');
+  const target = powerUp === 'honk' ? vehicleId : undefined;
+  if (state.status === 'lost' && !allowedWhenLost) return invalid(state, 'gameLost', target);
+  if (state.powerUps[powerUp] <= 0) return invalid(state, 'noUsesLeft', target);
 
   const s = draft(state);
   const events: GameEvent[] = [];
@@ -73,7 +79,7 @@ function usePowerUp(
       outcome = applyHonk(s, state, vehicleId, events);
       break;
   }
-  if (!outcome.ok) return invalid(state, outcome.reason);
+  if (!outcome.ok) return invalid(state, outcome.reason, target);
 
   s.powerUps[powerUp] -= 1;
   s.powerUpsUsed += 1;
@@ -82,11 +88,20 @@ function usePowerUp(
   return { state: s, events };
 }
 
+/** Das in der Aktion genannte Fahrzeug (Tipp oder Hupe), sonst undefined. */
+function namedVehicle(action: Action): string | undefined {
+  if (action.type === 'tapVehicle') return action.vehicleId;
+  if (action.type === 'usePowerUp' && action.powerUp === 'honk') return action.vehicleId;
+  return undefined;
+}
+
 export function step(state: GameState, action: Action, rules: ResolvedRules): StepResult {
-  if (state.status === 'won') return invalid(state, 'gameWon');
+  if (state.status === 'won') {
+    return invalid(state, 'gameWon', namedVehicle(action));
+  }
   switch (action.type) {
     case 'tapVehicle':
-      if (state.status === 'lost') return invalid(state, 'gameLost');
+      if (state.status === 'lost') return invalid(state, 'gameLost', action.vehicleId);
       return tap(state, action.vehicleId, rules);
     case 'usePowerUp':
       return usePowerUp(state, action.powerUp, action.vehicleId, rules);

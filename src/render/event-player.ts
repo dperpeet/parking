@@ -60,6 +60,16 @@ export class EventPlayer {
           else this.board.previewLane?.(event.vehicleId, event.blockerId);
           await this.board.shake(event.vehicleId);
           break;
+        case 'invalidAction':
+          this.hud.onEvent(event, state);
+          // Ungueltige Aktion an einem Fahrzeug auf dem Feld (z. B. Hupe ohne Wirkung): wackeln.
+          if (
+            event.vehicleId !== undefined &&
+            state.vehicles.some((v) => v.id === event.vehicleId && v.status === 'parked')
+          ) {
+            await this.board.shake(event.vehicleId);
+          }
+          break;
         case 'vehicleExited':
           await this.board.exit(event.vehicleId, event.path);
           this.hud.onEvent(event, state);
