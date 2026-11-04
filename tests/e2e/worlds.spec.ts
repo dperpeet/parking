@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'json' };
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
+import world2 from '../../src/content/levels/pack-02/index.json' with { type: 'json' };
 import { seedSave } from './support';
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
@@ -79,4 +80,27 @@ test('Gesperrtes Fahrzeug ist fuer Screenreader beschriftet', async ({ page }) =
   await expect(page.getByTestId('intro-dialog')).toHaveCount(0);
   await locked.click();
   await expect(page.getByTestId('live')).toContainText('gesperrt');
+});
+
+/** Spielstand, in dem alle Level von Welt 1 und 2 geschafft sind. */
+function worldsOneAndTwoDone(): string {
+  const levels: Record<string, { stars: number; bestMoves: number; completed: boolean }> = {};
+  for (const id of world1.levels) levels[`01/${id}`] = { stars: 3, bestMoves: 20, completed: true };
+  for (const id of world2.levels) levels[`02/${id}`] = { stars: 3, bestMoves: 20, completed: true };
+  return JSON.stringify({ version: 1, levels });
+}
+
+test('Welt 3 ist nach Welt 1 und 2 offen, Intro-Karte Hupe erscheint vor Level 1', async ({
+  page,
+}) => {
+  await seedSave(page, worldsOneAndTwoDone());
+  await page.goto('/');
+  await expect(page.getByTestId('world-3')).toHaveAttribute('data-state', 'open');
+  await expect(page.getByTestId('tile-3-1')).toBeEnabled();
+  await expect(page.getByTestId('tile-3-2')).toBeDisabled();
+  await page.getByTestId('tile-3-1').click();
+  const intro = page.getByTestId('intro-dialog');
+  await expect(intro).toHaveAttribute('data-mechanic', 'honk');
+  await page.getByTestId('intro-start').click();
+  await expect(page.getByTestId('vehicle-v1')).toBeVisible();
 });

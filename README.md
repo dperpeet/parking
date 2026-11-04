@@ -6,9 +6,9 @@ Alle Regeln sind datengetrieben (JSON-Rulesets und JSON-Level).
 
 Funktionen:
 
-- Kampagne mit zwei Welten (54 Level), Poller und Schlüssel ab Welt 2
+- Kampagne mit drei Welten (69 Level), Poller und Schlüssel ab Welt 2, Hupe ab Welt 3
 - Tageslevel, Endlos-Modus, "Stufe halten" und "Ähnliches Level"
-- Tipps, Undo, Shuffle und Extra-Slot
+- Tipps, Undo, Shuffle, Extra-Slot und Hupe
 - Level-Editor mit Lösbarkeitsprüfung und Teilen per Link
 - Fortschritt lokal im Browser, Deutsch und Englisch
 

@@ -7,7 +7,9 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 - Einbahnstraßen, Abbiegen (`turns`, `pathfinding`), Schranken und Mystery-Fahrzeuge.
 - Doppelfarb-Fahrzeuge (`vehicles.dualColor`) und `departOnFull = false` (volle Fahrzeuge blockieren).
 - Passagiere: `order` (`lookahead`, `free`), `boardPolicy` (`largestFree`, `playerChoice`) und `mysteryRate`.
-- Poller werden spielerisch erst mit Einbahn, Abbiegen und Hupe interessant, weil Fahrzeuge nur geradeaus fahren.
+- Die Hupe ist da und in Welt 3 Pflicht. Poller werden spielerisch erst mit Einbahn und Abbiegen richtig interessant, weil Fahrzeuge nur geradeaus fahren; beides ist offen.
+- Pflicht-Hupe in Tageslevel, Endlos und Stufen (dort lösen heute Tipps allein).
+- Hupen-Zahl im Editor einstellbar.
 
 ## Wertung
 
@@ -39,6 +41,5 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Release v1.0.0
 
-- Mindestens 60 Level.
 - Anleitung.
 - Datenschutzhinweis.

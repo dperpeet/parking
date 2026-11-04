@@ -6,9 +6,13 @@ import { decodeLevel, encodeLevel } from '../../../src/app/share';
 import type { RulesLookup } from '../../../src/app/share';
 import { Level, SHARE_MAX_LENGTH, SHARE_PREFIX, resolveRules } from '../../../src/schema';
 import type { ShareError } from '../../../src/schema';
-import { classicRuleset as classic, world2Ruleset as world2 } from '../helpers';
+import {
+  classicRuleset as classic,
+  world2Ruleset as world2,
+  world3Ruleset as world3,
+} from '../helpers';
 
-const RULESETS = new Map([classic, world2].map((r) => [r.id, r]));
+const RULESETS = new Map([classic, world2, world3].map((r) => [r.id, r]));
 const lookup: RulesLookup = (id, overrides) => {
   const ruleset = RULESETS.get(id);
   return ruleset ? resolveRules(ruleset, overrides) : null;
