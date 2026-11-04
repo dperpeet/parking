@@ -57,6 +57,8 @@ export interface EditorState {
   slots: number | null;
   /** Override fuer passengers.visible; null = Wert des Rulesets. */
   visible: number | null;
+  /** Power-up-Overrides eines importierten Levels (z. B. Hupe auf classic); der Editor aendert sie nicht, bewahrt sie aber. */
+  powerups?: RulesetOverrides['powerups'];
   title: string;
   nextId: number;
   passengers: string[];
@@ -114,6 +116,7 @@ export function overridesOf(state: EditorState, ruleset: Ruleset): RulesetOverri
   const out: RulesetOverrides = {};
   if (state.slots !== null) out.queue = { slots: state.slots };
   if (state.visible !== null) out.passengers = { visible: state.visible };
+  if (state.powerups && Object.keys(state.powerups).length > 0) out.powerups = state.powerups;
   const special: NonNullable<RulesetOverrides['special']> = {};
   if (state.fixed.length > 0 && !ruleset.special.fixed) special.fixed = true;
   if (state.vehicles.some((v) => v.keyId !== undefined) && !ruleset.special.keyVehicles) {
@@ -456,6 +459,7 @@ export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
       .map((c) => [c.x, c.y] as [number, number]),
     slots: level.overrides?.queue?.slots ?? null,
     visible: level.overrides?.passengers?.visible ?? null,
+    ...(level.overrides?.powerups ? { powerups: level.overrides.powerups } : {}),
     title:
       typeof level.title === 'string'
         ? level.title

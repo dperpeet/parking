@@ -2,15 +2,15 @@
 import type { GameState } from '../engine/types';
 import { computeBoardLayout, vehicleRect } from '../render/layout';
 import { computeLockMarks } from '../render/lock-marks';
-import { h } from './dom';
+import { h, icon } from './dom';
 import { vehicleLabel } from './strings';
 
 export interface VehicleButtons {
   update(state: GameState): void;
   /** Fokus per Pfeiltaste in Richtung (dx,dy) verschieben. */
   moveFocus(dx: number, dy: number): void;
-  /** Markiert ein Fahrzeug als Tipp (data-hint); null entfernt die Markierung. */
-  setHint(vehicleId: string | null): void;
+  /** Markiert ein Fahrzeug als Tipp (data-hint); null entfernt die Markierung. Bei `honk` traegt es eine Hupen-Blase. */
+  setHint(vehicleId: string | null, action?: 'tap' | 'honk'): void;
 }
 
 export function createVehicleButtons(
@@ -40,10 +40,17 @@ export function createVehicleButtons(
   };
 
   return {
-    setHint(vehicleId) {
+    setHint(vehicleId, action = 'tap') {
       for (const [id, btn] of buttons) {
-        if (id === vehicleId) btn.setAttribute('data-hint', 'true');
-        else btn.removeAttribute('data-hint');
+        btn.querySelector('.hint-bubble')?.remove();
+        if (id !== vehicleId) {
+          btn.removeAttribute('data-hint');
+          continue;
+        }
+        btn.setAttribute('data-hint', action === 'honk' ? 'honk' : 'true');
+        if (action === 'honk') {
+          btn.append(h('span', { class: 'hint-bubble', 'aria-hidden': 'true' }, icon('horn')));
+        }
       }
     },
     update(state) {

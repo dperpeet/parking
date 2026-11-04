@@ -459,7 +459,7 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
     onRuleset(id) {
       const ruleset = rulesetById(id);
       if (!ruleset) return;
-      state = { ...state, rulesetId: id, slots: null, visible: null };
+      state = { ...state, rulesetId: id, slots: null, visible: null, powerups: undefined };
       const r = rules();
       if (!(type in r.vehicles.types)) type = firstType(r);
       if (!r.vehicles.colors.includes(color)) color = r.vehicles.colors[0] ?? '';

@@ -29,7 +29,13 @@ function lane(blocker: ReturnType<typeof v>, extra: Partial<LevelSpec> = {}): Le
 function expectInvalid(spec: LevelSpec, action: Action, reason: string): void {
   const { state, rules } = setup(spec);
   const res = step(state, action, rules);
-  expect(res.events).toEqual([{ type: 'invalidAction', reason }]);
+  // vehicleId = genanntes Fahrzeug (auch unbekannte IDs), nur ohne Ziel fehlt das Feld.
+  const named = action.type === 'usePowerUp' ? action.vehicleId : undefined;
+  expect(res.events).toEqual([
+    named === undefined
+      ? { type: 'invalidAction', reason }
+      : { type: 'invalidAction', reason, vehicleId: named },
+  ]);
   expect(res.state).toBe(state);
   expect(res.state.powerUps.honk).toBe(state.powerUps.honk);
 }
@@ -42,6 +48,9 @@ describe('honk: errors', () => {
     expect(state.powerUps.honk).toBe(0);
     expect(step(state, honk(), rules).events).toEqual([
       { type: 'invalidAction', reason: 'noUsesLeft' },
+    ]);
+    expect(step(state, honk('V'), rules).events).toEqual([
+      { type: 'invalidAction', reason: 'noUsesLeft', vehicleId: 'V' },
     ]);
   });
 
@@ -62,7 +71,7 @@ describe('honk: errors', () => {
     });
     const exited = step(state, tap('V'), rules).state;
     expect(step(exited, honk('V'), rules).events).toEqual([
-      { type: 'invalidAction', reason: 'notParked' },
+      { type: 'invalidAction', reason: 'notParked', vehicleId: 'V' },
     ]);
   });
 
@@ -131,7 +140,7 @@ describe('honk: errors', () => {
     const won = run(state, rules, [honk('V'), tap('V'), tap('B')]).state;
     expect(won.status).toBe('won');
     expect(step(won, honk('V'), rules).events).toEqual([
-      { type: 'invalidAction', reason: 'gameWon' },
+      { type: 'invalidAction', reason: 'gameWon', vehicleId: 'V' },
     ]);
   });
 });
@@ -354,7 +363,7 @@ describe('honk: after a noMoves loss', () => {
     ).state;
     expect(lost).toMatchObject({ status: 'lost', loseReason: 'movesLimit' });
     const res = step(lost, honk('V'), limited.rules);
-    expect(res.events).toEqual([{ type: 'invalidAction', reason: 'gameLost' }]);
+    expect(res.events).toEqual([{ type: 'invalidAction', reason: 'gameLost', vehicleId: 'V' }]);
     expect(res.state).toBe(lost);
   });
 
@@ -367,7 +376,7 @@ describe('honk: after a noMoves loss', () => {
     const lost = step(state, tap('a'), rules).state;
     expect(lost).toMatchObject({ status: 'lost', loseReason: 'queueFull' });
     expect(step(lost, honk('a'), rules).events).toEqual([
-      { type: 'invalidAction', reason: 'gameLost' },
+      { type: 'invalidAction', reason: 'gameLost', vehicleId: 'a' },
     ]);
   });
 

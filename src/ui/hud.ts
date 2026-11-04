@@ -227,7 +227,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     isDialogOpen: dialogs.isOpen,
     announce: say,
     setHint(vehicleId, action = 'tap') {
-      buttons.setHint(vehicleId);
+      buttons.setHint(vehicleId, action);
       powerUps.setHonkHint(vehicleId !== null && action === 'honk');
     },
     toggleHonk() {

@@ -75,6 +75,26 @@ describe('EventPlayer', () => {
     expect(log.slice(0, 3)).toEqual(['hud vehicleBlocked', 'start shake v6', 'end shake v6']);
   });
 
+  it('wackelt bei invalidAction nur fuer ein vorhandenes, geparktes Fahrzeug', async () => {
+    const { log, gates, player } = setup();
+    const parked = state.vehicles.find((v) => v.status === 'parked')!;
+    const gone = { ...state, vehicles: state.vehicles.map((v) => ({ ...v, status: 'queued' })) };
+    const invalid = (vehicleId?: string): GameEvent => ({
+      type: 'invalidAction',
+      reason: 'cannotYield',
+      vehicleId,
+    });
+    const done = player.play([invalid(parked.id)], state);
+    await flush();
+    expect(log).toEqual(['hud invalidAction', `start shake ${parked.id}`]);
+    gates[0]?.();
+    await done;
+    log.length = 0;
+    await player.play([invalid(parked.id), invalid('nope'), invalid()], gone as GameState);
+    await player.play([invalid('nope'), invalid()], state);
+    expect(log.filter((l) => l.includes('shake'))).toEqual([]);
+  });
+
   it('zeigt bei vehicleBlocked die Fahrspur-Vorschau mit blockerId', async () => {
     const previews: Array<[string, string | null]> = [];
     const board: BoardAnimator = {
