@@ -1,6 +1,6 @@
 # Schnittstellen
 
-Verträge zwischen Engine, App, Renderer und Solver. Änderungen an den hier genannten Dateien nur bewusst, in einem eigenen PR und zusammen mit diesem Dokument.
+Verträge zwischen Engine, App, Renderer und Solver. Änderungen an den hier genannten Dateien nur bewusst, in einem eigenen Branch oder Commit und zusammen mit diesem Dokument.
 
 | Vertrag                                        | Datei                                                                      |
 | ---------------------------------------------- | -------------------------------------------------------------------------- |

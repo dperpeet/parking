@@ -2,7 +2,7 @@
 
 Projekt: **ParKing**, regelbasiertes Parkplatz-Puzzle im Browser.
 Design und Ist-Stand: `docs/DESIGN.md`; Offenes: `docs/ROADMAP.md`; Vertraege: `docs/INTERFACES.md`.
-Schnittstellendateien (siehe `docs/INTERFACES.md`) nur bewusst aendern, in einem eigenen kleinen PR und zusammen mit der Doku.
+Schnittstellendateien (siehe `docs/INTERFACES.md`) nur bewusst aendern, in einem eigenen kleinen Branch oder Commit und zusammen mit der Doku.
 
 ## Architektur und Import-Regeln
 
