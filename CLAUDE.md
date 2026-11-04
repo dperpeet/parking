@@ -28,15 +28,17 @@ pnpm test
 pnpm test:e2e      # lokal ggf. PW_CHROMIUM_PATH=/opt/pw-browsers/chromium
 ```
 
-## Definition of Done (pro PR)
+## Definition of Done (pro Merge)
 
-- `lint`, `format:check`, `typecheck`, `test` und `test:e2e` laufen lokal gruen; CI ist gruen.
+- `lint`, `format:check`, `typecheck`, `test` und `test:e2e` laufen lokal gruen; CI auf `main` nach dem Merge pruefen.
 - Tests fuer neue Logik sind mitgeliefert; Engine-Coverage >= 90 %.
-- PR klein (ca. < 500 Zeilen) und auf ein Thema beschraenkt; Schnittstellen-Aenderungen getrennt.
+- Branch klein (ca. < 500 Zeilen) und auf ein Thema beschraenkt; Schnittstellen-Aenderungen getrennt.
 - Keine verbotenen Imports, keine Magic Numbers, kein Debug-Code.
 
 ## Git
 
-- Branches: `feat/<kurz>` (z. B. `feat/honk`), `fix/...`, `chore/...`.
+- Arbeit auf Feature-Branches: `feat/<kurz>` (z. B. `feat/honk`), `fix/...`, `chore/...`.
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `ci:`, `refactor:`).
-- Nie direkt auf `main` pushen; Merge per PR (Squash) nach gruener CI.
+- Merge direkt nach `main` per Merge-Commit (`git merge --no-ff`), nachdem `lint`, `format:check`, `typecheck`, `test` und `test:e2e` lokal gruen sind.
+- Kleine Vertragsaenderungen duerfen direkt auf `main` committet werden.
+- Kein Force-Push auf `main`. Pull Requests sind optional.
