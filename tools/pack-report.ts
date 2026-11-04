@@ -1,4 +1,4 @@
-// CLI: pnpm level:report [dir]  - Tabelle ueber alle Level eines Packs (Analyse + Zeit).
+// CLI: pnpm level:report [--honk] [dir]  - Tabelle ueber alle Level eines Packs (Analyse + Zeit).
 import { readFileSync, readdirSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { Level, resolveRules } from '../src/schema';
@@ -6,7 +6,8 @@ import { loadRulesets, rulesetById } from './lib/rulesets';
 
 const PERCENT = 100;
 
-const dir = process.argv[2] ?? 'src/content/levels/pack-01';
+const allowHonk = process.argv.includes('--honk');
+const dir = process.argv.slice(2).find((a) => a !== '--honk') ?? 'src/content/levels/pack-01';
 const rulesets = loadRulesets();
 const files = readdirSync(dir)
   .filter((f) => f.endsWith('.json') && f !== 'index.json')
@@ -18,7 +19,7 @@ for (const f of files) {
   const level = Level.parse(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')));
   const rules = resolveRules(rulesetById(rulesets, level.ruleset), level.overrides);
   const t0 = performance.now();
-  const a = analyze(level, rules);
+  const a = analyze(level, rules, { allowHonk });
   const ms = performance.now() - t0;
   const cols = new Set(level.passengers).size;
   console.log(

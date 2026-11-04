@@ -1,4 +1,4 @@
-// CLI: pnpm level:analyze <file.json> [...]
+// CLI: pnpm level:analyze [--honk] <file.json> [...]  (--honk: Hupen gehoeren zum Zustandsraum)
 import { readFileSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { Level, resolveRules } from '../src/schema';
@@ -10,9 +10,10 @@ function pct(x: number): string {
   return `${(x * PERCENT).toFixed(2)} %`;
 }
 
-const files = process.argv.slice(2);
+const allowHonk = process.argv.includes('--honk');
+const files = process.argv.slice(2).filter((a) => a !== '--honk');
 if (files.length === 0) {
-  console.error('usage: pnpm level:analyze <file.json> [...]');
+  console.error('usage: pnpm level:analyze [--honk] <file.json> [...]');
   process.exit(1);
 }
 
@@ -21,7 +22,7 @@ for (const file of files) {
   const level = Level.parse(JSON.parse(readFileSync(file, 'utf8')));
   const rules = resolveRules(rulesetById(rulesets, level.ruleset), level.overrides);
   const t0 = performance.now();
-  const a = analyze(level, rules);
+  const a = analyze(level, rules, { allowHonk });
   const ms = performance.now() - t0;
   const rows: Array<[string, string]> = [
     ['level', `${level.id} (${file})`],

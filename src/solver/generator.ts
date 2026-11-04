@@ -3,6 +3,8 @@ import { createRng, nextRandom, validateLevel } from '../engine';
 import type { Dir, Level, ResolvedRules } from '../schema';
 import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
+import { applyHonkLayout, honkPlanHolds } from './generator-honk';
+import type { HonkPlan } from './generator-honk';
 import {
   DEFAULT_KEY_CHAIN_DEPTH,
   assignKeys,
@@ -214,7 +216,7 @@ function buildAttempt(
   rules: ResolvedRules,
   attemptSeed: number,
   attempt: number,
-): Level | null {
+): { level: Level; honk: HonkPlan | null } | null {
   const r: Rng = { state: createRng(attemptSeed) };
   const typeKeys = Object.keys(rules.vehicles.types);
   const weights: Array<[string, number]> = typeKeys.map((t) => [
@@ -237,6 +239,9 @@ function buildAttempt(
   const placed = placeVehicles(p, rules, r, types, colors, bollards);
   if (!placed) return null;
   if (!bollardHasRole(bollards, placed)) return null;
+  // Pflicht-Hupe: ein Blocker startet dort, wo ihn die Hupe von seinem Platz verdraengt haette.
+  const honk = p.requireHonk ? applyHonkLayout(r, placed, bollards, p.width, p.height) : null;
+  if (p.requireHonk && !honk) return null;
   const lockCount = resolveCount(r, p.keys);
   const keyOf =
     lockCount > 0
@@ -275,7 +280,7 @@ function buildAttempt(
     passengers,
     meta: { author: 'generator', solverVersion: SOLVER_VERSION },
   };
-  return level;
+  return { level, honk };
 }
 
 /**
@@ -285,15 +290,34 @@ function buildAttempt(
 export function generate(p: GeneratorOptions, baseRules: ResolvedRules): GenerateResult {
   const rules = effectiveRules(baseRules, p);
   const maxAttempts = p.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const maxStates = p.maxStates ?? DEFAULT_MAX_STATES;
+  if (p.requireHonk && !(rules.powerups.honk.enabled && rules.powerups.honk.uses > 0)) {
+    throw new Error('generate: requireHonk needs powerups.honk in the ruleset');
+  }
   let best: { level: Level; analysis: LevelAnalysis; dist: number } | null = null;
   let attempts = 0;
   for (let i = 0; i < maxAttempts; i++) {
     attempts += 1;
-    const level = buildAttempt(p, rules, deriveSeed(p.seed, i), i);
-    if (!level) continue;
+    const built = buildAttempt(p, rules, deriveSeed(p.seed, i), i);
+    if (!built) continue;
+    const { level, honk } = built;
     if (validateLevel(level, rules).length > 0) continue;
-    const analysis = analyze(level, rules, { maxStates: p.maxStates ?? DEFAULT_MAX_STATES });
+    if (
+      honk &&
+      !honkPlanHolds(
+        level,
+        rules,
+        level.vehicles.map((v) => v.id),
+        honk,
+      )
+    )
+      continue;
+    const analysis = analyze(level, rules, { maxStates, allowHonk: p.requireHonk });
     if (!analysis.solvable || analysis.truncated) continue;
+    if (p.requireHonk) {
+      const tapOnly = analyze(level, rules, { maxStates });
+      if (tapOnly.solvable || tapOnly.truncated) continue;
+    }
 
     const [lo, hi] = p.targetDifficulty ?? [0, 10];
     const d = analysis.difficulty;

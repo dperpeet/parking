@@ -44,6 +44,8 @@ interface LevelConfig {
   /** Gesperrte Fahrzeuge: Zahl oder [min, max]. */
   keys?: number | [number, number];
   keyChainDepth?: number;
+  /** Pflicht-Hupe: nur Level, die ohne Hupe unloesbar und mit Hupe loesbar sind. */
+  requireHonk?: boolean;
 }
 
 interface PackConfig {
@@ -108,6 +110,7 @@ config.levels.forEach((entry, index) => {
     ...(c.bollards !== undefined && { bollards: c.bollards }),
     ...(c.keys !== undefined && { keys: c.keys }),
     ...(c.keyChainDepth !== undefined && { keyChainDepth: c.keyChainDepth }),
+    ...(c.requireHonk !== undefined && { requireHonk: c.requireHonk }),
   };
   let g;
   try {
