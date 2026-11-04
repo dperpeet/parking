@@ -1,6 +1,6 @@
-// Vollstaendige Analyse eines Levels: memoisierte DFS ueber Engine-Zustaende (nur Tipp-Aktionen).
+// Vollstaendige Analyse eines Levels: memoisierte DFS ueber Engine-Zustaende (Tipps, optional Hupen).
 import { createGame, hashState, legalMoves, step } from '../engine';
-import type { GameState } from '../engine';
+import type { Action, GameState } from '../engine';
 import type { Level, ResolvedRules } from '../schema';
 import type { AnalyzeOptions, FirstMoveInfo, LevelAnalysis } from './types';
 
@@ -8,6 +8,8 @@ export const SOLVER_VERSION = '1.0';
 
 const DEFAULT_MAX_STATES = 2_000_000;
 const DECIMALS = 1;
+/** Praefix einer Hupen-Aktion in `solution` und `firstMoves` (`honk:<vehicleId>`). */
+export const HONK_PREFIX = 'honk:';
 
 /** Ergebnis fuer einen Zustand. Alle Zaehlungen beziehen sich auf Tipp-Folgen ab diesem Zustand. */
 export interface Node {
@@ -32,6 +34,20 @@ function strip(state: GameState): GameState {
   return { ...state, history: [] };
 }
 
+const isHonk = (id: string): boolean => id.startsWith(HONK_PREFIX);
+
+/** Engine-Aktion zu einer Aktions-ID (`<vehicleId>` = Tipp, `honk:<vehicleId>` = Hupe). */
+export function actionOf(id: string): Action {
+  return isHonk(id)
+    ? { type: 'usePowerUp', powerUp: 'honk', vehicleId: id.slice(HONK_PREFIX.length) }
+    : { type: 'tapVehicle', vehicleId: id };
+}
+
+/** Speicherschluessel: hashState kennt den Hupen-Zaehler nicht. */
+function memoKey(state: GameState): string {
+  return `${hashState(state)}:${state.powerUps.honk}`;
+}
+
 export class Searcher {
   readonly memo = new Map<string, Node>();
   truncated = false;
@@ -41,15 +57,36 @@ export class Searcher {
   constructor(
     private readonly rules: ResolvedRules,
     private readonly maxStates: number = DEFAULT_MAX_STATES,
+    private readonly allowHonk = false,
   ) {}
+
+  /** Aktionen und Folgezustaende: Tipps, mit allowHonk danach gueltige Hupen (je parked Fahrzeug). */
+  private successors(state: GameState): Array<{ id: string; next: GameState }> {
+    const out: Array<{ id: string; next: GameState }> = [];
+    for (const id of legalMoves(state, this.rules)) {
+      out.push({ id, next: strip(step(state, actionOf(id), this.rules).state) });
+    }
+    if (this.allowHonk && state.powerUps.honk > 0 && state.status !== 'won') {
+      for (const v of state.vehicles) {
+        if (v.status !== 'parked') continue;
+        const id = HONK_PREFIX + v.id;
+        const res = step(state, actionOf(id), this.rules);
+        if (res.events.some((e) => e.type === 'invalidAction')) continue;
+        out.push({ id, next: strip(res.state) });
+      }
+    }
+    return out;
+  }
 
   /** Wertet einen Zustand aus. `keepKids` merkt die Kinder (fuer Wurzel und Hinweis). */
   evaluate(state: GameState, keepKids = false): Node {
-    const key = hashState(state);
+    const key = memoKey(state);
     const cached = this.memo.get(key);
     if (cached && (!keepKids || cached.kids || cached.terminal)) return cached;
 
-    if (state.status !== 'playing') {
+    // Mit Hupe uebrig ist auch "lost" (noMoves) nicht endgueltig; ohne gueltige Hupe schon.
+    const early = state.status === 'playing' ? null : this.successors(state);
+    if (early !== null && early.length === 0) {
       const won = state.status === 'won';
       const node: Node = {
         wins: won ? 1n : 0n,
@@ -78,7 +115,6 @@ export class Searcher {
       };
     }
 
-    const moves = legalMoves(state, this.rules);
     const kids: Array<{ id: string; node: Node }> = [];
     let wins = 0n;
     let total = 0n;
@@ -87,8 +123,8 @@ export class Searcher {
     let best: string | null = null;
     let unknown = false;
     let depth = 0;
-    for (const id of moves) {
-      const next = strip(step(state, { type: 'tapVehicle', vehicleId: id }, this.rules).state);
+    const succ = early ?? this.successors(state);
+    for (const { id, next } of succ) {
       const node = this.evaluate(next);
       kids.push({ id, node });
       wins += node.wins;
@@ -104,7 +140,7 @@ export class Searcher {
     const result: Node = {
       wins,
       total,
-      p: moves.length > 0 ? pSum / moves.length : 0,
+      p: succ.length > 0 ? pSum / succ.length : 0,
       min,
       best,
       terminal: false,
@@ -471,12 +507,12 @@ function ratio(a: bigint, b: bigint): number {
   return Number((a * scale) / b) / Number(scale);
 }
 
-/** Wie viele Slots entlang der Loesung maximal belegt waren (direkt nach dem Ausfahren, vor dem Einsteigen). */
+/** Wie viele Slots entlang der Loesung maximal belegt waren (direkt nach dem Ausfahren, vor dem Einsteigen; Hupen zaehlen nicht). */
 function maxQueueUsed(state: GameState, solution: string[], rules: ResolvedRules): number {
   let s = state;
   let max = 0;
   for (const id of solution) {
-    const res = step(s, { type: 'tapVehicle', vehicleId: id }, rules);
+    const res = step(s, actionOf(id), rules);
     s = strip(res.state);
     const occupied = s.slots.filter((x) => x.kind === 'vehicle').length;
     const departed = res.events.filter((e) => e.type === 'vehicleDeparted').length;
@@ -508,7 +544,7 @@ function finish(
   return {
     solvable: parts.solvable,
     truncated: parts.truncated,
-    minMoves: parts.solvable ? parts.minRemaining + state.moves : null,
+    minMoves: parts.solvable ? parts.solution.filter((a) => !isHonk(a)).length + state.moves : null,
     solution: parts.solvable ? parts.solution : null,
     winningPaths: parts.wins.toString(),
     totalPaths: parts.total.toString(),
@@ -536,7 +572,7 @@ export function analyzeStateReference(
   rules: ResolvedRules,
   opts: AnalyzeOptions = {},
 ): LevelAnalysis {
-  const searcher = new Searcher(rules, opts.maxStates ?? DEFAULT_MAX_STATES);
+  const searcher = new Searcher(rules, opts.maxStates ?? DEFAULT_MAX_STATES, opts.allowHonk);
   const start = strip(state);
   const root = searcher.evaluate(start, true);
 
@@ -547,7 +583,7 @@ export function analyzeStateReference(
       const node = searcher.evaluate(s);
       if (node.terminal || node.best === null) break;
       solution.push(node.best);
-      s = strip(step(s, { type: 'tapVehicle', vehicleId: node.best }, rules).state);
+      s = strip(step(s, actionOf(node.best), rules).state);
     }
   }
   return finish(state, rules, start, {
@@ -576,7 +612,8 @@ export function analyzeState(
   rules: ResolvedRules,
   opts: AnalyzeOptions = {},
 ): LevelAnalysis {
-  const model = buildFastModel(state, rules);
+  // Der schnelle Pfad kennt nur Tipps; ohne Hupe uebrig ist das Ergebnis dasselbe.
+  const model = opts.allowHonk && state.powerUps.honk > 0 ? null : buildFastModel(state, rules);
   if (!model) return analyzeStateReference(state, rules, opts);
   const searcher = new FastSearcher(model, opts.maxStates ?? DEFAULT_MAX_STATES);
   const start = strip(state);
