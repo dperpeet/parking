@@ -1,0 +1,89 @@
+{
+  "pack": "03",
+  "world": 3,
+  "maxStates": 200000,
+  "maxAttempts": 300,
+  "defaults": {
+    "ruleset": "world3",
+    "slots": 5,
+    "visible": 8,
+    "shuffleWindow": 3,
+    "blockiness": 0.7,
+    "tolerance": 0.6,
+    "requireHonk": true
+  },
+  "levels": [
+    { "seed": 301, "grid": 5, "vehicles": 6, "colors": 3, "target": 2.5 },
+    { "seed": 702, "tolerance": 0.8, "grid": 5, "vehicles": 6, "colors": 3, "target": 3.0 },
+    { "seed": 303, "grid": 5, "vehicles": 7, "colors": 3, "target": 3.5 },
+    { "seed": 504, "grid": 5, "vehicles": 7, "colors": 3, "target": 4.3, "tolerance": 0.4 },
+    { "seed": 405, "maxAttempts": 600, "grid": 5, "vehicles": 7, "colors": 4, "target": 4.5 },
+    { "seed": 306, "grid": 6, "vehicles": 8, "colors": 3, "target": 3.5, "bollards": 1 },
+    {
+      "seed": 407,
+      "grid": 6,
+      "vehicles": 8,
+      "colors": 4,
+      "target": 4.3,
+      "tolerance": 0.4,
+      "bollards": [1, 2]
+    },
+    { "seed": 308, "grid": 6, "vehicles": 9, "colors": 4, "target": 4.5, "bollards": [1, 2] },
+    { "seed": 309, "grid": 6, "vehicles": 9, "colors": 4, "target": 5.0, "bollards": [1, 2] },
+    {
+      "seed": 410,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 5.8,
+      "tolerance": 0.4,
+      "bollards": 2
+    },
+    {
+      "seed": 311,
+      "grid": 6,
+      "vehicles": 9,
+      "colors": 4,
+      "target": 5.0,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 412,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 5.5,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 313,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 4,
+      "target": 6.0,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 314,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 6.5,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 515,
+      "tolerance": 0.8,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 6.9,
+      "bollards": [1, 2],
+      "keys": 1
+    }
+  ]
+}

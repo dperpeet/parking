@@ -18,12 +18,17 @@ import {
   resolveRules,
 } from '../../../src/schema';
 import type { ShareError } from '../../../src/schema';
-import { classicRuleset as classic, level as level007, world2Ruleset as world2 } from '../helpers';
+import {
+  classicRuleset as classic,
+  level as level007,
+  world2Ruleset as world2,
+  world3Ruleset as world3,
+} from '../helpers';
 
 const campaign = getCampaign();
 
 /** Wie der Session-Lookup: alle ausgelieferten Rulesets. */
-const RULESETS = new Map([classic, world2].map((r) => [r.id, r]));
+const RULESETS = new Map([classic, world2, world3].map((r) => [r.id, r]));
 const lookup: RulesLookup = (id, overrides) => {
   const ruleset = RULESETS.get(id);
   return ruleset ? resolveRules(ruleset, overrides) : null;
