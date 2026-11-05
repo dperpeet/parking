@@ -60,7 +60,7 @@ describe('pack-03 (Hupe)', () => {
   it('lists 001-015 in index.json with intro, ids, titles and meta', () => {
     const index = PackIndex.parse(JSON.parse(readFileSync(join(PACK, 'index.json'), 'utf8')));
     expect(index.world).toBe(3);
-    expect(index.name).toEqual({ de: 'Hupe', en: 'Horn' });
+    expect(index.name).toEqual({ de: 'Hupe', en: 'Honk' });
     expect(index.levels).toEqual(pack.map((e) => String(e.n).padStart(3, '0')));
     expect(index.intros).toEqual({ '001': 'honk' });
     for (const { n, level, withHonk } of pack) {
