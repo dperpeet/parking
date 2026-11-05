@@ -89,7 +89,7 @@ describe('hintMove', () => {
     expect(s.status).toBe('playing');
     expect(s.powerUps.honk).toBeGreaterThan(0);
     expect(hint(s, r)).toBeNull();
-    expect(hintMove(s, r)).toEqual({ action: 'honk', vehicleId: 'V' });
+    expect(hintMove(s, r)).toEqual({ action: 'honk', vehicleId: 'V', needsHonk: true });
     let t = step(s, { type: 'usePowerUp', powerUp: 'honk', vehicleId: 'V' }, r).state;
     for (let i = 0; i < 10 && t.status === 'playing'; i++) {
       t = step(t, { type: 'tapVehicle', vehicleId: hint(t, r)! }, r).state;
@@ -109,7 +109,7 @@ describe('hintMove', () => {
     const s = createGame(l, r);
     expect(s.status).toBe('lost');
     expect(s.loseReason).toBe('noMoves');
-    expect(hintMove(s, r)).toEqual({ action: 'honk', vehicleId: 'V' });
+    expect(hintMove(s, r)).toEqual({ action: 'honk', vehicleId: 'V', needsHonk: true });
     expect(hintMove(withHonk(s, 0), r)).toBeNull();
   });
 

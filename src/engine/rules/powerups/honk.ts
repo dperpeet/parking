@@ -77,7 +77,7 @@ export function applyHonk(
   const [dx, dy] = DIR_VECTORS[blocker.dir];
   blocker.x += dx * shift;
   blocker.y += dy * shift;
-  s.history = [...s.history, takeSnapshot(original)];
+  s.history = [...s.history, { ...takeSnapshot(original), honk: true }];
   // Aus einer Niederlage durch fehlende Zuege wieder aufnehmen; evaluateOutcome bewertet neu.
   s.status = 'playing';
   s.loseReason = null;
