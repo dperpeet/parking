@@ -28,7 +28,7 @@ test('Hupen: Zielmodus, Blocker weicht aus, Fahrzeug faehrt aus', async ({ page 
   // Direktes Antippen ist blockiert; die Hupe loest das.
   await honk.click();
   await expect(honk).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('honk-hint')).toHaveText('Tippe das Fahrzeug, das hupen soll');
+  await expect(page.getByTestId('honk-hint')).toHaveText('Welches Auto steckt fest? Tippe es an.');
   await page.getByTestId('vehicle-v1').click();
   await expect(page.getByTestId('live')).toHaveText('Das grüne Fahrzeug weicht aus');
   await expect(honk).toHaveAttribute('aria-pressed', 'false');
@@ -67,15 +67,18 @@ test('Esc, erneuter Klick und Taste H steuern den Zielmodus', async ({ page }) =
   await expect(honk.locator('.badge')).toHaveText('1');
 });
 
-test('Hupen ohne Blocker zeigt eine Meldung und beendet den Zielmodus', async ({ page }) => {
+test('Hupen ohne Blocker zeigt eine Meldung, der Zielmodus bleibt aktiv', async ({ page }) => {
   await page.goto(`/#/play?l=${HONK_CODE}`);
   const honk = page.getByTestId('powerup-honk');
   await expect(page.getByTestId('vehicle-v2')).toBeVisible();
   await honk.click();
   // Das gruene Fahrzeug hat freie Fahrt: nichts zum Ausweichen.
   await page.getByTestId('vehicle-v2').click();
-  await expect(page.getByTestId('live')).toHaveText('Der Weg ist frei – Hupen ist nicht nötig.');
-  await expect(page.locator('.toast')).toBeVisible();
-  await expect(honk).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('live')).toHaveText('Das Auto kann doch fahren!');
+  await expect(page.locator('.toast')).toHaveText('Das Auto kann doch fahren!');
+  await expect(honk).toHaveAttribute('aria-pressed', 'true');
   await expect(honk.locator('.badge')).toHaveText('1');
+  // Abbrechen-Knopf im Banner beendet den Modus.
+  await page.getByTestId('honk-cancel').click();
+  await expect(honk).toHaveAttribute('aria-pressed', 'false');
 });
