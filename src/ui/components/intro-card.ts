@@ -34,6 +34,67 @@ function car(color: string, ...children: Array<Node | null>): HTMLElement {
   return el;
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function svg(
+  tag: string,
+  attrs: Record<string, string>,
+  ...children: Array<Node | string>
+): SVGElement {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  node.append(...children);
+  return node;
+}
+
+/** Zackenstern (Hupen-Burst) um den Mittelpunkt (cx, cy); Punkte wechseln zwischen Aussen- und Innenradius. */
+function burstPoints(cx: number, cy: number, outer: number, inner: number, spikes: number): string {
+  const points: string[] = [];
+  for (let i = 0; i < spikes * 2; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = (Math.PI * i) / spikes;
+    points.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+  }
+  return points.join(' ');
+}
+
+/** Wer hupt, wer rutscht: hinteres Auto mit Pfeil und Burst, davor das quer stehende Auto, daneben das Geisterbild. */
+function honkArt(): HTMLElement {
+  const burst = svg(
+    'svg',
+    { class: 'art-burst', viewBox: '0 0 70 80', 'aria-hidden': 'true' },
+    svg('polygon', { class: 'art-burst-shape', points: burstPoints(35, 40, 34, 21, 9) }),
+    svg(
+      'text',
+      { class: 'art-burst-text', x: '35', y: '45', 'text-anchor': 'middle' },
+      t('honkBubble'),
+    ),
+  );
+  const arc = svg(
+    'svg',
+    { class: 'art-arc', viewBox: '0 0 44 90', 'aria-hidden': 'true' },
+    svg('path', { class: 'art-arc-line', d: 'M0 4C40 4 40 82 6 82' }),
+    svg('polygon', { class: 'art-arc-head', points: '2,82 13,74 13,90' }),
+  );
+  const honker = car('green', h('span', { class: 'art-drive' }, '→'));
+  honker.classList.add('art-honker');
+  const blocker = car('blue');
+  blocker.classList.add('art-blocker');
+  return h(
+    'div',
+    { class: 'intro-art art-honk', 'aria-hidden': 'true' },
+    h(
+      'div',
+      { class: 'art-scene' },
+      honker,
+      burst,
+      blocker,
+      h('span', { class: 'art-ghost' }),
+      arc,
+    ),
+  );
+}
+
 function art(mechanic: Mechanic): HTMLElement {
   if (mechanic === 'bollards') {
     return h(
@@ -44,16 +105,7 @@ function art(mechanic: Mechanic): HTMLElement {
       h('span', { class: 'art-detour' }, '↷'),
     );
   }
-  if (mechanic === 'honk') {
-    return h(
-      'div',
-      { class: 'intro-art art-honk', 'aria-hidden': 'true' },
-      h('span', { class: 'art-bubble' }, t('honkBubble')),
-      car('green'),
-      h('span', { class: 'art-detour' }, '→'),
-      car('blue'),
-    );
-  }
+  if (mechanic === 'honk') return honkArt();
   const lock = h('span', { class: 'art-badge art-badge-lock' }, icon('lock'), h('b', {}, '1'));
   const key = h('span', { class: 'art-badge art-badge-key' }, icon('key'), h('b', {}, '1'));
   return h(

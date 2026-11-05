@@ -1,7 +1,7 @@
 // Spielbildschirm: Shell + HUD + Pixi-Brett, verbunden mit einer GameSession.
 import { t } from '../i18n';
 import type { StringKey } from '../i18n';
-import type { GameState } from '../engine/types';
+import type { GameEvent, GameState } from '../engine/types';
 import { BoardView, EventPlayer, createPixiApp } from '../render';
 import type { PixiHandle } from '../render';
 import { THEME } from '../render/theme';
@@ -10,6 +10,7 @@ import type { Hud, IntroCard } from '../ui';
 import { hintAnnouncement } from '../ui/strings';
 import { browserShareEnv, buildDailyShareText, pageUrl, shareText } from './daily-share';
 import { HINT_DISPLAY_MS } from './hints';
+import type { HonkAdvice } from './honk-guide';
 import type { GameSession, SharedError } from './session';
 
 /** Wie lange die Schrift hoechstens geladen wird, bevor das Spiel startet. */
@@ -47,6 +48,14 @@ function loadFont(): Promise<void> {
   return fontReady;
 }
 
+/** Ereignisse, die den Zustand nicht aendern: ein Tipp bleibt dabei stehen. */
+function changesNothing(events: GameEvent[]): boolean {
+  return (
+    events.length > 0 &&
+    events.every((e) => e.type === 'vehicleBlocked' || e.type === 'invalidAction')
+  );
+}
+
 export interface GameScreenOptions {
   /** Zurueck zur Levelauswahl (Header-Pfeil, Menue-Knopf). */
   back(): void;
@@ -78,6 +87,9 @@ export function mountGameScreen(
   let intro: IntroCard | null = null;
   let hintTimer: ReturnType<typeof setTimeout> | undefined;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Letzter Rat des Hupen-Hinweises (wartet ggf., bis die Intro-Karte zu ist). */
+  let advice: HonkAdvice = { kind: 'none' };
+  let nudgeAnnounced = false;
 
   const shell = mountShell(root);
   const layer = el('div', 'loading-layer');
@@ -112,7 +124,8 @@ export function mountGameScreen(
 
   const toast = (text: string, ms = TOAST_MS): void => {
     shell.boardWrap.querySelector('.toast')?.remove();
-    const node = el('div', 'toast panel', text);
+    // Lange Hinweise (ungeprueftes Level) duerfen umbrechen, alle anderen Meldungen bleiben einzeilig.
+    const node = el('div', ms === NOTICE_MS ? 'toast toast-wrap panel' : 'toast panel', text);
     shell.boardWrap.append(node);
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => node.remove(), ms);
@@ -121,7 +134,32 @@ export function mountGameScreen(
   const clearHint = (): void => {
     clearTimeout(hintTimer);
     hud?.setHint(null);
+    hud?.nudgeHonk(false);
     board?.highlight(null);
+    advice = { kind: 'none' };
+  };
+
+  /** Zeigt den proaktiven Hupen-Hinweis: pulsierender Knopf, im gefuehrten Level auch die Blase am Fahrzeug. */
+  const applyAdvice = (): void => {
+    if (!hud || advice.kind !== 'honk' || intro) return;
+    hud.nudgeHonk(true);
+    if (!nudgeAnnounced) {
+      nudgeAnnounced = true;
+      hud.announce(t('honkNow'));
+    }
+    if (session.guidedHonk() && advice.move.action === 'honk') {
+      hud.setHint(advice.move.vehicleId, 'honk');
+      board?.highlight(advice.move.vehicleId);
+    }
+  };
+
+  /** Fragt den Solver im Hintergrund (kein Tipp). Nur Pflicht-Hupe-Level bekommen einen Hinweis. */
+  const refreshAdvice = async (): Promise<void> => {
+    const { controller, honkGuide } = session;
+    const result = await honkGuide.check(() => controller.getState(), controller.getRules());
+    if (disposed || !hud) return;
+    advice = result;
+    applyAdvice();
   };
 
   const onHint = async (): Promise<void> => {
@@ -140,9 +178,14 @@ export function mountGameScreen(
         hud.announce(text);
         toast(text);
         hud.setHint(result.vehicleId, result.action);
-        board?.highlight(result.vehicleId, HINT_DISPLAY_MS);
         clearTimeout(hintTimer);
-        hintTimer = setTimeout(() => hud?.setHint(null), HINT_DISPLAY_MS);
+        if (result.action === 'honk') {
+          // Ein Hupen-Tipp bleibt, bis gehupt, gezogen, zurueckgenommen oder neu gestartet wird.
+          board?.highlight(result.vehicleId);
+        } else {
+          board?.highlight(result.vehicleId, HINT_DISPLAY_MS);
+          hintTimer = setTimeout(() => hud?.setHint(null), HINT_DISPLAY_MS);
+        }
         break;
       }
       case 'none':
@@ -169,6 +212,7 @@ export function mountGameScreen(
         if (disposed) return;
         session.markIntroSeen(mechanic);
         shell.game.querySelector<HTMLElement>('.vehicle-btn')?.focus();
+        applyAdvice();
       },
     });
   };
@@ -187,6 +231,7 @@ export function mountGameScreen(
       next: () => session.next(),
       similar: () => session.similar(),
       hint: () => void onHint(),
+      honkTargets: (state) => session.honkTargets(state),
       notify: (text) => toast(text),
       share: (text) => shareText(text, browserShareEnv()),
       back: opts.back,
@@ -222,12 +267,19 @@ export function mountGameScreen(
       hud,
     );
     controller.subscribe((u) => {
+      // Ablehnungen (blockiertes Fahrzeug, falsche Hupe) aendern nichts: Tipp und Hinweis bleiben stehen.
+      if (u.kind === 'step' && changesNothing(u.events)) {
+        void player.play(u.events, u.state);
+        return;
+      }
       clearHint();
       if (u.kind === 'new') {
+        nudgeAnnounced = false;
         hud?.cancelHonk();
         void player.reset(u.state);
         maybeShowIntro();
       } else void player.play(u.events, u.state);
+      void refreshAdvice();
     });
     unbindKeys = bindKeyboard({
       moveFocus: hud.moveFocus,

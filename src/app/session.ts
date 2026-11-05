@@ -8,6 +8,7 @@ import type { EngineApi } from './engine-port';
 import { formatDay, localizedText } from './format';
 import { GameController } from './game-controller';
 import { HintTracker, displayStars } from './hints';
+import { HonkGuide } from './honk-guide';
 import type { Campaign, CampaignLevel } from './levels';
 import { Progress, localDateKey } from './progress';
 import type { PlayRoute, Route } from './router';
@@ -126,6 +127,8 @@ export function mechanicsOf(level: Level): Mechanic[] {
 
 export class GameSession {
   readonly hints: HintTracker;
+  /** Proaktiver Hupen-Hinweis (kein Tipp, zaehlt nicht). */
+  readonly honkGuide: HonkGuide;
   private controllerRef: GameController | null = null;
   private mode: Mode | null = null;
   private status: SessionStatus = 'loading';
@@ -141,6 +144,7 @@ export class GameSession {
     private readonly route: PlayRoute,
   ) {
     this.hints = new HintTracker(deps.solver);
+    this.honkGuide = new HonkGuide(deps.solver);
   }
 
   get controller(): GameController {
@@ -252,6 +256,7 @@ export class GameSession {
   private install(level: Level, rules: ResolvedRules, fresh: boolean): void {
     this.recorded = false;
     this.hints.begin(level.id, fresh);
+    this.honkGuide.begin(level.id);
     if (this.controllerRef) {
       this.controllerRef.load(level, rules);
     } else {
@@ -296,6 +301,7 @@ export class GameSession {
     const fresh = this.controller.getState().status === 'won';
     this.recorded = false;
     this.hints.begin(this.controller.getLevel().id, fresh);
+    this.honkGuide.begin(this.controller.getLevel().id);
     this.controller.restart();
   }
 
@@ -347,6 +353,24 @@ export class GameSession {
         : null;
     }
     return null;
+  }
+
+  /** Das Level fuehrt die Hupe ein (Intro `honk`): der Hupen-Tipp erscheint dort von selbst. */
+  guidedHonk(): boolean {
+    return this.mode?.kind === 'campaign' && this.mode.entry.intro === 'honk';
+  }
+
+  /** Fahrzeuge, deren Hupe die Engine annehmen wuerde (Probe auf dem unveraenderten Zustand). */
+  honkTargets(state: GameState): string[] {
+    const rules = this.controller.getRules();
+    return state.vehicles
+      .filter((v) => v.status === 'parked')
+      .filter((v) => {
+        const action = { type: 'usePowerUp', powerUp: 'honk', vehicleId: v.id } as const;
+        const { events } = this.deps.engine.step(state, action, rules);
+        return !events.some((e) => e.type === 'invalidAction');
+      })
+      .map((v) => v.id);
   }
 
   markIntroSeen(mechanic: Mechanic): void {

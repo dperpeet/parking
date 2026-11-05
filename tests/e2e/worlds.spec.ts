@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'json' };
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
 import world2 from '../../src/content/levels/pack-02/index.json' with { type: 'json' };
-import { seedSave } from './support';
+import { seedSave, tapAll } from './support';
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
 function worldOneDone(): string {
@@ -101,6 +101,42 @@ test('Welt 3 ist nach Welt 1 und 2 offen, Intro-Karte Hupe erscheint vor Level 1
   await page.getByTestId('tile-3-1').click();
   const intro = page.getByTestId('intro-dialog');
   await expect(intro).toHaveAttribute('data-mechanic', 'honk');
+  await expect(intro).toContainText('Steckt ein Auto fest?');
   await page.getByTestId('intro-start').click();
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
+});
+
+test('Welt 3 Level 1: Sackgasse zeigt Hilfe-Karte, Hupen fuehrt zum Sieg mit 3 Sternen', async ({
+  page,
+}) => {
+  await seedSave(page, worldsOneAndTwoDone());
+  await page.goto('/#/level/03/001');
+  await page.getByTestId('intro-start').click();
+  await expect(page.getByTestId('vehicle-v1')).toBeVisible();
+
+  // Zwei Zuege fuehren in die Sackgasse: Karte statt Verlust-Dialog, Brett bleibt bedienbar.
+  await tapAll(page, ['v2', 'v4']);
+  const card = page.getByTestId('stuck-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Hier klemmt es!');
+  await expect(page.getByTestId('lose-dialog')).toHaveCount(0);
+  await expect(page.getByTestId('hint')).toBeEnabled();
+  await expect(page.getByTestId('stuck-honk')).toBeFocused();
+
+  // Abbrechen aus dem Zielmodus bringt die Karte zurueck.
+  await page.getByTestId('stuck-honk').click();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByTestId('honk-hint')).toHaveText('Welches Auto steckt fest? Tippe es an.');
+  await page.getByTestId('honk-cancel').click();
+  await expect(card).toBeVisible();
+
+  // Hupen mit dem blockierten Auto loest die Sackgasse; danach laesst sich das Level gewinnen.
+  await page.getByTestId('stuck-honk').click();
+  await page.getByTestId('vehicle-v1').click();
+  await expect(card).toHaveCount(0);
+  await expect(page.locator('.toast')).toHaveText('Super gehupt!');
+  await tapAll(page, ['v1', 'v3', 'v5', 'v6']);
+  const win = page.getByTestId('win-dialog');
+  await expect(win).toBeVisible();
+  await expect(win.locator('.star-on')).toHaveCount(3);
 });

@@ -13,14 +13,31 @@ function open(mechanic: Mechanic): { layer: HTMLElement; onClosed: () => void } 
 }
 
 describe('Intro-Karte', () => {
-  it('zeigt fuer honk die eigene Grafik mit Sprechblase', () => {
+  it('zeigt fuer honk die Grafik mit Burst, hupendem Auto, Blocker und Geisterbild', () => {
     setLanguage('de');
     const { layer } = open('honk');
     const art = layer.querySelector('.intro-art');
     expect(art?.classList.contains('art-honk')).toBe(true);
     expect(layer.querySelector('.art-keys')).toBeNull();
-    expect(layer.querySelector('.art-bubble')?.textContent).toBe(t('honkBubble'));
+    expect(layer.querySelector('.art-burst-text')?.textContent).toBe(t('honkBubble'));
     expect(layer.querySelectorAll('.art-car')).toHaveLength(2);
+    expect(layer.querySelector('.art-honker .art-drive')).not.toBeNull();
+    expect(layer.querySelector('.art-blocker')).not.toBeNull();
+    expect(layer.querySelector('.art-ghost')).not.toBeNull();
+    expect(layer.querySelector('.art-arc')).not.toBeNull();
+  });
+
+  it('Intro-Texte fuer honk sind kurz (de und en)', () => {
+    for (const lang of ['de', 'en'] as const) {
+      setLanguage(lang);
+      const { layer } = open('honk');
+      const words = layer.querySelector('.intro-text')?.textContent?.split(/\s+/) ?? [];
+      expect(words.length, lang).toBeLessThanOrEqual(25);
+    }
+    setLanguage('en');
+    const { layer } = open('honk');
+    expect(layer.querySelector('.dlg-title')?.textContent).toBe('Honk');
+    expect(layer.querySelector('.art-burst-text')?.textContent).toBe('HONK!');
   });
 
   it.each([

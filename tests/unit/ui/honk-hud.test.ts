@@ -31,6 +31,9 @@ interface Setup {
   rules: ResolvedRules;
 }
 
+/** Ziele, die die Fake-Engine im Test als gueltig meldet. */
+let targets: string[] = ['V'];
+
 function mount(overrides: object = HONK, patch: Partial<GameState> = {}): Setup {
   const { state: initial, rules } = game(overrides);
   const state = { ...initial, ...patch };
@@ -44,6 +47,7 @@ function mount(overrides: object = HONK, patch: Partial<GameState> = {}): Setup 
     next: () => undefined,
     similar: () => undefined,
     hint: () => undefined,
+    honkTargets: () => targets,
     notify: (text) => notes.push(text),
     share: () => Promise.resolve('cancelled'),
     back: () => undefined,
@@ -72,6 +76,7 @@ const key = (k: string): void => {
 let unbind: (() => void) | undefined;
 beforeEach(() => {
   setLanguage('de');
+  targets = ['V'];
   document.body.replaceChildren();
 });
 afterEach(() => {
@@ -112,7 +117,7 @@ describe('Zielmodus', () => {
     const { actions } = mount();
     honkBtn().click();
     expect(honkBtn().getAttribute('aria-pressed')).toBe('true');
-    expect(byId('honk-hint').textContent).toBe('Tippe das Fahrzeug, das hupen soll');
+    expect(byId('honk-hint').textContent).toBe('Welches Auto steckt fest? Tippe es an.');
     byId('vehicle-V').click();
     expect(actions).toEqual([{ type: 'usePowerUp', powerUp: 'honk', vehicleId: 'V' }]);
     expect(honkBtn().getAttribute('aria-pressed')).toBe('false');
@@ -225,14 +230,40 @@ describe('Meldungen', () => {
     const { hud, notes, shell, state } = mount();
     hud.onEvent({ type: 'invalidAction', reason: 'notBlocked' }, state);
     hud.render(state);
-    expect(notes).toEqual(['Der Weg ist frei – Hupen ist nicht nötig.']);
-    expect(shell.live.textContent).toBe('Der Weg ist frei – Hupen ist nicht nötig.');
+    expect(notes).toEqual(['Das Auto kann doch fahren!']);
+    expect(shell.live.textContent).toBe('Das Auto kann doch fahren!');
   });
 
   it('andere ungueltige Aktionen bleiben still', () => {
     const { hud, notes, state } = mount();
     hud.onEvent({ type: 'invalidAction', reason: 'noHistory' }, state);
     expect(notes).toEqual([]);
+  });
+
+  it('Fehlertexte sind kurz und kindgerecht (de und en)', () => {
+    const expected = {
+      de: {
+        notBlocked: 'Das Auto kann doch fahren!',
+        blockedByBollard: 'Der Poller bleibt stehen.',
+        blockerLocked: 'Das Auto davor ist abgeschlossen.',
+        cannotYield: 'Das Auto davor hat keinen Platz.',
+        noTarget: 'Tippe ein Auto an.',
+      },
+      en: {
+        notBlocked: 'This car can already drive!',
+        blockedByBollard: 'The post won’t move.',
+        blockerLocked: 'The car in front is locked.',
+        cannotYield: 'The car in front has no room.',
+        noTarget: 'Tap a car.',
+      },
+    } as const;
+    for (const lang of ['de', 'en'] as const) {
+      setLanguage(lang);
+      for (const [reason, text] of Object.entries(expected[lang])) {
+        expect(honkErrorText(reason), `${lang} ${reason}`).toBe(text);
+        expect(text.split(' ').length).toBeLessThanOrEqual(7);
+      }
+    }
   });
 
   it('jeder neue Grund hat einen Text, beide Sprachen', () => {
@@ -266,30 +297,137 @@ describe('Meldungen', () => {
   });
 });
 
-describe('Verlust-Dialog', () => {
+describe('Sackgasse', () => {
   const lost = { status: 'lost', loseReason: 'noMoves' } as const;
+  const card = (): HTMLElement | null => document.querySelector('[data-testid="stuck-card"]');
 
-  it('bietet bei noMoves Hupen an; Klick schliesst den Dialog und startet den Zielmodus', () => {
+  it('zeigt mit Hupe uebrig eine nicht-modale Karte statt des Verlust-Dialogs', () => {
     const { hud, shell } = mount(HONK, lost);
-    expect(shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).not.toBeNull();
-    byId('dlg-honk').click();
     expect(shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).toBeNull();
-    expect(honkBtn().getAttribute('aria-pressed')).toBe('true');
     expect(hud.isDialogOpen()).toBe(false);
+    expect(shell.game.inert).toBeFalsy();
+    expect(card()?.textContent).toContain('Hier klemmt es!');
+    expect(card()?.textContent).toContain('Lass ein Auto hupen.');
+    expect(document.activeElement).toBe(byId('stuck-honk'));
+    // Das Brett bleibt sichtbar: kein abdunkelnder Overlay.
+    expect(shell.dialogLayer.querySelector('.overlay')).toBeNull();
   });
 
-  it('Abbrechen bringt den Dialog zurueck', () => {
-    const { hud, shell } = mount(HONK, lost);
-    byId('dlg-honk').click();
+  it('Englisch: Titel und Satz', () => {
+    setLanguage('en');
+    mount(HONK, lost);
+    expect(card()?.textContent).toContain('Stuck!');
+    expect(card()?.textContent).toContain('Let a car honk.');
+    expect(byId('stuck-honk').textContent).toBe('Honk');
+  });
+
+  it('Hupen startet den Zielmodus und blendet die Karte aus; Abbrechen bringt sie zurueck', () => {
+    const { hud } = mount(HONK, lost);
+    byId('stuck-honk').click();
+    expect(card()).toBeNull();
+    expect(honkBtn().getAttribute('aria-pressed')).toBe('true');
     hud.cancelHonk();
-    expect(shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).not.toBeNull();
+    expect(card()).not.toBeNull();
+    expect(document.querySelector('[data-testid="lose-dialog"]')).toBeNull();
   });
 
-  it('kein Hupen-Angebot ohne Hupe oder bei anderem Verlustgrund', () => {
+  it('Abbrechen-Knopf im Banner hat mindestens 44 px und bringt die Karte zurueck', () => {
+    mount(HONK, lost);
+    byId('stuck-honk').click();
+    const cancel = byId('honk-cancel');
+    expect(cancel.getAttribute('aria-label')).toBe('Abbrechen');
+    cancel.click();
+    expect(card()).not.toBeNull();
+  });
+
+  it('Zurueck und Nochmal sind kleine Nebenknoepfe', () => {
+    const { actions } = mount(HONK, lost);
+    expect(byId('stuck-undo').classList.contains('btn-small')).toBe(true);
+    expect(byId('stuck-again').classList.contains('btn-small')).toBe(true);
+    // Level ohne Verlauf: nichts zum Zuruecknehmen.
+    expect((byId('stuck-undo') as HTMLButtonElement).disabled).toBe(true);
+    expect(actions).toEqual([]);
+  });
+
+  it('Tipp-Knopf ist in der Sackgasse aktiv, sonst bei Niederlage nicht', () => {
+    mount(HONK, lost);
+    expect((byId('hint') as HTMLButtonElement).disabled).toBe(false);
+    document.body.replaceChildren();
+    mount(HONK, { status: 'lost', loseReason: 'queueFull' });
+    expect((byId('hint') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('Fallback: ohne Hupe uebrig oder bei anderem Verlustgrund bleibt der Dialog', () => {
     const noHonk = mount({}, lost);
-    expect(noHonk.shell.dialogLayer.querySelector('[data-testid="dlg-honk"]')).toBeNull();
+    expect(noHonk.shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).not.toBeNull();
+    expect(document.querySelector('[data-testid="stuck-card"]')).toBeNull();
+    document.body.replaceChildren();
+    const { state } = game();
+    const empty = mount(HONK, { ...lost, powerUps: { ...state.powerUps, honk: 0 } });
+    expect(empty.shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).not.toBeNull();
+    expect(document.querySelector('[data-testid="stuck-card"]')).toBeNull();
     document.body.replaceChildren();
     const full = mount(HONK, { status: 'lost', loseReason: 'queueFull' });
-    expect(full.shell.dialogLayer.querySelector('[data-testid="dlg-honk"]')).toBeNull();
+    expect(full.shell.dialogLayer.querySelector('[data-testid="lose-dialog"]')).not.toBeNull();
+    expect(document.querySelector('[data-testid="stuck-card"]')).toBeNull();
+    expect(document.querySelector('[data-testid="dlg-honk"]')).toBeNull();
+  });
+});
+
+describe('Zielmodus mit Fuehrung', () => {
+  it('markiert nur gueltige Ziele, die anderen sind gedimmt', () => {
+    mount();
+    honkBtn().click();
+    expect(byId('vehicle-V').getAttribute('data-honk-target')).toBe('yes');
+    expect(byId('vehicle-B').getAttribute('data-honk-target')).toBe('no');
+    honkBtn().click();
+    expect(byId('vehicle-V').hasAttribute('data-honk-target')).toBe(false);
+  });
+
+  it('Fehlgriff sendet die Hupe (Engine lehnt ab), der Modus bleibt aktiv', () => {
+    const { actions } = mount();
+    honkBtn().click();
+    byId('vehicle-B').click();
+    expect(actions).toEqual([{ type: 'usePowerUp', powerUp: 'honk', vehicleId: 'B' }]);
+    expect(honkBtn().getAttribute('aria-pressed')).toBe('true');
+    expect(byId('honk-hint').textContent).not.toBe('');
+  });
+
+  it('Banner hat einen Abbrechen-Knopf', () => {
+    mount();
+    honkBtn().click();
+    byId('honk-cancel').click();
+    expect(honkBtn().getAttribute('aria-pressed')).toBe('false');
+    expect(byId('honk-hint').textContent).toBe('');
+  });
+});
+
+describe('Rueckmeldung', () => {
+  it('Lob-Toast nach erfolgreicher Hupe, beide Sprachen', () => {
+    const { hud, notes, state } = mount();
+    const event: GameEvent = {
+      type: 'vehicleYielded',
+      vehicleId: 'B',
+      byVehicleId: 'V',
+      from: [3, 2],
+      to: [3, 3],
+    };
+    hud.onEvent(event, state);
+    setLanguage('en');
+    hud.onEvent(event, state);
+    expect(notes).toEqual(['Super gehupt!', 'Nice honk!']);
+  });
+
+  it('proaktiver Hinweis laesst den Hupen-Knopf pulsieren, unabhaengig vom Fahrzeug-Tipp', () => {
+    const { hud } = mount();
+    hud.nudgeHonk(true);
+    expect(honkBtn().hasAttribute('data-hint')).toBe(true);
+    expect(honkBtn().querySelector('.hint-bubble')?.textContent).toBe('HUP!');
+    hud.setHint('V', 'honk');
+    hud.setHint(null);
+    expect(honkBtn().hasAttribute('data-hint')).toBe(true);
+    hud.nudgeHonk(false);
+    expect(honkBtn().hasAttribute('data-hint')).toBe(false);
+    expect(honkBtn().querySelector('.hint-bubble')).toBeNull();
   });
 });
