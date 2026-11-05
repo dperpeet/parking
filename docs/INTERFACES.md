@@ -47,7 +47,7 @@ nextRandom(rng: number): [value: number, next: number]   // value in [0, 1)
    - `honk` (Aktion mit `vehicleId` = hupendes Fahrzeug V): Das erste Hindernis auf V's Weg (Kopfzelle in Blickrichtung bis zum Rand) weicht aus.
      - Fehler (`invalidAction`, in dieser Pruefreihenfolge): ohne `vehicleId` → `noTarget`; V unbekannt → `unknownVehicle`; V nicht `parked` → `notParked`; Weg frei → `notBlocked`; erstes Hindernis ist eine `fixed`-Zelle → `blockedByBollard`; Blocker B ist `locked` → `blockerLocked`; B kann nicht ausweichen → `cannotYield`. Ein Schloss an V selbst ist egal.
      - Ausweichen: B rutscht entlang seiner eigenen Achse vorwaerts (Blickrichtung) oder rueckwaerts um die kleinste Zellzahl, nach der keine seiner Zellen mehr auf V's Weg liegt. Alle ueberfahrenen und belegten Zellen muessen im Raster, frei von anderen `parked`-Fahrzeugen und frei von `fixed`-Zellen sein. Gleichstand → vorwaerts. Liegt B parallel zu V's Weg (gleiche Spur), ist Ausweichen unmoeglich (`cannotYield`). B behaelt `dir`, nur `x`/`y` aendern sich.
-     - Snapshot in `history` vor dem Ausweichen (Undo stellt die Position wieder her), `moves` unveraendert. Events: `vehicleYielded`, `powerUpUsed`; danach Einsteigen + Sieg/Niederlage pruefen.
+     - Snapshot in `history` vor dem Ausweichen, markiert mit `honk: true`; Undo stellt die Position wieder her und gibt die Hupe zurueck (Zaehler + 1, `powerUpsUsed` − 1; das Undo selbst zaehlt wie immer). `moves` unveraendert. Events: `vehicleYielded`, `powerUpUsed`; danach Einsteigen + Sieg/Niederlage pruefen.
      - Erlaubt auch im Zustand `lost` mit `loseReason = noMoves` (setzt auf `playing` zurueck und bewertet neu); bei anderen Niederlagen → `gameLost`.
        Jede erfolgreiche Nutzung: Zähler − 1, `powerUpsUsed + 1`, Event `powerUpUsed`.
 7. Aktionen im Zustand `won` bzw. `lost` (außer Undo bei `lost`) → `invalidAction`.
@@ -73,7 +73,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - `invalidAction.vehicleId` (optional): das in der Aktion genannte Fahrzeug, wenn es eins gibt (bei `tapVehicle` und `honk`, auch `unknownVehicle` traegt die genannte ID); der Renderer laesst ein vorhandenes Fahrzeug wackeln.
 - `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `noTarget`, `notBlocked`, `blockedByBollard`, `blockerLocked`, `cannotYield`.
 - `vehicleYielded`: `vehicleId` = ausweichender Blocker, `byVehicleId` = hupendes Fahrzeug, `from`/`to` = Kopfzelle vorher/nachher.
-- Undo nimmt nur Züge/Shuffles zurück: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
+- Undo nimmt Züge, Shuffles und Hupen zurück; nur eine zurückgenommene Hupe wird erstattet: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
 - `createGame` bewertet sofort das Ergebnis; ein Level ohne möglichen ersten Zug startet als `lost`/`noMoves`.
 - Sterne: `starMode` `powerupsUsed` (Default) bewertet `powerUpsUsed`. Die Engine kennt weder Par noch Zeit: `moves` bewertet die rohe Zugzahl, `time` ergibt immer 3 Sterne (siehe `docs/ROADMAP.md`).
 
@@ -102,7 +102,7 @@ Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellunge
 ## Solver-Port (App)
 
 `SolverPort` (`src/app/solver-port.ts`): `hint`, `generate`, `analyze(level, rules, { maxStates?, signal? })`.
-`hint` liefert `HintMove | null` (`src/solver/types.ts`): `{ action: 'tap' | 'honk', vehicleId }`. `analyze` und die Schwierigkeit kennen per Default nur Tipps; mit `AnalyzeOptions.allowHonk` gehoeren Hupen (begrenzt durch `powerUps.honk`) zum Zustandsraum, `solution` enthaelt sie als `honk:<vehicleId>`. `hint` bevorzugt einen Tipp, der ohne Hupe gewinnt; sonst (Hupe uebrig) den Tipp oder die Hupe mit den meisten Gewinnfolgen in der Suche mit Hupe.
+`hint` liefert `HintMove | null` (`src/solver/types.ts`): `{ action: 'tap' | 'honk', vehicleId }`. `analyze` und die Schwierigkeit kennen per Default nur Tipps; mit `AnalyzeOptions.allowHonk` gehoeren Hupen (begrenzt durch `powerUps.honk`) zum Zustandsraum, `solution` enthaelt sie als `honk:<vehicleId>`. `hint` bevorzugt einen Tipp, der ohne Hupe gewinnt; sonst setzt er `needsHonk: true` und liefert (Hupe uebrig) den Tipp oder die Hupe mit den meisten Gewinnfolgen in der Suche mit Hupe.
 Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams & GeneratorTuning`).
 
 ## Welten und Packs

@@ -35,6 +35,8 @@ export interface Snapshot {
   passengerIndex: number;
   moves: number;
   rng: number;
+  /** Snapshot vor einer Hupe: Undo gibt die Hupe zurueck (Zaehler + 1, powerUpsUsed - 1). */
+  honk?: true;
 }
 
 export interface GameState {

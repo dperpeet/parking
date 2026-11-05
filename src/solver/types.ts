@@ -133,6 +133,11 @@ export interface GenerateResult {
 export interface HintMove {
   action: 'tap' | 'honk';
   vehicleId: string;
+  /**
+   * true: vom Zustand aus gewinnt kein reiner Tipp-Verlauf mehr, mit Hupe aber schon
+   * (der Zug stammt aus der Suche mit Hupe). Fehlt bzw. false: es gibt einen Sieg ohne Hupe.
+   */
+  needsHonk?: boolean;
 }
 
 export type SolveRequest =
