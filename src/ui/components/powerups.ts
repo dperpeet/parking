@@ -32,6 +32,8 @@ export interface PowerUpView {
   update(state: GameState, hint: HintStatus, honk: HonkStatus): void;
   /** Hebt den Hupen-Knopf als Tipp hervor (data-hint, pulsiert, kleine Sprechblase). */
   setHonkHint(on: boolean): void;
+  /** Hebt den Undo-Knopf hervor (data-hint, pulsiert). */
+  setUndoHint(on: boolean): void;
 }
 
 const BUTTONS: Array<{ id: PowerUpId; icon: IconName }> = [
@@ -93,6 +95,10 @@ export function createPowerUps(parent: HTMLElement, cb: PowerUpCallbacks): Power
           ?.querySelector('.pu-icon')
           ?.append(h('span', { class: 'hint-bubble', 'aria-hidden': 'true' }, t('honkBubble')));
       }
+    },
+    setUndoHint(on) {
+      if (on) buttons.get('undo')?.setAttribute('data-hint', 'true');
+      else buttons.get('undo')?.removeAttribute('data-hint');
     },
     update(state, hint, honk) {
       for (const b of BUTTONS) {

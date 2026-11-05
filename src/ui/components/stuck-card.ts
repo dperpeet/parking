@@ -1,4 +1,5 @@
-// Sackgasse als Hilfe-Moment: nicht-modale Karte am Brett (Brett bleibt sichtbar), statt Verlust-Dialog.
+// Sackgasse als Hilfe-Moment: nicht-modale Karte statt Verlust-Dialog. Sie nutzt die freie Flaeche ueber (Titel)
+// und unter dem Brett (Knoepfe); das Brett wird dafuer nicht skaliert und verdeckt nichts.
 import type { GameState } from '../../engine/types';
 import { t } from '../../i18n';
 import { h, icon } from '../dom';
@@ -15,12 +16,8 @@ export interface StuckCard {
   isVisible(): boolean;
 }
 
-/** `anchor`: Geschwisterknoten in `parent`, vor dem die Karte eingefuegt wird (z. B. die Hilfen-Leiste). */
-export function createStuckCard(
-  parent: HTMLElement,
-  cb: StuckCardCallbacks,
-  anchor: Node | null = null,
-): StuckCard {
+/** `parent`: der Brett-Rahmen; Titel und Knopfreihe haengen ueber bzw. unter dem Brett. */
+export function createStuckCard(parent: HTMLElement, cb: StuckCardCallbacks): StuckCard {
   let card: HTMLElement | null = null;
 
   const small = (label: string, testid: string, onClick: () => void): HTMLButtonElement => {
@@ -44,14 +41,14 @@ export function createStuckCard(
     return h(
       'div',
       {
-        class: 'stuck-card panel',
+        class: 'stuck-card',
         role: 'region',
         'aria-labelledby': 'stuck-title',
         'data-testid': 'stuck-card',
       },
       h(
         'div',
-        { class: 'stuck-text' },
+        { class: 'stuck-text panel' },
         h('h2', { id: 'stuck-title', class: 'stuck-title' }, t('stuckTitle')),
         h('p', { class: 'stuck-sub' }, t('stuckText')),
       ),
@@ -75,7 +72,7 @@ export function createStuckCard(
       }
       if (!card) {
         card = build();
-        parent.insertBefore(card, anchor);
+        parent.append(card);
         card.querySelector<HTMLElement>('.stuck-honk')?.focus();
       }
       const undo = card.querySelector<HTMLButtonElement>('[data-testid="stuck-undo"]');

@@ -38,6 +38,8 @@ export interface HudActions {
   honkTargets(state: GameState): string[];
   /** Kurze sichtbare Meldung (Toast), z. B. wenn Hupen nicht moeglich ist. */
   notify(text: string): void;
+  /** Entfernt eine stehende Kurzmeldung sofort. */
+  clearToast(): void;
   /** Teilt den Text (Share-Dialog, Zwischenablage); wirft nie. */
   share(text: string): Promise<ShareResult>;
   back(): void;
@@ -62,6 +64,8 @@ export interface Hud {
   toggleHonk(): void;
   /** Hupen-Knopf pulsiert mit Sprechblase (proaktiver Hinweis); unabhaengig vom Fahrzeug-Tipp. */
   nudgeHonk(on: boolean): void;
+  /** Undo-Knopf pulsiert (nach einer sinnlosen Hupe: Zurueck gibt die Hupe wieder). */
+  nudgeUndo(on: boolean): void;
   /** Beendet den Zielmodus; true, wenn er aktiv war. */
   cancelHonk(): boolean;
 }
@@ -159,18 +163,14 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     info: (state) => actions.info(state).dialog,
   });
 
-  const stuckCard = createStuckCard(
-    shell.game,
-    {
-      onHonk: () => {
-        setHonkMode(true);
-        buttons.moveFocus(0, 0);
-      },
-      onUndo: () => usePowerUp('undo'),
-      onAgain: () => void actions.again(),
+  const stuckCard = createStuckCard(shell.boardWrap, {
+    onHonk: () => {
+      setHonkMode(true);
+      buttons.moveFocus(0, 0);
     },
-    shell.powerUps,
-  );
+    onUndo: () => usePowerUp('undo'),
+    onAgain: () => void actions.again(),
+  });
 
   /** Sackgasse mit Hupe uebrig: Hilfe-Karte statt Verlust-Dialog. */
   const isStuck = (state: GameState): boolean =>
@@ -185,8 +185,27 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
       active: honkMode,
     });
 
+  let cardShown = false;
+
+  /** Fokus fiel weg (Knopf entfernt, Dialog zu, Knopf gesperrt): auf Undo bzw. das erste Fahrzeug setzen. */
+  const rescueFocus = (): void => {
+    const active = document.activeElement;
+    const lost =
+      !active ||
+      active === document.body ||
+      !active.isConnected ||
+      (active as HTMLButtonElement).disabled;
+    if (!lost || shell.game.inert) return;
+    const undo = shell.powerUps.querySelector<HTMLButtonElement>('[data-testid="powerup-undo"]');
+    const anchor =
+      undo && !undo.disabled ? undo : shell.vehicleLayer.querySelector<HTMLElement>('button');
+    anchor?.focus();
+  };
+
   const paint = (state: GameState): void => {
     last = state;
+    const hadFocus =
+      shell.wrap.contains(document.activeElement) && document.activeElement !== document.body;
     // Wird die Hupe unbenutzbar (Sieg, Niederlage, Zaehler 0, neues Level), endet der Zielmodus.
     if (honkMode && !honkUsable(state)) leaveHonkMode();
     const info = actions.info(state);
@@ -194,13 +213,16 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     passengers.update(state, rules().passengers.visible);
     queue.update(state);
     paintPowerUps(state);
-    // Mit der Sackgassen-Karte schrumpft das Brett (data-stuck), bleibt aber ganz sichtbar; vor dem Button-Layout setzen.
+    // Mit der Sackgassen-Karte rueckt das Brett nur sanft nach oben (data-stuck), es wird nicht kleiner.
     const showCard = isStuck(state) && !honkMode;
+    if (showCard && !cardShown) actions.clearToast();
+    cardShown = showCard;
     shell.game.toggleAttribute('data-stuck', showCard);
     buttons.update(state);
     stuckCard.update(state, showCard);
     dialogs.update(state, honkMode || isStuck(state));
     attachShare(state, info.share);
+    if (hadFocus) rescueFocus();
   };
 
   /** Haengt "Ergebnis teilen" an den Sieg-Dialog (einmalig je Dialog). */
@@ -253,7 +275,14 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     onEvent(event, state) {
       const text = announce(event, state);
       if (text) pending.push(text);
-      if (event.type === 'vehicleYielded') actions.notify(t('honkPraise'));
+      if (event.type === 'vehicleYielded') actions.notify(t('honkYielded'));
+      // Blockiert, obwohl die Hupe gerade pulsiert: freundlicher Hinweis statt nur Wackeln.
+      if (
+        event.type === 'vehicleBlocked' &&
+        event.reason === 'path' &&
+        (vehicleHonkHint || honkNudge)
+      )
+        actions.notify(t('honkBlockedTry'));
       if (event.type === 'invalidAction') {
         const message = honkErrorText(event.reason);
         if (message) actions.notify(message);
@@ -281,6 +310,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
       honkNudge = on;
       syncHonkButton();
     },
+    nudgeUndo: powerUps.setUndoHint,
     toggleHonk() {
       if (honkMode) setHonkMode(false);
       else if (last && honkUsable(last) && !dialogs.isOpen()) setHonkMode(true);

@@ -115,6 +115,9 @@ test('Welt 3 Level 1: Sackgasse zeigt Hilfe-Karte, Hupen fuehrt zum Sieg mit 3 S
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
 
   // Zwei Zuege fuehren in die Sackgasse: Karte statt Verlust-Dialog, Brett bleibt bedienbar.
+  const boardWidth = async (): Promise<number> =>
+    (await page.locator('.board-wrap').boundingBox())?.width ?? 0;
+  const widthBefore = await boardWidth();
   await tapAll(page, ['v2', 'v4']);
   const card = page.getByTestId('stuck-card');
   await expect(card).toBeVisible();
@@ -122,6 +125,9 @@ test('Welt 3 Level 1: Sackgasse zeigt Hilfe-Karte, Hupen fuehrt zum Sieg mit 3 S
   await expect(page.getByTestId('lose-dialog')).toHaveCount(0);
   await expect(page.getByTestId('hint')).toBeEnabled();
   await expect(page.getByTestId('stuck-honk')).toBeFocused();
+  // Kein Groessensprung: das Brett behaelt seine Breite, und kein Toast bleibt stehen.
+  expect(await boardWidth()).toBeCloseTo(widthBefore, 0);
+  await expect(page.locator('.toast')).toHaveCount(0);
 
   // Abbrechen aus dem Zielmodus bringt die Karte zurueck.
   await page.getByTestId('stuck-honk').click();

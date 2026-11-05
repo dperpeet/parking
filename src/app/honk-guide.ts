@@ -14,9 +14,23 @@ export type HonkAdvice =
 
 const NONE: HonkAdvice = { kind: 'none' };
 
+/** Urteil ueber eine gerade benutzte Hupe: fuehrt der Zustand danach noch zu einem Sieg? */
+export type HonkVerdict = 'useful' | 'useless' | 'unknown';
+
 /** Der Startzustand eines Levels: noch kein Zug, keine Hilfe benutzt. */
 function isStartState(state: GameState): boolean {
   return state.moves === 0 && state.history.length === 0 && state.powerUpsUsed === 0;
+}
+
+/** Der Zustand hat sich seit der Solver-Frage veraendert (Zug, Undo, Neustart, Levelwechsel). */
+function isStale(asked: GameState, now: GameState): boolean {
+  return (
+    now.levelId !== asked.levelId ||
+    now.moves !== asked.moves ||
+    now.history.length !== asked.history.length ||
+    now.powerUpsUsed !== asked.powerUpsUsed ||
+    now.status !== asked.status
+  );
 }
 
 export class HonkGuide {
@@ -24,6 +38,7 @@ export class HonkGuide {
   /** null: unbekannt; true: das Level braucht die Hupe (schon der Startzustand braucht sie). */
   private required: boolean | null = null;
   private seq = 0;
+  private verdictSeq = 0;
 
   constructor(
     private readonly port: SolverPort,
@@ -65,19 +80,39 @@ export class HonkGuide {
       });
       const move = await Promise.race([this.port.hint(state, rules), timeout]);
       if (move === 'timeout' || seq !== this.seq) return NONE;
-      const now = getState();
-      const stale =
-        now.levelId !== state.levelId ||
-        now.moves !== state.moves ||
-        now.history.length !== state.history.length ||
-        now.powerUpsUsed !== state.powerUpsUsed ||
-        now.status !== state.status;
-      if (stale) return NONE;
+      if (isStale(state, getState())) return NONE;
       if (isStartState(state)) this.required = move?.needsHonk === true;
       if (this.required !== true || move === null || move.needsHonk !== true) return NONE;
       return { kind: 'honk', move };
     } catch {
       return NONE;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Nach einer Hupe: Gibt es im Pflicht-Hupe-Level danach noch einen Sieg? Nur dort `useful`/`useless`;
+   * sonst, bei veralteter Antwort, Fehler oder Zeitueberschreitung `unknown`.
+   */
+  async assessHonk(getState: () => GameState, rules: ResolvedRules): Promise<HonkVerdict> {
+    const state = getState();
+    if (!this.isRequired() || !rules.powerups.honk.enabled) return 'unknown';
+    if (state.status === 'won') return 'useful';
+    if (state.status === 'lost') return 'useless';
+    const seq = ++this.verdictSeq;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const timeout = new Promise<'timeout'>((resolve) => {
+        timer = setTimeout(() => resolve('timeout'), this.timeoutMs);
+      });
+      const move = await Promise.race([this.port.hint(state, rules), timeout]);
+      if (move === 'timeout' || seq !== this.verdictSeq || isStale(state, getState())) {
+        return 'unknown';
+      }
+      return move === null ? 'useless' : 'useful';
+    } catch {
+      return 'unknown';
     } finally {
       clearTimeout(timer);
     }

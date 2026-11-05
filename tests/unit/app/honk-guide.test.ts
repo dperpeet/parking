@@ -118,6 +118,76 @@ describe('HonkGuide: Pflicht-Hupe-Level', () => {
   });
 });
 
+describe('HonkGuide: Urteil nach der Hupe (assessHonk)', () => {
+  /** Pflicht-Level erkannt, dann gehupt (V weicht B aus). */
+  async function honked() {
+    const t = guide();
+    t.solver.hintResult = { action: 'honk', vehicleId: 'V', needsHonk: true };
+    await t.g.check(t.get, t.rules);
+    t.set(step(t.get(), { type: 'usePowerUp', powerUp: 'honk', vehicleId: 'V' }, t.rules).state);
+    return t;
+  }
+
+  it('Sieg danach moeglich: useful', async () => {
+    const t = await honked();
+    t.solver.hintResult = { action: 'tap', vehicleId: 'V' };
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('useful');
+  });
+
+  it('kein Sieg mehr (hint null): useless', async () => {
+    const t = await honked();
+    t.solver.hintResult = null;
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('useless');
+  });
+
+  it('Verlust nach der Hupe: useless ohne Solver-Frage; Sieg: useful', async () => {
+    const t = await honked();
+    const calls = t.solver.hintCalls;
+    t.set({ ...t.get(), status: 'lost', loseReason: 'noMoves' });
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('useless');
+    t.set({ ...t.get(), status: 'won' });
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('useful');
+    expect(t.solver.hintCalls).toBe(calls);
+  });
+
+  it('ohne Pflicht-Hupe (oder unbekanntem Level): unknown, ohne Solver', async () => {
+    const t = guide();
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('unknown');
+    t.solver.hintResult = { action: 'tap', vehicleId: 'C' };
+    await t.g.check(t.get, t.rules);
+    const calls = t.solver.hintCalls;
+    expect(await t.g.assessHonk(t.get, t.rules)).toBe('unknown');
+    expect(t.solver.hintCalls).toBe(calls);
+  });
+
+  it('Fehler, Zeitueberschreitung und veraltete Antwort: unknown', async () => {
+    const failing = await honked();
+    failing.solver.hintResult = new Error('worker');
+    expect(await failing.g.assessHonk(failing.get, failing.rules)).toBe('unknown');
+
+    const slow = await honked();
+    const quick = new HonkGuide(slow.solver, 10);
+    quick.begin('test');
+    slow.solver.hintResult = { action: 'honk', vehicleId: 'V', needsHonk: true };
+    slow.set(game().state);
+    await quick.check(slow.get, slow.rules);
+    slow.set(
+      step(slow.get(), { type: 'usePowerUp', powerUp: 'honk', vehicleId: 'V' }, slow.rules).state,
+    );
+    slow.solver.hintGate = new Promise(() => undefined);
+    expect(await quick.assessHonk(slow.get, slow.rules)).toBe('unknown');
+
+    const stale = await honked();
+    stale.solver.hintResult = null;
+    let release: () => void = () => undefined;
+    stale.solver.hintGate = new Promise<void>((r) => (release = r));
+    const pending = stale.g.assessHonk(stale.get, stale.rules);
+    stale.tap('C');
+    release();
+    expect(await pending).toBe('unknown');
+  });
+});
+
 class MemStorage implements StorageLike {
   private readonly m = new Map<string, string>();
   getItem = (k: string): string | null => this.m.get(k) ?? null;

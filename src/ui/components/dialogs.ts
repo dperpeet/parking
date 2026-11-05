@@ -154,6 +154,10 @@ export function createDialogs(
             'data-testid': 'lose-dialog',
           },
           h('h2', { id: 'dlg-title', class: 'dlg-title' }, loseTitle(reason)),
+          // Die letzte Aktion war eine Hupe, die nichts gebracht hat: Zurueck gibt sie wieder.
+          reason === 'noMoves' && !undo.disabled && state.history.at(-1)?.honk
+            ? h('p', { class: 'dlg-sub' }, t('honkUseless'))
+            : null,
           h(
             'div',
             { class: 'dlg-row' },
