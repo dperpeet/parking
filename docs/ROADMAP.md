@@ -35,6 +35,10 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 - Animations-Feinschliff.
 - Optionale Themes Holz und Flach (siehe [ADR 0001](adr/0001-visual-style-comic.md)).
 
+## Performance
+
+- Spielfeld samt PixiJS erst beim Levelstart dynamisch laden (`import()` von `game-screen`, `setMotionSetting` direkt aus `render/tween`): Initial-JS etwa 220 → 65 kB gz, dafür einmalig etwa 175 kB beim ersten Levelstart und eine kurze Ladeanzeige. Danach optional ungenutzte Pixi-Erweiterungen (`browserAll`) weglassen (etwa 10–20 kB gz).
+
 ## PWA und Offline
 
 - Installierbarkeit und Offline-Betrieb.
