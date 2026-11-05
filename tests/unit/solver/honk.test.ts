@@ -109,12 +109,12 @@ describe('hintMove tap before honk', () => {
     const s = createGame(l, world3);
     const invalid = step(s, { type: 'usePowerUp', powerUp: 'honk', vehicleId: 'V0' }, world3);
     expect(invalid.events.some((e) => e.type === 'invalidAction')).toBe(true);
-    expect(hintMove(s, world3)).toEqual({ action: 'tap', vehicleId: 'F' });
+    expect(hintMove(s, world3)).toEqual({ action: 'tap', vehicleId: 'F', needsHonk: true });
   });
 
   it('then suggests the honk', () => {
     const s = step(createGame(l, world3), { type: 'tapVehicle', vehicleId: 'F' }, world3).state;
-    expect(hintMove(s, world3)).toEqual({ action: 'honk', vehicleId: 'V0' });
+    expect(hintMove(s, world3)).toEqual({ action: 'honk', vehicleId: 'V0', needsHonk: true });
   });
 });
 

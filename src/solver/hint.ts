@@ -41,7 +41,8 @@ export function hint(state: GameState, rules: ResolvedRules, maxStates?: number)
 /**
  * Tipp fuer den Worker-Vertrag (`HintMove`): gewinnender Tipp ohne Hupe bevorzugt. Sonst, wenn eine
  * Hupe uebrig ist (auch nach einer Niederlage durch fehlende Zuege), Suche mit Hupe: der Tipp oder
- * die Hupe mit den meisten Gewinnfolgen (Gleichstand: Siegchance, dann Tipp vor Hupe). So kommt in
+ * die Hupe mit den meisten Gewinnfolgen (Gleichstand: Siegchance, dann Tipp vor Hupe), jeweils mit
+ * `needsHonk: true` (ohne Hupe gewinnt nichts mehr; sonst bleibt das Feld weg). So kommt in
  * Leveln mit Pflicht-Hupe zuerst der Tipp, der die Hupe vorbereitet.
  */
 export function hintMove(
@@ -57,6 +58,6 @@ export function hintMove(
   const id = bestAction(new Searcher(rules, maxStates, true), state);
   if (id === null) return null;
   return id.startsWith(HONK_PREFIX)
-    ? { action: 'honk', vehicleId: id.slice(HONK_PREFIX.length) }
-    : { action: 'tap', vehicleId: id };
+    ? { action: 'honk', vehicleId: id.slice(HONK_PREFIX.length), needsHonk: true }
+    : { action: 'tap', vehicleId: id, needsHonk: true };
 }

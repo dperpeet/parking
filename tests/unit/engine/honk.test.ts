@@ -275,14 +275,45 @@ describe('honk: yielding', () => {
 describe('honk: consequences', () => {
   const spec = lane(v('B', 3, 2, 'S', 's', 'green'));
 
-  it('undo restores the position and costs another use', () => {
+  it('undo restores the position and refunds the honk', () => {
     const { state, rules } = setup(spec);
     const honked = step(state, honk('V'), rules).state;
+    expect(honked.history.at(-1)).toMatchObject({ honk: true });
+    expect(honked).toMatchObject({ powerUpsUsed: 1, moves: 0 });
+    expect(honked.powerUps.honk).toBe(1);
     const undone = step(honked, power('undo'), rules).state;
     expect(undone.vehicles).toEqual(state.vehicles);
     expect(undone.history).toHaveLength(0);
-    expect(undone.powerUps.honk).toBe(1);
-    expect(undone.powerUpsUsed).toBe(2);
+    expect(undone.moves).toBe(0);
+    expect(undone.powerUps.honk).toBe(2);
+    expect(undone.powerUps.undo).toBe(state.powerUps.undo - 1);
+    expect(undone.powerUpsUsed).toBe(1);
+    // erneutes Hupen moeglich
+    const again = step(undone, honk('V'), rules);
+    expect(again.events.map((e) => e.type)).toContain('vehicleYielded');
+    expect(again.state.powerUps.honk).toBe(1);
+  });
+
+  it('undo of a tap refunds nothing', () => {
+    const { state, rules } = setup(spec);
+    const tapped = step(state, tap('B'), rules).state;
+    expect(tapped.history.at(-1)?.honk).toBeUndefined();
+    const undone = step(tapped, power('undo'), rules).state;
+    expect(undone.powerUps.honk).toBe(state.powerUps.honk);
+    expect(undone.powerUpsUsed).toBe(1);
+  });
+
+  it('honk, undo, honk with one use costs two power-ups (world3 stars)', () => {
+    const one = lane(v('B', 3, 2, 'S', 's', 'green'), {
+      overrides: {
+        powerups: { honk: { enabled: true, uses: 1 } },
+        scoring: { starMode: 'powerupsUsed', stars: { three: 1, two: 3 } },
+      },
+    });
+    const { state, rules } = setup(one);
+    const res = run(state, rules, [honk('V'), power('undo'), honk('V'), tap('V'), tap('B')]);
+    expect(res.state).toMatchObject({ status: 'won', powerUpsUsed: 2, stars: 2 });
+    expect(res.state.powerUps.honk).toBe(0);
   });
 
   it('changes the state hash, and the freed vehicle becomes legal', () => {

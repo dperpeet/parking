@@ -16,6 +16,11 @@ export function applyUndo(s: GameState, events: GameEvent[]): PowerUpOutcome {
   s.moves = snapshot.moves;
   s.rng = snapshot.rng;
   s.history = s.history.slice(0, -1);
+  // Snapshot einer Hupe: Undo gibt sie zurueck (das Undo selbst zaehlt in step() als Power-Up).
+  if (snapshot.honk) {
+    s.powerUps.honk += 1;
+    s.powerUpsUsed -= 1;
+  }
   s.status = 'playing';
   s.loseReason = null;
   s.stars = 0;
