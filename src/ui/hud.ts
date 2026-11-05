@@ -7,11 +7,12 @@ import { createHeader } from './components/header';
 import type { HeaderTitle } from './components/header';
 import { createPassengers } from './components/passengers';
 import { createPowerUps } from './components/powerups';
+import { createStuckCard } from './components/stuck-card';
 import type { HintStatus } from './components/powerups';
 import { createQueue } from './components/queue';
 import type { Shell } from './shell';
 import { announce, honkErrorText } from './strings';
-import { h } from './dom';
+import { h, icon } from './dom';
 import { createVehicleButtons } from './vehicle-buttons';
 
 /** Alles, was das HUD pro Zustand vom Modus (Kampagne, Tageslevel, Endlos ...) erfragt. */
@@ -33,6 +34,8 @@ export interface HudActions {
   next(): MaybeAsync;
   similar(): MaybeAsync;
   hint(): void;
+  /** Ids der Fahrzeuge, deren Hupe die Engine annehmen wuerde (Zielmodus: nur sie werden hervorgehoben). */
+  honkTargets(state: GameState): string[];
   /** Kurze sichtbare Meldung (Toast), z. B. wenn Hupen nicht moeglich ist. */
   notify(text: string): void;
   /** Teilt den Text (Share-Dialog, Zwischenablage); wirft nie. */
@@ -57,6 +60,8 @@ export interface Hud {
   setHint(vehicleId: string | null, action?: 'tap' | 'honk'): void;
   /** Schaltet den Hupen-Zielmodus um (Knopf, Taste H); wirkungslos, wenn die Hupe nicht nutzbar ist. */
   toggleHonk(): void;
+  /** Hupen-Knopf pulsiert mit Sprechblase (proaktiver Hinweis); unabhaengig vom Fahrzeug-Tipp. */
+  nudgeHonk(on: boolean): void;
   /** Beendet den Zielmodus; true, wenn er aktiv war. */
   cancelHonk(): boolean;
 }
@@ -71,6 +76,8 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
   let honkMode = false;
   let last: GameState | null = null;
   let pending: string[] = [];
+  let vehicleHonkHint = false;
+  let honkNudge = false;
 
   const honkEnabled = (): boolean => rules().powerups.honk.enabled;
   /** Hupe nutzbar: Zaehler offen, Spiel laeuft oder ist wegen `noMoves` verloren. */
@@ -79,6 +86,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     state.powerUps.honk > 0 &&
     (state.status === 'playing' || (state.status === 'lost' && state.loseReason === 'noMoves'));
 
+  // Banner im Zielmodus: Anleitung und sichtbarer Abbrechen-Knopf.
   const honkHint = h('div', {
     class: 'honk-hint panel',
     role: 'status',
@@ -87,18 +95,34 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
   });
   shell.boardWrap.append(honkHint);
 
+  let validTargets = new Set<string>();
+
   const leaveHonkMode = (): void => {
     honkMode = false;
-    honkHint.textContent = '';
+    honkHint.replaceChildren();
     shell.vehicleLayer.removeAttribute('data-honk-mode');
+    buttons.setHonkTargets(null);
   };
 
   const setHonkMode = (on: boolean): void => {
     if (honkMode === on) return;
     if (on) {
       honkMode = true;
-      honkHint.textContent = t('honkTarget');
+      const cancel = h(
+        'button',
+        {
+          type: 'button',
+          class: 'honk-cancel',
+          'aria-label': t('honkCancel'),
+          'data-testid': 'honk-cancel',
+        },
+        icon('close'),
+      );
+      cancel.addEventListener('click', () => setHonkMode(false));
+      honkHint.replaceChildren(h('span', { class: 'honk-hint-text' }, t('honkTarget')), cancel);
       shell.vehicleLayer.setAttribute('data-honk-mode', 'true');
+      validTargets = new Set(last ? actions.honkTargets(last) : []);
+      buttons.setHonkTargets(validTargets);
     } else leaveHonkMode();
     if (last) paint(last);
   };
@@ -108,10 +132,13 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
       actions.dispatch({ type: 'tapVehicle', vehicleId });
       return;
     }
-    // Der Modus endet mit dem Tipp, auch wenn die Hupe abgelehnt wird. Gemalt wird nur der Knopf:
-    // ein Neuzeichnen des alten Zustands wuerde einen Verlust-Dialog waehrend der Animation zeigen.
-    leaveHonkMode();
-    if (last) paintPowerUps(last);
+    if (validTargets.has(vehicleId)) {
+      // Der Modus endet mit der gueltigen Hupe. Gemalt wird nur der Knopf:
+      // ein Neuzeichnen des alten Zustands wuerde einen Verlust-Dialog waehrend der Animation zeigen.
+      leaveHonkMode();
+      if (last) paintPowerUps(last);
+    }
+    // Fehlgriff: Der Modus bleibt, die Engine lehnt ab (Meldung und Wackeln kommen aus den Events).
     actions.dispatch({ type: 'usePowerUp', powerUp: 'honk', vehicleId });
   });
   const powerUps = createPowerUps(shell.powerUps, {
@@ -128,14 +155,28 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     onAgain: actions.again,
     onSimilar: actions.similar,
     onUndo: () => usePowerUp('undo'),
-    onHonk: () => {
-      setHonkMode(true);
-      buttons.moveFocus(0, 0);
-    },
-    canHonk: honkUsable,
     onMenu: actions.back,
     info: (state) => actions.info(state).dialog,
   });
+
+  const stuckCard = createStuckCard(
+    shell.game,
+    {
+      onHonk: () => {
+        setHonkMode(true);
+        buttons.moveFocus(0, 0);
+      },
+      onUndo: () => usePowerUp('undo'),
+      onAgain: () => void actions.again(),
+    },
+    shell.powerUps,
+  );
+
+  /** Sackgasse mit Hupe uebrig: Hilfe-Karte statt Verlust-Dialog. */
+  const isStuck = (state: GameState): boolean =>
+    state.status === 'lost' && state.loseReason === 'noMoves' && honkUsable(state);
+
+  const syncHonkButton = (): void => powerUps.setHonkHint(vehicleHonkHint || honkNudge);
 
   const paintPowerUps = (state: GameState): void =>
     powerUps.update(state, actions.info(state).hint, {
@@ -153,8 +194,12 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     passengers.update(state, rules().passengers.visible);
     queue.update(state);
     paintPowerUps(state);
+    // Mit der Sackgassen-Karte schrumpft das Brett (data-stuck), bleibt aber ganz sichtbar; vor dem Button-Layout setzen.
+    const showCard = isStuck(state) && !honkMode;
+    shell.game.toggleAttribute('data-stuck', showCard);
     buttons.update(state);
-    dialogs.update(state, honkMode);
+    stuckCard.update(state, showCard);
+    dialogs.update(state, honkMode || isStuck(state));
     attachShare(state, info.share);
   };
 
@@ -208,6 +253,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     onEvent(event, state) {
       const text = announce(event, state);
       if (text) pending.push(text);
+      if (event.type === 'vehicleYielded') actions.notify(t('honkPraise'));
       if (event.type === 'invalidAction') {
         const message = honkErrorText(event.reason);
         if (message) actions.notify(message);
@@ -228,7 +274,12 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     announce: say,
     setHint(vehicleId, action = 'tap') {
       buttons.setHint(vehicleId, action);
-      powerUps.setHonkHint(vehicleId !== null && action === 'honk');
+      vehicleHonkHint = vehicleId !== null && action === 'honk';
+      syncHonkButton();
+    },
+    nudgeHonk(on) {
+      honkNudge = on;
+      syncHonkButton();
     },
     toggleHonk() {
       if (honkMode) setHonkMode(false);

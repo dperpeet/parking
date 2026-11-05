@@ -30,7 +30,7 @@ export interface HonkStatus {
 
 export interface PowerUpView {
   update(state: GameState, hint: HintStatus, honk: HonkStatus): void;
-  /** Hebt den Hupen-Knopf als Tipp hervor (data-hint). */
+  /** Hebt den Hupen-Knopf als Tipp hervor (data-hint, pulsiert, kleine Sprechblase). */
   setHonkHint(on: boolean): void;
 }
 
@@ -81,8 +81,18 @@ export function createPowerUps(parent: HTMLElement, cb: PowerUpCallbacks): Power
   return {
     setHonkHint(on) {
       const btn = buttons.get('honk');
-      if (on) btn?.setAttribute('data-hint', 'true');
-      else btn?.removeAttribute('data-hint');
+      const bubble = btn?.querySelector('.hint-bubble');
+      if (!on) {
+        btn?.removeAttribute('data-hint');
+        bubble?.remove();
+        return;
+      }
+      btn?.setAttribute('data-hint', 'true');
+      if (!bubble) {
+        btn
+          ?.querySelector('.pu-icon')
+          ?.append(h('span', { class: 'hint-bubble', 'aria-hidden': 'true' }, t('honkBubble')));
+      }
     },
     update(state, hint, honk) {
       for (const b of BUTTONS) {
@@ -104,7 +114,9 @@ export function createPowerUps(parent: HTMLElement, cb: PowerUpCallbacks): Power
         btn.setAttribute('aria-label', t('puLeft', { label: powerUpLabel(b.id), n: left }));
       }
       hintBadge.textContent = String(hint.left);
-      hintBtn.disabled = hint.left <= 0 || state.status !== 'playing' || hint.busy;
+      // Auch in der Sackgasse (verloren durch noMoves, Hupe uebrig) gibt es noch einen Tipp.
+      const canHint = state.status === 'playing' || (state.status === 'lost' && honk.usable);
+      hintBtn.disabled = hint.left <= 0 || !canHint || hint.busy;
       hintBtn.setAttribute('aria-busy', String(hint.busy));
       hintBtn.setAttribute('aria-label', t('puLeft', { label: t('puHint'), n: hint.left }));
     },

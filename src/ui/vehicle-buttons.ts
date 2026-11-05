@@ -11,6 +11,8 @@ export interface VehicleButtons {
   moveFocus(dx: number, dy: number): void;
   /** Markiert ein Fahrzeug als Tipp (data-hint); null entfernt die Markierung. Bei `honk` traegt es eine Hupen-Blase. */
   setHint(vehicleId: string | null, action?: 'tap' | 'honk'): void;
+  /** Zielmodus: markiert gueltige Hupen-Ziele (data-honk-target yes/no); null entfernt die Markierung. */
+  setHonkTargets(ids: ReadonlySet<string> | null): void;
 }
 
 export function createVehicleButtons(
@@ -19,6 +21,12 @@ export function createVehicleButtons(
 ): VehicleButtons {
   const buttons = new Map<string, HTMLButtonElement>();
   let lastLevel = '';
+  let targets: ReadonlySet<string> | null = null;
+
+  const markTarget = (id: string, btn: HTMLElement): void => {
+    if (targets === null) btn.removeAttribute('data-honk-target');
+    else btn.setAttribute('data-honk-target', targets.has(id) ? 'yes' : 'no');
+  };
 
   const center = (b: HTMLElement): [number, number] => [
     b.offsetLeft + b.offsetWidth / 2,
@@ -40,6 +48,10 @@ export function createVehicleButtons(
   };
 
   return {
+    setHonkTargets(ids) {
+      targets = ids;
+      for (const [id, btn] of buttons) markTarget(id, btn);
+    },
     setHint(vehicleId, action = 'tap') {
       for (const [id, btn] of buttons) {
         btn.querySelector('.hint-bubble')?.remove();
@@ -91,6 +103,7 @@ export function createVehicleButtons(
           buttons.set(v.id, btn);
           layer.append(btn);
         }
+        markTarget(v.id, btn);
         const r = vehicleRect(layout, v);
         btn.style.left = `${r.x}px`;
         btn.style.top = `${r.y}px`;

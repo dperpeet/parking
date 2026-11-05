@@ -19,16 +19,12 @@ export interface DialogCallbacks {
   onAgain(): MaybeAsync;
   onSimilar(): MaybeAsync;
   onUndo(): void;
-  /** Hupe aus dem Verlust-Dialog (nur bei noMoves): Dialog schliesst, der Zielmodus beginnt. */
-  onHonk(): void;
-  /** Ist die Hupe im verlorenen Zustand nutzbar? */
-  canHonk(state: GameState): boolean;
   onMenu(): void;
   info(state: GameState): DialogInfo;
 }
 
 export interface DialogView {
-  /** Zeigt oder schliesst den Dialog passend zum Spielstatus; `hidden` haelt ihn geschlossen (Zielmodus). */
+  /** Zeigt oder schliesst den Dialog passend zum Spielstatus; `hidden` haelt ihn geschlossen (Zielmodus, Sackgassen-Karte). */
   update(state: GameState, hidden?: boolean): void;
   isOpen(): boolean;
 }
@@ -148,10 +144,6 @@ export function createDialogs(
         const reason = state.loseReason ?? 'queueFull';
         const undo = button(t('loseUndo'), 'btn-primary', 'dlg-undo', cb.onUndo);
         undo.disabled = state.powerUps.undo <= 0 || state.history.length === 0;
-        const honk =
-          reason === 'noMoves' && cb.canHonk(state)
-            ? button(t('loseHonk'), 'btn-secondary', 'dlg-honk', cb.onHonk)
-            : null;
         const dialog = h(
           'div',
           {
@@ -166,7 +158,6 @@ export function createDialogs(
             'div',
             { class: 'dlg-row' },
             undo,
-            honk,
             button(t('again'), 'btn-secondary', 'dlg-again', cb.onAgain),
           ),
         );
