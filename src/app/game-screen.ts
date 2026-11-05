@@ -131,10 +131,17 @@ export function mountGameScreen(
     toastTimer = setTimeout(() => node.remove(), ms);
   };
 
+  /** Entfernt eine stehende Kurzmeldung sofort (Undo, Neustart, Levelwechsel, Sackgassen-Karte). */
+  const clearToast = (): void => {
+    clearTimeout(toastTimer);
+    shell.boardWrap.querySelector('.toast')?.remove();
+  };
+
   const clearHint = (): void => {
     clearTimeout(hintTimer);
     hud?.setHint(null);
     hud?.nudgeHonk(false);
+    hud?.nudgeUndo(false);
     board?.highlight(null);
     advice = { kind: 'none' };
   };
@@ -160,6 +167,20 @@ export function mountGameScreen(
     if (disposed || !hud) return;
     advice = result;
     applyAdvice();
+  };
+
+  /** Nach einer Hupe im Pflicht-Hupe-Level: Lob, wenn es danach noch zum Sieg reicht, sonst Hinweis auf Zurueck. */
+  const judgeHonk = async (): Promise<void> => {
+    const { controller, honkGuide } = session;
+    const verdict = await honkGuide.assessHonk(() => controller.getState(), controller.getRules());
+    // Im Verlust-Dialog steht der Hinweis selbst; ein veraltetes Urteil (neuer Zug) bleibt stumm.
+    if (disposed || !hud || controller.getState().status === 'lost') return;
+    if (verdict === 'useful') toast(t('honkPraise'));
+    else if (verdict === 'useless') {
+      hud.announce(t('honkUseless'));
+      toast(t('honkUseless'), NOTICE_MS);
+      hud.nudgeUndo(true);
+    }
   };
 
   const onHint = async (): Promise<void> => {
@@ -233,6 +254,7 @@ export function mountGameScreen(
       hint: () => void onHint(),
       honkTargets: (state) => session.honkTargets(state),
       notify: (text) => toast(text),
+      clearToast,
       share: (text) => shareText(text, browserShareEnv()),
       back: opts.back,
       info: (state) => ({
@@ -273,12 +295,16 @@ export function mountGameScreen(
         return;
       }
       clearHint();
+      if (u.kind === 'new' || u.events.some((e) => e.type === 'stateRestored')) clearToast();
       if (u.kind === 'new') {
         nudgeAnnounced = false;
         hud?.cancelHonk();
         void player.reset(u.state);
         maybeShowIntro();
-      } else void player.play(u.events, u.state);
+      } else {
+        const played = player.play(u.events, u.state);
+        if (u.events.some((e) => e.type === 'vehicleYielded')) void played.then(judgeHonk);
+      }
       void refreshAdvice();
     });
     unbindKeys = bindKeyboard({

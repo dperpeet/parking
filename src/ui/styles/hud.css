@@ -423,51 +423,74 @@
   height: 26px;
 }
 
-/* Sackgasse: nicht-modale Hilfe-Karte unter dem Brett. Das Brett schrumpft dafuer, bleibt aber ganz sichtbar. */
+/* Sackgasse: nicht-modale Hilfe-Karte. Der Titel haengt in der Luft ueber dem Brett, die Knoepfe darunter; das Brett
+   behaelt seine Groesse und rueckt nur sanft ein Stueck nach oben (Reduced-Motion: base.css). */
+.game {
+  --stuck-lift: 12px;
+}
+
+.board-wrap {
+  transition: transform 220ms ease-out;
+}
+
 .game[data-stuck] .board-wrap {
-  width: 72%;
-  margin-right: auto;
-  margin-left: auto;
+  transform: translateY(calc(var(--stuck-lift) * -1));
 }
 
 .stuck-card {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 12px 10px;
-  animation: dialog-in 260ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .stuck-text {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 3px);
+  left: 0;
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 8px;
-  text-align: left;
+  justify-content: center;
+  gap: 8px;
+  padding: 1px 10px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: dialog-in 260ms cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
 .stuck-title {
   margin: 0;
-  font-size: 23px;
+  font-size: 18px;
   line-height: 1.1;
 }
 
 .stuck-sub {
+  min-width: 0;
   margin: 0;
-  font-size: 16px;
+  overflow: hidden;
+  font-size: 14px;
   color: var(--t-sub);
+  text-overflow: ellipsis;
 }
 
 .stuck-row {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  left: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 44px;
+  pointer-events: auto;
+  animation: dialog-in 260ms cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
 .btn.stuck-honk {
   flex: 1 1 auto;
   min-width: 0;
+  height: 44px;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -506,18 +529,17 @@
   animation: fade-in 180ms ease-out;
 }
 
-.game[data-stuck] .toast,
-.game[data-stuck] .honk-hint {
-  bottom: calc(100% + 2px);
-}
-
 .toast {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Lange Hinweise (ungeprueftes Level) duerfen umbrechen */
+/* Lange Hinweise duerfen umbrechen, bleiben aber in der Luecke zu den Halteplaetzen (verdecken sie nie) */
 .toast-wrap {
+  bottom: calc(100% + 2px);
+  padding: 2px 10px 0;
+  font-size: 14px;
+  line-height: 1.15;
   white-space: normal;
 }

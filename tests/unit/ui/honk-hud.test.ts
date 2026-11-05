@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Action, GameEvent, GameState } from '../../../src/engine/types';
+import type { Action, GameEvent, GameState, Snapshot } from '../../../src/engine/types';
 import type { ResolvedRules } from '../../../src/schema';
 import { setLanguage } from '../../../src/i18n';
 import { mountShell } from '../../../src/ui/shell';
@@ -27,6 +27,7 @@ interface Setup {
   hud: Hud;
   actions: Action[];
   notes: string[];
+  cleared: { count: number };
   state: GameState;
   rules: ResolvedRules;
 }
@@ -40,6 +41,7 @@ function mount(overrides: object = HONK, patch: Partial<GameState> = {}): Setup 
   const shell = mountShell(document.body);
   const actions: Action[] = [];
   const notes: string[] = [];
+  const cleared = { count: 0 };
   const handlers: HudActions = {
     dispatch: (a) => actions.push(a),
     restart: () => undefined,
@@ -49,6 +51,7 @@ function mount(overrides: object = HONK, patch: Partial<GameState> = {}): Setup 
     hint: () => undefined,
     honkTargets: () => targets,
     notify: (text) => notes.push(text),
+    clearToast: () => void (cleared.count += 1),
     share: () => Promise.resolve('cancelled'),
     back: () => undefined,
     info: () => ({
@@ -60,7 +63,7 @@ function mount(overrides: object = HONK, patch: Partial<GameState> = {}): Setup 
   };
   const hud = createHud(shell, () => rules, handlers);
   hud.render(state);
-  return { shell, hud, actions, notes, state, rules };
+  return { shell, hud, actions, notes, cleared, state, rules };
 }
 
 const byId = (id: string): HTMLElement => {
@@ -246,14 +249,14 @@ describe('Meldungen', () => {
         notBlocked: 'Das Auto kann doch fahren!',
         blockedByBollard: 'Der Poller bleibt stehen.',
         blockerLocked: 'Das Auto davor ist abgeschlossen.',
-        cannotYield: 'Das Auto davor hat keinen Platz.',
+        cannotYield: 'Hier hilft Hupen nicht.',
         noTarget: 'Tippe ein Auto an.',
       },
       en: {
         notBlocked: 'This car can already drive!',
         blockedByBollard: 'The post won’t move.',
         blockerLocked: 'The car in front is locked.',
-        cannotYield: 'The car in front has no room.',
+        cannotYield: 'Honking won’t help here.',
         noTarget: 'Tap a car.',
       },
     } as const;
@@ -403,7 +406,7 @@ describe('Zielmodus mit Fuehrung', () => {
 });
 
 describe('Rueckmeldung', () => {
-  it('Lob-Toast nach erfolgreicher Hupe, beide Sprachen', () => {
+  it('neutrale Meldung nach erfolgreicher Hupe, beide Sprachen (Lob kommt vom Guide)', () => {
     const { hud, notes, state } = mount();
     const event: GameEvent = {
       type: 'vehicleYielded',
@@ -415,7 +418,7 @@ describe('Rueckmeldung', () => {
     hud.onEvent(event, state);
     setLanguage('en');
     hud.onEvent(event, state);
-    expect(notes).toEqual(['Super gehupt!', 'Nice honk!']);
+    expect(notes).toEqual(['Das Auto macht Platz!', 'The car makes room!']);
   });
 
   it('proaktiver Hinweis laesst den Hupen-Knopf pulsieren, unabhaengig vom Fahrzeug-Tipp', () => {
@@ -429,5 +432,141 @@ describe('Rueckmeldung', () => {
     hud.nudgeHonk(false);
     expect(honkBtn().hasAttribute('data-hint')).toBe(false);
     expect(honkBtn().querySelector('.hint-bubble')).toBeNull();
+  });
+});
+
+describe('Blockiertes Auto bei pulsierender Hupe', () => {
+  const blocked = (reason: 'path' | 'locked' | 'queueFull'): GameEvent => ({
+    type: 'vehicleBlocked',
+    vehicleId: 'B',
+    reason,
+    blockerId: reason === 'path' ? 'V' : null,
+  });
+
+  it('Toast, solange die Hupe pulsiert (Nudge oder Hupen-Tipp), beide Sprachen', () => {
+    const { hud, notes, state } = mount();
+    hud.nudgeHonk(true);
+    hud.onEvent(blocked('path'), state);
+    setLanguage('en');
+    hud.onEvent(blocked('path'), state);
+    hud.nudgeHonk(false);
+    hud.setHint('V', 'honk');
+    hud.onEvent(blocked('path'), state);
+    expect(notes).toEqual([
+      'Blockiert – die Hupe hilft!',
+      'Blocked – try the horn!',
+      'Blocked – try the horn!',
+    ]);
+  });
+
+  it('ohne pulsierende Hupe oder bei anderem Grund bleibt es still', () => {
+    const { hud, notes, state } = mount();
+    hud.onEvent(blocked('path'), state);
+    hud.nudgeHonk(true);
+    hud.onEvent(blocked('locked'), state);
+    hud.onEvent(blocked('queueFull'), state);
+    expect(notes).toEqual([]);
+  });
+});
+
+describe('Toast-Reste und Undo-Puls', () => {
+  const lost = { status: 'lost', loseReason: 'noMoves' } as const;
+
+  it('beim Erscheinen der Sackgassen-Karte wird der Toast entfernt (einmal)', () => {
+    const { hud, cleared, state } = mount();
+    expect(cleared.count).toBe(0);
+    hud.render({ ...state, ...lost });
+    expect(cleared.count).toBe(1);
+    hud.refresh();
+    expect(cleared.count).toBe(1);
+  });
+
+  it('nudgeUndo laesst den Undo-Knopf pulsieren', () => {
+    const { hud } = mount();
+    const undo = byId('powerup-undo');
+    hud.nudgeUndo(true);
+    expect(undo.hasAttribute('data-hint')).toBe(true);
+    expect(honkBtn().hasAttribute('data-hint')).toBe(false);
+    hud.nudgeUndo(false);
+    expect(undo.hasAttribute('data-hint')).toBe(false);
+  });
+});
+
+describe('Verlust-Dialog nach sinnloser Hupe', () => {
+  const snap = (honk: boolean): Snapshot => ({
+    ...(game().state as unknown as Snapshot),
+    ...(honk ? { honk: true } : {}),
+  });
+  const noHonk = (): Partial<GameState> => ({
+    status: 'lost',
+    loseReason: 'noMoves',
+    powerUps: { ...game().state.powerUps, honk: 0 },
+  });
+
+  it('zeigt den Zusatzsatz, wenn Undo geht und der letzte Eintrag eine Hupe war', () => {
+    const { shell } = mount(HONK, { ...noHonk(), history: [snap(false), snap(true)] });
+    expect(shell.dialogLayer.textContent).toContain(
+      'Hoppla, das hilft nicht. Mit Zurück bekommst du die Hupe wieder.',
+    );
+    setLanguage('en');
+    document.body.replaceChildren();
+    const en = mount(HONK, { ...noHonk(), history: [snap(true)] });
+    expect(en.shell.dialogLayer.textContent).toContain(
+      'Oops, that didn’t help. Undo gives the horn back.',
+    );
+  });
+
+  it('kein Zusatzsatz ohne Hupe im Verlauf, ohne Undo oder bei anderem Grund', () => {
+    const text = (patch: Partial<GameState>): string => {
+      document.body.replaceChildren();
+      return mount(HONK, { ...noHonk(), ...patch }).shell.dialogLayer.textContent ?? '';
+    };
+    expect(text({ history: [snap(true), snap(false)] })).not.toContain('Hoppla');
+    expect(text({ history: [] })).not.toContain('Hoppla');
+    const { state } = game();
+    expect(
+      text({ history: [snap(true)], powerUps: { ...state.powerUps, honk: 0, undo: 0 } }),
+    ).not.toContain('Hoppla');
+    expect(text({ history: [snap(true)], loseReason: 'queueFull' })).not.toContain('Hoppla');
+  });
+});
+
+describe('Fokus', () => {
+  const lost = { status: 'lost', loseReason: 'noMoves' } as const;
+  const history = [game().state as unknown as Snapshot];
+
+  it('schliesst die Karte per Zurueck, landet der Fokus auf dem Undo-Knopf', () => {
+    const { hud, state } = mount(HONK, { ...lost, history });
+    byId('stuck-undo').focus();
+    expect(document.activeElement).toBe(byId('stuck-undo'));
+    hud.render({ ...state, status: 'playing', history });
+    expect(document.querySelector('[data-testid="stuck-card"]')).toBeNull();
+    expect(document.activeElement).toBe(byId('powerup-undo'));
+  });
+
+  it('ohne Verlauf (Neustart) landet der Fokus auf einem Fahrzeug', () => {
+    const { hud, state } = mount(HONK, { ...lost, history });
+    byId('stuck-again').focus();
+    hud.render({ ...state, status: 'playing', history: [] });
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement?.getAttribute('data-testid')).toMatch(/^vehicle-/);
+  });
+
+  it('nach dem Verlust-Dialog-Zurueck faellt der Fokus nicht auf BODY', () => {
+    const { hud, state } = mount(HONK, {
+      status: 'lost',
+      loseReason: 'queueFull',
+      history,
+    });
+    expect(document.activeElement).toBe(byId('dlg-undo'));
+    hud.render({ ...state, status: 'playing', history });
+    expect(document.activeElement).toBe(byId('powerup-undo'));
+  });
+
+  it('klaut keinen Fokus, wenn er ausserhalb des Spiels liegt', () => {
+    const { hud, state } = mount();
+    expect(document.activeElement).toBe(document.body);
+    hud.render({ ...state });
+    expect(document.activeElement).toBe(document.body);
   });
 });
