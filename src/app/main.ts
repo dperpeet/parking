@@ -1,3 +1,4 @@
+import { createSound } from '../audio';
 import { createGame, step } from '../engine';
 import { applyThemeVars } from '../ui';
 import type { EngineApi } from './engine-port';
@@ -22,6 +23,8 @@ function boot(): void {
   const progress = new Progress(() => window.localStorage);
   applyLanguage(progress.get().settings.language, navigator.language);
   applyMotion(progress.get().settings.motion);
+  const sound = createSound();
+  sound.setEnabled(progress.get().settings.sound);
 
   const campaign = getCampaign();
   const solver = createSolverPort();
@@ -40,7 +43,7 @@ function boot(): void {
     showId += 1;
     if (!(route.name === 'shared' && route.code === editorReturn)) editorReturn = null;
     if (route.name === 'select') {
-      current = mountSelectScreen(root, { progress, campaign, router, now });
+      current = mountSelectScreen(root, { progress, campaign, router, now, sound });
       return;
     }
     if (route.name === 'editor') {
@@ -63,7 +66,8 @@ function boot(): void {
         })
         .catch(() => {
           // Chunk nicht ladbar (z. B. offline ohne Cache): zurueck zur Levelauswahl.
-          if (id === showId) current = mountSelectScreen(root, { progress, campaign, router, now });
+          if (id === showId)
+            current = mountSelectScreen(root, { progress, campaign, router, now, sound });
         });
       return;
     }
@@ -89,6 +93,7 @@ function boot(): void {
     current = mountGameScreen(root, session, {
       back: leave,
       retry: () => show(route),
+      sound,
     });
   };
 

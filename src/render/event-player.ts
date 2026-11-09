@@ -25,6 +25,11 @@ export interface HudSink {
   render(state: GameState): void;
 }
 
+/** Optionaler Ton: bekommt jedes Event in dem Moment, in dem es abgespielt wird. */
+export interface SoundSink {
+  cue(event: GameEvent): void;
+}
+
 /**
  * Spielt GameEvent[] nacheinander ab. Brett-Events werden animiert, alle anderen gehen ans HUD.
  * Mehrere play()-Aufrufe werden hintereinander gereiht.
@@ -35,6 +40,7 @@ export class EventPlayer {
   constructor(
     private readonly board: BoardAnimator,
     private readonly hud: HudSink,
+    private readonly sound?: SoundSink,
   ) {}
 
   play(events: GameEvent[], state: GameState): Promise<void> {
@@ -53,6 +59,7 @@ export class EventPlayer {
 
   private async run(events: GameEvent[], state: GameState): Promise<void> {
     for (const event of events) {
+      this.sound?.cue(event);
       switch (event.type) {
         case 'vehicleBlocked':
           this.hud.onEvent(event, state);

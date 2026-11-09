@@ -349,11 +349,6 @@
   font-size: 17px;
 }
 
-.set-soon {
-  font-size: 15px;
-  color: var(--t-sub);
-}
-
 .segmented {
   display: flex;
   gap: 8px;

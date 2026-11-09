@@ -28,7 +28,8 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Sound
 
-- Der Sound-Schalter in den Einstellungen ist ein Platzhalter.
+- Lautstärke-Regler und Ton auch direkt im Spiel umschaltbar (heute nur in den Einstellungen der Levelauswahl).
+- Klang-Feinschliff (eigene Klänge je Fahrzeugtyp, leise Hintergrundmusik).
 
 ## Optik
 

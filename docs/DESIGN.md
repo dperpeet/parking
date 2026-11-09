@@ -125,6 +125,7 @@ Verzeichnisse unter `src`:
 - `solver`: Analyse, Tipps, Generator, Worker und Client.
 - `content`: Ruleset- und Level-JSON samt Lader.
 - `render`: PixiJS-Spielfeld, Event-Player, Theme-Tokens.
+- `audio`: Klänge per Web Audio, synthetisch erzeugt (keine Audiodateien). Der Event-Player meldet jedes Event im Moment des Abspielens an den Ton, damit Klang und Animation zusammenpassen; die App verbindet beides und den Schalter in den Einstellungen (Standard: an).
 - `ui`: DOM-Oberfläche (Screens, Komponenten, Editor, Styles).
 - `app`: Steuerung, Routing, Session, Fortschritt, Teilen.
 - `i18n`: Texte in Deutsch und Englisch mit typisierten Keys.

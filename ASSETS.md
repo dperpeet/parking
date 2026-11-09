@@ -11,3 +11,7 @@
 ## Grafiken
 
 Fahrzeuge, Spielfeld und Icons werden zur Laufzeit als Vektorformen erzeugt (PixiJS `Graphics` bzw. Inline-SVG). Es gibt keine Bilddateien von Dritten.
+
+## Klänge
+
+Alle Klänge werden zur Laufzeit per Web Audio aus einfachen Oszillator-Tönen erzeugt (`src/audio/recipes.ts`). Es gibt keine Audiodateien.
