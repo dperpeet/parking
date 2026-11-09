@@ -105,7 +105,7 @@ CLI: `pnpm level:analyze [--honk]` analysiert Level-Dateien (`--honk`: mit Hupen
 
 ## Fortschritt
 
-Der Spielstand liegt unter dem `localStorage`-Schlüssel `parking.save.v1` (versioniert, zod-validiert; defekte Teile fallen auf Defaults zurück). Er enthält Level-Ergebnisse, Tageslevel-Verlauf, Endlos-Bestwert, „Stufe halten", gesehene Intros, eigene Level und Einstellungen (Sprache, Bewegung). Alle Storage-Zugriffe laufen in try/catch; ohne Speicher läuft das Spiel im Arbeitsspeicher weiter. Es gibt keine Cookies und keine externen Requests.
+Der Spielstand liegt unter dem `localStorage`-Schlüssel `parking.save.v1` (versioniert, zod-validiert; defekte Teile fallen auf Defaults zurück). Er enthält Level-Ergebnisse, Tageslevel-Verlauf, Endlos-Bestwert, „Stufe halten", gesehene Intros, eigene Level und Einstellungen (Sprache, Bewegung, Ton). Alle Storage-Zugriffe laufen in try/catch; ohne Speicher läuft das Spiel im Arbeitsspeicher weiter. Es gibt keine Cookies und keine externen Requests.
 
 ## Architektur
 
