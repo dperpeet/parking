@@ -131,7 +131,7 @@ describe('migrate', () => {
     });
     expect(s.levels['01/001']?.stars).toBe(2);
     expect(s.hold).toEqual({ enabled: false, stage: 0 });
-    expect(s.settings).toEqual({ language: 'auto', motion: 'system' });
+    expect(s.settings).toEqual({ language: 'auto', motion: 'system', sound: true });
   });
 
   it('behandelt Staende ohne Versionsfeld wie v1', () => {
@@ -147,7 +147,7 @@ describe('migrate', () => {
       hold: { enabled: 'maybe', stage: 99 },
       highestStage: 50,
       endless: { best: 4 },
-      settings: { language: 'fr', motion: 'fast' },
+      settings: { language: 'fr', motion: 'fast', sound: 'loud' },
       daily: { lastPlayed: 'gestern', streak: 2 },
     });
     expect(s.levels['01/001']).toEqual({ stars: 0, bestMoves: 0, completed: false });
@@ -155,7 +155,7 @@ describe('migrate', () => {
     expect(s.hold.enabled).toBe(false);
     expect(s.highestStage).toBe(6);
     expect(s.endless.best).toBe(4);
-    expect(s.settings).toEqual({ language: 'auto', motion: 'system' });
+    expect(s.settings).toEqual({ language: 'auto', motion: 'system', sound: true });
     expect(s.daily.lastPlayed).toBeNull();
   });
 
@@ -276,13 +276,23 @@ describe('Endlos, Halten, Einstellungen', () => {
     expect(p.nextSimilarCounter()).toBe(2);
   });
 
+  it('Ton ist standardmaessig an und bleibt ausgeschaltet gespeichert', () => {
+    const storage = new FakeStorage();
+    const p = new Progress(() => storage);
+    expect(p.get().settings.sound).toBe(true);
+    p.setSound(false);
+    expect(new Progress(() => storage).get().settings.sound).toBe(false);
+  });
+
   it('reset loescht den Fortschritt, behaelt aber die Einstellungen', () => {
     const p = new Progress(() => new FakeStorage());
     p.recordLevel('a', { stars: 3, moves: 1, stage: 2 });
     p.setLanguage('en');
+    p.setSound(false);
     p.reset();
     expect(p.get().levels).toEqual({});
     expect(p.get().settings.language).toBe('en');
+    expect(p.get().settings.sound).toBe(false);
   });
 });
 
@@ -424,7 +434,7 @@ describe('Eigene Level und Ersetzen', () => {
     const incoming: SaveData = {
       ...emptySave(),
       levels: { q: { stars: 1, bestMoves: 3, completed: true } },
-      settings: { language: 'de', motion: 'off' },
+      settings: { language: 'de', motion: 'off', sound: false },
     };
     p.replace(incoming);
     const s = stored(storage);

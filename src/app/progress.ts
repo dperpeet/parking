@@ -64,8 +64,10 @@ const SaveSchema = z.object({
     .object({
       language: z.enum(['auto', 'de', 'en']).catch('auto'),
       motion: z.enum(['system', 'on', 'off']).catch('system'),
+      /** Additiv zu v1: fehlt in alten Staenden und ist dann an. */
+      sound: z.boolean().catch(true),
     })
-    .catch({ language: 'auto', motion: 'system' }),
+    .catch({ language: 'auto', motion: 'system', sound: true }),
   /** Additiv zu v1: fehlt in alten Staenden und faellt dann auf [] zurueck. */
   customLevels: z
     .array(CustomLevel.nullable().catch(null))
@@ -90,7 +92,7 @@ export function emptySave(): SaveData {
     hold: { enabled: false, stage: 0 },
     highestStage: 0,
     similarCounter: 0,
-    settings: { language: 'auto', motion: 'system' },
+    settings: { language: 'auto', motion: 'system', sound: true },
     customLevels: [],
     seenIntros: [],
   };
@@ -367,6 +369,12 @@ export class Progress {
   setMotion(motion: MotionSetting): void {
     this.update((d) => {
       d.settings.motion = motion;
+    });
+  }
+
+  setSound(sound: boolean): void {
+    this.update((d) => {
+      d.settings.sound = sound;
     });
   }
 

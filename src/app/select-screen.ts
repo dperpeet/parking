@@ -1,6 +1,7 @@
 // Levelauswahl-Screen: verbindet Fortschritt, Kampagne und Einstellungen mit der UI.
 import { getLanguage, onLanguageChange } from '../i18n';
 import type { Lang } from '../i18n';
+import type { Sound } from '../audio';
 import { createLevelSelect, openIntro, openSettings } from '../ui';
 import type { IntroCard, SettingsDialog } from '../ui';
 import type { Campaign } from './levels';
@@ -14,6 +15,7 @@ export interface SelectScreenDeps {
   campaign: Campaign;
   router: Router;
   now: () => Date;
+  sound: Sound;
 }
 
 export interface SelectScreen {
@@ -34,7 +36,7 @@ function downloadJson(name: string, text: string): void {
 }
 
 export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): SelectScreen {
-  const { progress, campaign, router, now } = deps;
+  const { progress, campaign, router, now, sound } = deps;
   let settings: SettingsDialog | null = null;
   let intro: IntroCard | null = null;
   const dialogLayer = document.createElement('div');
@@ -55,6 +57,7 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
           getModel: () => ({
             language: getLanguage(),
             motion: progress.get().settings.motion,
+            sound: progress.get().settings.sound,
           }),
           onLanguage: (lang: Lang) => {
             progress.setLanguage(lang);
@@ -63,6 +66,12 @@ export function mountSelectScreen(root: HTMLElement, deps: SelectScreenDeps): Se
           onMotion: (motion) => {
             progress.setMotion(motion);
             applyMotion(motion);
+          },
+          onSound: (on) => {
+            progress.setSound(on);
+            sound.setEnabled(on);
+            // Beim Einschalten kurz anspielen, damit man hoert, dass es an ist.
+            if (on) sound.play('board');
           },
           onExport: () => downloadJson(EXPORT_FILE, JSON.stringify(progress.get(), null, 2)),
           validateImport: (text) => parseImport(text) !== null,

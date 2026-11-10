@@ -8,6 +8,7 @@ export type MotionChoice = 'system' | 'on' | 'off';
 export interface SettingsModel {
   language: Lang;
   motion: MotionChoice;
+  sound: boolean;
 }
 
 export type ImportMode = 'merge' | 'replace';
@@ -16,6 +17,7 @@ export interface SettingsHandlers {
   getModel(): SettingsModel;
   onLanguage(lang: Lang): void;
   onMotion(motion: MotionChoice): void;
+  onSound(on: boolean): void;
   onExport(): void;
   /** Prueft, ob der Dateiinhalt ein gueltiger Spielstand ist (ohne etwas zu aendern). */
   validateImport(text: string): boolean;
@@ -134,12 +136,15 @@ export function openSettings(
       type: 'button',
       class: 'switch',
       role: 'switch',
-      'aria-checked': 'false',
+      'aria-checked': String(model.sound),
       'aria-label': t('sound'),
-      disabled: true,
       'data-testid': 'sound-switch',
     });
     soundSwitch.append(h('span', { class: 'switch-knob' }));
+    soundSwitch.addEventListener('click', () => {
+      handlers.onSound(!model.sound);
+      render();
+    });
 
     const title = h('h2', { id: 'set-title', class: 'dlg-title set-title' }, t('settingsTitle'));
     const dialog = h('div', {
@@ -218,7 +223,6 @@ export function openSettings(
         'div',
         { class: 'set-row set-row-inline' },
         h('div', { class: 'set-label' }, t('sound')),
-        h('span', { class: 'set-soon' }, t('soundSoon')),
         soundSwitch,
       ),
       segmented(

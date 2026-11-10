@@ -174,6 +174,35 @@ describe('Tweener', () => {
   });
 });
 
+describe('EventPlayer: Ton', () => {
+  it('meldet jedes Event dem Ton, wenn es abgespielt wird (nach vorherigen Animationen)', async () => {
+    const log: string[] = [];
+    let release: () => void = () => undefined;
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+      sync: () => undefined,
+    };
+    const hud: HudSink = { onEvent: () => undefined, render: () => undefined };
+    const player = new EventPlayer(board, hud, { cue: (e) => log.push(e.type) });
+    const done = player.play(
+      [
+        { type: 'vehicleExited', vehicleId: 'v1', slotIndex: 0, path: [] },
+        { type: 'won', moves: 1, stars: 3 },
+      ],
+      state,
+    );
+    await flush();
+    expect(log).toEqual(['vehicleExited']);
+    release();
+    await done;
+    expect(log).toEqual(['vehicleExited', 'won']);
+  });
+});
+
 describe('EventPlayer: vehicleYielded', () => {
   it('hupt zuerst, laesst dann den Blocker gleiten und gleicht danach ab', async () => {
     const log: string[] = [];

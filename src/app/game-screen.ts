@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import type { StringKey } from '../i18n';
 import type { GameEvent, GameState } from '../engine/types';
 import { BoardView, EventPlayer, createPixiApp } from '../render';
-import type { PixiHandle } from '../render';
+import type { PixiHandle, SoundSink } from '../render';
 import { THEME } from '../render/theme';
 import { bindKeyboard, createHud, mountShell, openIntro } from '../ui';
 import type { Hud, IntroCard } from '../ui';
@@ -61,6 +61,8 @@ export interface GameScreenOptions {
   back(): void;
   /** Screen neu aufbauen (Wiederholen nach Fehler). */
   retry(): void;
+  /** Ton zu den Events (optional). */
+  sound?: SoundSink;
 }
 
 export interface GameScreen {
@@ -287,6 +289,7 @@ export function mountGameScreen(
         sync: () => undefined,
       },
       hud,
+      opts.sound,
     );
     controller.subscribe((u) => {
       // Ablehnungen (blockiertes Fahrzeug, falsche Hupe) aendern nichts: Tipp und Hinweis bleiben stehen.

@@ -30,3 +30,18 @@ test('Einstellungen: Zuruecksetzen fragt nach und loescht den Fortschritt', asyn
   await page.getByTestId('settings-close').click();
   await expect(page.getByTestId('hold-switch')).toHaveAttribute('aria-checked', 'false');
 });
+
+test('Einstellungen: Ton-Schalter ist bedienbar und bleibt gespeichert', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('settings').click();
+  const sw = page.getByTestId('sound-switch');
+  await expect(sw).toBeEnabled();
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await page.reload();
+  await page.getByTestId('settings').click();
+  await expect(page.getByTestId('sound-switch')).toHaveAttribute('aria-checked', 'false');
+  await page.getByTestId('sound-switch').click();
+  await expect(page.getByTestId('sound-switch')).toHaveAttribute('aria-checked', 'true');
+});

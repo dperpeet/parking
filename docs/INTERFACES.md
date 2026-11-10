@@ -98,6 +98,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 `parking.save.v1` hat additiv `customLevels: { id: "c<n>", code, title, verified }[]` (max. `CUSTOM_LEVEL_LIMIT` = 50,
 aelteste fallen raus). API in `Progress`: `saveCustom(entry, id?)`, `deleteCustom(id)`, `customLevels()`.
 Import: `merge(save)` (Vereinigung nach Code) oder `replace(save)` (Einstellungen bleiben).
+`settings` hat additiv `sound: boolean` (fehlt in alten Staenden → `true`), API `setSound(on)`.
 
 ## Solver-Port (App)
 
