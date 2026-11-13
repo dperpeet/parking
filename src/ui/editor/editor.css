@@ -94,6 +94,13 @@
   color: var(--t-panel);
 }
 
+.ed-cell-oneWay {
+  background: var(--t-board);
+  color: var(--t-ink);
+  font-size: 24px;
+  border-style: dotted;
+}
+
 .ed-head-cell {
   border-width: var(--t-outline-w);
 }

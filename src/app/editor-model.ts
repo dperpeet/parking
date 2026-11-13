@@ -1,9 +1,9 @@
 // Level-Editor: reiner, DOM-freier Zustand und Operationen (immutabel). Verbindet sich nur mit Schema und Engine.
 import { createRng, nextRandom, validateLevel } from '../engine';
 import type { LevelIssue } from '../engine';
-import { cellKey, inBounds, pathToEdge, vehicleCells } from '../engine/geometry';
+import { cellKey, exitPath, inBounds, vehicleCells } from '../engine/geometry';
 import { Level, Ruleset, resolveRules } from '../schema';
-import type { Dir, ResolvedRules, RulesetOverrides } from '../schema';
+import type { Cell, Dir, ResolvedRules, RulesetOverrides } from '../schema';
 
 /** Rasterbreite/-hoehe, Halteplaetze und sichtbare Fahrgaeste: Grenzen direkt aus den Schemas. */
 export const EDITOR_LIMITS = {
@@ -55,6 +55,8 @@ export interface EditorState {
   vehicles: EditorVehicle[];
   /** Poller-Zellen (`fixed`). */
   fixed: Array<[number, number]>;
+  /** Abbiegepfeile (`oneWay`-Zellen mit Richtung), zeilenweise sortiert. */
+  arrows: Array<[number, number, Dir]>;
   /** Override fuer queue.slots; null = Wert des Rulesets. */
   slots: number | null;
   /** Override fuer passengers.visible; null = Wert des Rulesets. */
@@ -63,6 +65,8 @@ export interface EditorState {
   powerups?: RulesetOverrides['powerups'];
   /** Override `special.mysteryVehicles` eines importierten Levels; wie `powerups` bewahrt, nicht vom Editor gesetzt. */
   mysteryRule?: true;
+  /** Abbiegepfeile per Override freischalten (`movement.model = turns`, `special.oneWay`), falls das Ruleset sie nicht hat. */
+  turnsRule?: true;
   title: string;
   nextId: number;
   passengers: string[];
@@ -79,7 +83,9 @@ export type EditError =
   | 'unknownVehicle'
   | 'keySelf'
   | 'keyCycle'
-  | 'badIndex';
+  | 'badIndex'
+  | 'oneWayDisabled'
+  | 'noArrow';
 
 export type EditResult = { ok: true; state: EditorState } | { ok: false; error: EditError };
 
@@ -103,6 +109,7 @@ export function newEditorState(rulesetId: string): EditorState {
     height: EDITOR_DEFAULT_SIZE,
     vehicles: [],
     fixed: [],
+    arrows: [],
     slots: null,
     visible: null,
     title: '',
@@ -127,12 +134,28 @@ export function overridesOf(state: EditorState, ruleset: Ruleset): RulesetOverri
     special.keyVehicles = true;
   }
   if (state.mysteryRule && !ruleset.special.mysteryVehicles) special.mysteryVehicles = true;
+  if (state.turnsRule) {
+    if (!ruleset.special.oneWay) special.oneWay = true;
+    if (ruleset.movement.model !== 'turns') out.movement = { model: 'turns' };
+  }
   if (Object.keys(special).length > 0) out.special = special;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
 export function rulesOfState(state: EditorState, ruleset: Ruleset): ResolvedRules {
   return resolveRules(ruleset, overridesOf(state, ruleset));
+}
+
+/** Abbiegepfeile sind erlaubt (docs/INTERFACES.md, Spielregeln 9). */
+export function arrowsAllowed(rules: Pick<ResolvedRules, 'special' | 'movement'>): boolean {
+  return rules.special.oneWay && rules.movement.model === 'turns';
+}
+
+/** Abbiegepfeile per Override ein- oder ausschalten; vorhandene Pfeile bleiben (sonst `oneWayDisabled`). */
+export function setTurnsRule(state: EditorState, on: boolean): EditorState {
+  const { turnsRule: dropped, ...rest } = state;
+  void dropped;
+  return on ? { ...rest, turnsRule: true } : rest;
 }
 
 // --- Geometrie ---
@@ -168,6 +191,15 @@ export function fixedSet(state: EditorState): Set<string> {
   return new Set(state.fixed.map(([x, y]) => cellKey(x, y)));
 }
 
+/** Zelle -> Pfeilrichtung. */
+export function arrowMap(state: EditorState): Map<string, Dir> {
+  return new Map(state.arrows.map(([x, y, dir]) => [cellKey(x, y), dir]));
+}
+
+function arrowCells(state: EditorState): Cell[] {
+  return state.arrows.map(([x, y, dir]) => ({ x, y, type: 'oneWay' as const, dir }));
+}
+
 /** Prueft eine Platzierung gegen Raster, Fahrzeuge (ausser `skipId`) und Poller. */
 export function placementError(
   state: EditorState,
@@ -181,16 +213,20 @@ export function placementError(
   if (cells.some(([x, y]) => !inBounds(state, x, y))) return 'outOfBounds';
   const taken = occupancy(state, rules, skipId);
   const fixed = fixedSet(state);
-  if (cells.some(([x, y]) => taken.has(cellKey(x, y)) || fixed.has(cellKey(x, y))))
-    return 'overlap';
+  const arrows = arrowMap(state);
+  const blocked = (key: string): boolean => taken.has(key) || fixed.has(key) || arrows.has(key);
+  if (cells.some(([x, y]) => blocked(cellKey(x, y)))) return 'overlap';
   return null;
 }
 
 // --- Fahrgaeste ---
 
-/** Ausfahr-Reihenfolge: wiederholt alle Fahrzeuge mit freiem Weg (und entsperrt) entfernen. Rest haengt hinten an. */
+/**
+ * Ausfahr-Reihenfolge: wiederholt alle Fahrzeuge mit freiem Weg (`exitPath`, also ueber Abbiegepfeile) und
+ * entsperrt entfernen. Falschfahrt und Pfeil-Schleife blockieren. Rest haengt hinten an.
+ */
 export function exitOrder(state: EditorState, rules: ResolvedRules): string[] {
-  const grid = { width: state.width, height: state.height };
+  const grid = { width: state.width, height: state.height, cells: arrowCells(state) };
   const fixed = fixedSet(state);
   let remaining = [...state.vehicles];
   const gone = new Set<string>();
@@ -200,8 +236,11 @@ export function exitOrder(state: EditorState, rules: ResolvedRules): string[] {
     for (const v of remaining) for (const [x, y] of cellsOf(v, rules)) taken.add(cellKey(x, y));
     const free = remaining.filter((v) => {
       if (v.keyId !== undefined && !gone.has(v.keyId)) return false;
-      return pathToEdge(v, grid).every(
-        ([x, y]) => !taken.has(cellKey(x, y)) && !fixed.has(cellKey(x, y)),
+      const route = exitPath(v, grid);
+      return (
+        route.wrongWay === null &&
+        !route.loop &&
+        route.path.every(([x, y]) => !taken.has(cellKey(x, y)) && !fixed.has(cellKey(x, y)))
       );
     });
     if (free.length === 0) {
@@ -354,11 +393,74 @@ export function toggleFixed(
   if (!inBounds(state, x, y)) return fail('outOfBounds');
   const key = cellKey(x, y);
   const has = state.fixed.some(([fx, fy]) => cellKey(fx, fy) === key);
-  if (!has && occupancy(state, rules).has(key)) return fail('overlap');
+  if (!has && (occupancy(state, rules).has(key) || arrowMap(state).has(key)))
+    return fail('overlap');
   const fixed: Array<[number, number]> = has
     ? state.fixed.filter(([fx, fy]) => cellKey(fx, fy) !== key)
     : sortCells([...state.fixed, [x, y]]);
   return { ok: true, state: refresh({ ...state, fixed }, rules) };
+}
+
+function withArrow(
+  state: EditorState,
+  rules: ResolvedRules,
+  x: number,
+  y: number,
+  dir: Dir | null,
+): EditorState {
+  const key = cellKey(x, y);
+  const rest = state.arrows.filter(([ax, ay]) => cellKey(ax, ay) !== key);
+  const arrows: Array<[number, number, Dir]> =
+    dir === null ? rest : sortCells([...rest, [x, y, dir]]);
+  return refresh({ ...state, arrows }, rules);
+}
+
+/**
+ * Pfeil-Werkzeug: freie Zelle -> Pfeil in `dir`; Pfeil gleicher Richtung -> entfernen; sonst auf `dir` drehen.
+ * Setzen und Drehen nur mit `arrowsAllowed`; Entfernen geht immer (z. B. nach einem Regelwerk-Wechsel).
+ * Nicht auf Fahrzeugen und Pollern.
+ */
+export function toggleArrow(
+  state: EditorState,
+  rules: ResolvedRules,
+  x: number,
+  y: number,
+  dir: Dir,
+): EditResult {
+  if (!inBounds(state, x, y)) return fail('outOfBounds');
+  const current = arrowMap(state).get(cellKey(x, y));
+  if (current === dir) return removeArrow(state, rules, x, y);
+  if (!arrowsAllowed(rules)) return fail('oneWayDisabled');
+  if (current === undefined) {
+    const key = cellKey(x, y);
+    if (occupancy(state, rules).has(key) || fixedSet(state).has(key)) return fail('overlap');
+  }
+  return { ok: true, state: withArrow(state, rules, x, y, dir) };
+}
+
+/** Dreht den Pfeil auf x/y im Uhrzeigersinn (nur mit `arrowsAllowed`). */
+export function rotateArrow(
+  state: EditorState,
+  rules: ResolvedRules,
+  x: number,
+  y: number,
+): EditResult {
+  const current = arrowMap(state).get(cellKey(x, y));
+  if (current === undefined) return fail('noArrow');
+  if (!arrowsAllowed(rules)) return fail('oneWayDisabled');
+  const next = DIR_CYCLE[(DIR_CYCLE.indexOf(current) + 1) % DIR_CYCLE.length] as Dir;
+  return { ok: true, state: withArrow(state, rules, x, y, next) };
+}
+
+/** Entfernt den Pfeil auf x/y. */
+export function removeArrow(
+  state: EditorState,
+  rules: ResolvedRules,
+  x: number,
+  y: number,
+): EditResult {
+  if (!arrowMap(state).has(cellKey(x, y))) return fail('noArrow');
+  return { ok: true, state: withArrow(state, rules, x, y, null) };
 }
 
 /** Sperrt `id` bis `keyId` ausgefahren ist (null = entsperren). Zyklen und Selbstbezug werden abgelehnt. */
@@ -408,7 +510,7 @@ export function setMystery(state: EditorState, id: string, mystery: boolean): Ed
   };
 }
 
-/** Rastergroesse aendern. Fahrzeuge muessen weiter passen (sonst abgelehnt); Poller ausserhalb entfallen. */
+/** Rastergroesse aendern. Fahrzeuge muessen weiter passen (sonst abgelehnt); Poller und Pfeile ausserhalb entfallen. */
 export function resizeGrid(
   state: EditorState,
   rules: ResolvedRules,
@@ -423,6 +525,7 @@ export function resizeGrid(
     width: w,
     height: h,
     fixed: state.fixed.filter(([x, y]) => inBounds({ width: w, height: h }, x, y)),
+    arrows: state.arrows.filter(([x, y]) => inBounds({ width: w, height: h }, x, y)),
   };
   for (const v of state.vehicles) {
     if (cellsOf(v, rules).some(([x, y]) => !inBounds(next, x, y))) return fail('outOfBounds');
@@ -445,7 +548,10 @@ export function toLevel(state: EditorState, ruleset: Ruleset): Level {
     grid: {
       width: state.width,
       height: state.height,
-      cells: state.fixed.map(([x, y]) => ({ x, y, type: 'fixed' as const })),
+      cells: [
+        ...state.fixed.map(([x, y]) => ({ x, y, type: 'fixed' as const })),
+        ...arrowCells(state),
+      ],
     },
     vehicles: state.vehicles.map((v) => ({
       id: v.id,
@@ -460,7 +566,7 @@ export function toLevel(state: EditorState, ruleset: Ruleset): Level {
   };
 }
 
-/** Level -> Editor-Zustand. Nur `fixed`-Zellen, Schluessel und Mystery-Markierungen werden uebernommen. */
+/** Level -> Editor-Zustand. Nur `fixed`- und `oneWay`-Zellen, Schluessel und Mystery-Markierungen werden uebernommen. */
 export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
   const vehicles: EditorVehicle[] = level.vehicles.map((v) => ({
     id: v.id,
@@ -481,11 +587,21 @@ export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
     fixed: level.grid.cells
       .filter((c) => c.type === 'fixed')
       .map((c) => [c.x, c.y] as [number, number]),
+    arrows: sortCells(
+      level.grid.cells.flatMap((c) =>
+        c.type === 'oneWay' && c.dir !== undefined
+          ? [[c.x, c.y, c.dir] as [number, number, Dir]]
+          : [],
+      ),
+    ),
     slots: level.overrides?.queue?.slots ?? null,
     visible: level.overrides?.passengers?.visible ?? null,
     ...(level.overrides?.powerups ? { powerups: level.overrides.powerups } : {}),
     ...(level.overrides?.special?.mysteryVehicles && !ruleset.special.mysteryVehicles
       ? { mysteryRule: true as const }
+      : {}),
+    ...(!arrowsAllowed(ruleset) && arrowsAllowed(resolveRules(ruleset, level.overrides))
+      ? { turnsRule: true as const }
       : {}),
     title:
       typeof level.title === 'string'
@@ -520,6 +636,6 @@ export function checkLevel(state: EditorState, ruleset: Ruleset): EditorIssue[] 
 }
 
 /** Zellen zeilenweise sortieren (stabile Reihenfolge fuer Level und Vergleiche). */
-function sortCells(cells: Array<[number, number]>): Array<[number, number]> {
+function sortCells<T extends [number, number, ...unknown[]]>(cells: T[]): T[] {
   return [...cells].sort((a, b) => a[1] - b[1] || a[0] - b[0]);
 }
