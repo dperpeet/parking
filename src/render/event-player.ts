@@ -1,4 +1,5 @@
 import type { GameEvent, GameState } from '../engine/types';
+import type { Dir } from '../schema';
 
 /** Was der Event-Player vom Pixi-Brett braucht (in Tests ersetzbar). */
 export interface BoardAnimator {
@@ -15,8 +16,11 @@ export interface BoardAnimator {
   reveal?(vehicleId: string): Promise<void>;
   /** Optional: der Blocker gleitet von Kopfzelle `from` nach `to`. */
   yield?(vehicleId: string, from: [number, number], to: [number, number]): Promise<void>;
-  /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
-  exit(vehicleId: string, path: Array<[number, number]>): Promise<void>;
+  /**
+   * Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. `exitDir` (nur bei Abbiegepfeilen): Richtung,
+   * in der es das Raster verlaesst; fehlt sie, faehrt es geradeaus.
+   */
+  exit(vehicleId: string, path: Array<[number, number]>, exitDir?: Dir): Promise<void>;
   /** Gleicht die sichtbaren Fahrzeuge mit dem Zustand ab (z. B. nach Undo). */
   sync(state: GameState): void;
 }
@@ -80,7 +84,8 @@ export class EventPlayer {
           }
           break;
         case 'vehicleExited':
-          await this.board.exit(event.vehicleId, event.path);
+          if (event.exitDir === undefined) await this.board.exit(event.vehicleId, event.path);
+          else await this.board.exit(event.vehicleId, event.path, event.exitDir);
           this.hud.onEvent(event, state);
           break;
         case 'vehicleYielded':
