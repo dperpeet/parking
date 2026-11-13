@@ -46,6 +46,11 @@ export const ShareLevel = z.object({
   /** Fahrgaeste als Indizes in die Farbliste `k`. */
   k: z.array(ColorId).min(1).max(10),
   p: z.array(z.number().int().min(0).max(9)).min(1).max(400),
+  /**
+   * Mystery-Fahrzeuge als aufsteigende, eindeutige Indizes in `v` (fehlt = keine). Eigenes Feld statt
+   * Tupel-Erweiterung, damit Codes ohne Mystery-Fahrzeuge bitgleich bleiben.
+   */
+  m: z.array(z.number().int().min(0).max(59)).min(1).max(60).optional(),
   t: ShareText.optional(),
   a: ShareText.optional(),
   /** Vom Solver ungeprueft geteilt. */

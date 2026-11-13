@@ -44,6 +44,8 @@ export interface EditorVehicle {
   color: string;
   /** Gesperrt, bis dieses Fahrzeug ausgefahren ist. */
   keyId?: string;
+  /** Mystery-Fahrzeug: Farbe verdeckt, bis der Weg frei ist (nur mit special.mysteryVehicles). */
+  mystery?: true;
 }
 
 export interface EditorState {
@@ -59,6 +61,8 @@ export interface EditorState {
   visible: number | null;
   /** Power-up-Overrides eines importierten Levels (z. B. Hupe auf classic); der Editor aendert sie nicht, bewahrt sie aber. */
   powerups?: RulesetOverrides['powerups'];
+  /** Override `special.mysteryVehicles` eines importierten Levels; wie `powerups` bewahrt, nicht vom Editor gesetzt. */
+  mysteryRule?: true;
   title: string;
   nextId: number;
   passengers: string[];
@@ -122,6 +126,7 @@ export function overridesOf(state: EditorState, ruleset: Ruleset): RulesetOverri
   if (state.vehicles.some((v) => v.keyId !== undefined) && !ruleset.special.keyVehicles) {
     special.keyVehicles = true;
   }
+  if (state.mysteryRule && !ruleset.special.mysteryVehicles) special.mysteryVehicles = true;
   if (Object.keys(special).length > 0) out.special = special;
   return Object.keys(out).length > 0 ? out : undefined;
 }
@@ -386,6 +391,23 @@ export function setKey(
   return replaceVehicle(state, rules, { ...v, keyId });
 }
 
+/**
+ * Markiert `id` als Mystery-Fahrzeug oder hebt die Markierung auf. Erlaubt unabhaengig vom Ruleset, damit eine
+ * Markierung nach einem Regelwerk-Wechsel entfernt werden kann; ohne `special.mysteryVehicles` meldet
+ * `checkLevel` dann `mysteryDisabled`. Fahrgaeste bleiben unveraendert (reine Darstellung).
+ */
+export function setMystery(state: EditorState, id: string, mystery: boolean): EditResult {
+  const v = state.vehicles.find((o) => o.id === id);
+  if (!v) return fail('unknownVehicle');
+  const { mystery: dropped, ...rest } = v;
+  void dropped;
+  const next: EditorVehicle = mystery ? { ...rest, mystery: true } : rest;
+  return {
+    ok: true,
+    state: { ...state, vehicles: state.vehicles.map((o) => (o.id === id ? next : o)) },
+  };
+}
+
 /** Rastergroesse aendern. Fahrzeuge muessen weiter passen (sonst abgelehnt); Poller ausserhalb entfallen. */
 export function resizeGrid(
   state: EditorState,
@@ -432,12 +454,13 @@ export function toLevel(state: EditorState, ruleset: Ruleset): Level {
       type: v.type,
       color: v.color,
       ...(v.keyId !== undefined ? { locked: true, keyId: v.keyId } : {}),
+      ...(v.mystery ? { mystery: true } : {}),
     })),
     passengers: [...state.passengers],
   };
 }
 
-/** Level -> Editor-Zustand. Nur `fixed`-Zellen und Schluessel werden uebernommen. */
+/** Level -> Editor-Zustand. Nur `fixed`-Zellen, Schluessel und Mystery-Markierungen werden uebernommen. */
 export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
   const vehicles: EditorVehicle[] = level.vehicles.map((v) => ({
     id: v.id,
@@ -447,6 +470,7 @@ export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
     type: v.type,
     color: v.color,
     ...(v.locked && v.keyId !== undefined ? { keyId: v.keyId } : {}),
+    ...(v.mystery ? { mystery: true as const } : {}),
   }));
   const nums = vehicles.map((v) => Number(/^v(\d+)$/.exec(v.id)?.[1] ?? 0));
   const base: EditorState = {
@@ -460,6 +484,9 @@ export function fromLevel(level: Level, ruleset: Ruleset): EditorState {
     slots: level.overrides?.queue?.slots ?? null,
     visible: level.overrides?.passengers?.visible ?? null,
     ...(level.overrides?.powerups ? { powerups: level.overrides.powerups } : {}),
+    ...(level.overrides?.special?.mysteryVehicles && !ruleset.special.mysteryVehicles
+      ? { mysteryRule: true as const }
+      : {}),
     title:
       typeof level.title === 'string'
         ? level.title

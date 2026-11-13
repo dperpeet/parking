@@ -116,6 +116,21 @@ export interface GeneratorTuning {
    * Schwierigkeit kommt dann aus der Analyse mit Hupe. Erfordert `powerups.honk` in den Regeln.
    */
   requireHonk?: boolean;
+  /**
+   * Anzahl Mystery-Fahrzeuge, Zahl oder Bereich [min, max] (eigener, seed-deterministischer Zufall;
+   * Default 0). Erfordert `special.mysteryVehicles` in den Regeln. Markiert werden nur Fahrzeuge, die
+   * verdeckt starten (Weg anfangs blockiert); spaet in der Loesung aufgedeckte werden bevorzugt.
+   * Analyse und Schwierigkeit bleiben unveraendert (volle Information).
+   */
+  mystery?: number | [number, number];
+  /**
+   * Fairness-Filter: Mindest-Siegquote des blinden, gierigen Spielers (`blindWinRate` in
+   * src/solver/blind.ts, kennt nur aufgedeckte Farben). Darunter bekommt der Kandidat eine Strafe
+   * und zaehlt nicht als Treffer. Default 0.25.
+   */
+  mysteryMinBlindWin?: number;
+  /** Playouts pro Fairness-Bewertung (Default 64). */
+  mysteryPlayouts?: number;
 }
 
 /** Generator-Eingabe inklusive Tuning. */
@@ -127,6 +142,19 @@ export interface GenerateResult {
   attempts: number;
   /** true, wenn targetDifficulty getroffen wurde (oder keins vorgegeben war). */
   matched: boolean;
+  /** Nur mit Mystery-Fahrzeugen: Auswahl und Fairness-Werte (siehe GeneratorTuning.mystery). */
+  mystery?: MysteryInfo;
+}
+
+export interface MysteryInfo {
+  /** IDs der Mystery-Fahrzeuge. */
+  ids: string[];
+  /** Siegquote des blinden Spielers (nur aufgedeckte Farben). */
+  blindWin: number;
+  /** Siegquote desselben Spielers mit voller Information (Vergleichswert). */
+  informedWin: number;
+  /** blindWin >= mysteryMinBlindWin. */
+  fair: boolean;
 }
 
 /** Tipp: Fahrzeug antippen oder mit diesem Fahrzeug hupen (Power-Up `honk`, siehe docs/INTERFACES.md). */

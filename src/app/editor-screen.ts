@@ -28,6 +28,7 @@ import {
   rotateVehicle,
   rulesOfState,
   setKey,
+  setMystery,
   setShuffle,
   swapPassengers,
   toLevel,
@@ -94,8 +95,7 @@ const ISSUE_KEYS: Record<EditorIssue['code'], StringKey> = {
   unknownVehicleType: 'edIssueOther',
   unknownColor: 'edIssueOther',
   duplicateId: 'edIssueOther',
-  // Mystery-Fahrzeuge kennt der Editor noch nicht (eigener Text folgt mit dem Editor-Ausbau).
-  mysteryDisabled: 'edIssueOther',
+  mysteryDisabled: 'edIssueMystery',
   unsupportedRule: 'edIssueOther',
 };
 /** Nachkommastellen der angezeigten Schwierigkeit. */
@@ -231,7 +231,10 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       };
     }
     const head = v.x === x && v.y === y;
-    const extra = (head ? t('edHeadCell') : '') + (v.keyId !== undefined ? t('edLockedExtra') : '');
+    const extra =
+      (head ? t('edHeadCell') : '') +
+      (v.keyId !== undefined ? t('edLockedExtra') : '') +
+      (v.mystery ? t('edMysteryExtra') : '');
     const what = t('edVehicleWhat', {
       color: colorName(v.color),
       type: v.type.toUpperCase(),
@@ -249,6 +252,7 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       selected: v.id === selectedId,
       locked: v.keyId !== undefined,
       isKey: state.vehicles.some((o) => o.keyId === v.id),
+      mystery: v.mystery === true,
       label: t('edCellVehicle', { row, col, what }),
     };
   };
@@ -286,6 +290,9 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
             id: selectedVehicle.id,
             keyId: selectedVehicle.keyId ?? null,
             canKey: state.vehicles.length > 1,
+            mystery: selectedVehicle.mystery === true,
+            // Ohne Ruleset-Flag nur zum Entfernen einer vorhandenen Markierung.
+            canMystery: r.special.mysteryVehicles || selectedVehicle.mystery === true,
             keyOptions: state.vehicles
               .filter(
                 (o) => o.id !== selectedVehicle.id && setKey(state, r, selectedVehicle.id, o.id).ok,
@@ -457,11 +464,22 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       const id = selectedId;
       if (id !== null) apply(setKey(state, rules(), id, keyId));
     },
+    onMystery(on) {
+      const id = selectedId;
+      if (id !== null) apply(setMystery(state, id, on));
+    },
     onSize: (w, hgt) => apply(resizeGrid(state, rules(), w, hgt)),
     onRuleset(id) {
       const ruleset = rulesetById(id);
       if (!ruleset) return;
-      state = { ...state, rulesetId: id, slots: null, visible: null, powerups: undefined };
+      state = {
+        ...state,
+        rulesetId: id,
+        slots: null,
+        visible: null,
+        powerups: undefined,
+        mysteryRule: undefined,
+      };
       const r = rules();
       if (!(type in r.vehicles.types)) type = firstType(r);
       if (!r.vehicles.colors.includes(color)) color = r.vehicles.colors[0] ?? '';

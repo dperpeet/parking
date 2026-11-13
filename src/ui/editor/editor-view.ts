@@ -37,6 +37,8 @@ const ARROW_STEPS: Record<string, [number, number]> = {
 const FIXED_GLYPH = '▮';
 const LOCK_GLYPH = '🔒';
 const KEY_GLYPH = '🔑';
+/** Markierung fuer Mystery-Fahrzeuge (unten links, damit sie Schloss/Schluessel nicht verdeckt). */
+const MYSTERY_GLYPH = '?';
 
 const glyphOf = (color: string): string => PALETTE[color]?.glyph ?? '?';
 
@@ -204,6 +206,12 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
       if (c.locked) b.append(h('span', { class: 'ed-badge', 'aria-hidden': 'true' }, LOCK_GLYPH));
       else if (c.isKey)
         b.append(h('span', { class: 'ed-badge', 'aria-hidden': 'true' }, KEY_GLYPH));
+      if (c.mystery) {
+        b.classList.add('ed-mystery');
+        b.append(
+          h('span', { class: 'ed-badge ed-badge-mystery', 'aria-hidden': 'true' }, MYSTERY_GLYPH),
+        );
+      }
     } else if (c.kind === 'fixed') {
       b.append(FIXED_GLYPH);
     }
@@ -346,6 +354,17 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
         parts.push(
           h('div', { class: 'ed-field' }, h('label', { for: 'ed-key' }, t('edKey')), select),
         );
+      }
+      if (sel.canMystery) {
+        const mystery = button(
+          'ed-btn',
+          'mystery',
+          t('edMystery'),
+          () => handlers.onMystery(!sel.mystery),
+          t('edMystery'),
+        );
+        mystery.setAttribute('aria-pressed', String(sel.mystery));
+        parts.push(h('div', { class: 'ed-row' }, mystery));
       }
       selection = h('div', { class: 'ed-selection' }, ...parts);
     } else {

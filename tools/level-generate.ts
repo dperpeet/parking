@@ -1,4 +1,5 @@
 // CLI: pnpm level:generate [--pack 01] [--config tools/pack-01.config.json] [--only 3,5] [--dry]
+//      [--out dir]  (Zielordner, Default src/content/levels/pack-<pack>; z. B. zum Vergleichen)
 // Erzeugt ein Level-Pack deterministisch aus einer Konfigurationsdatei (feste Seeds pro Level).
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -46,6 +47,11 @@ interface LevelConfig {
   keyChainDepth?: number;
   /** Pflicht-Hupe: nur Level, die ohne Hupe unloesbar und mit Hupe loesbar sind. */
   requireHonk?: boolean;
+  /** Mystery-Fahrzeuge: Zahl oder [min, max] (Ruleset mit special.mysteryVehicles). */
+  mystery?: number | [number, number];
+  /** Fairness-Filter: Mindest-Siegquote des blinden Spielers (Default 0.25). */
+  mysteryMinBlindWin?: number;
+  mysteryPlayouts?: number;
 }
 
 interface PackConfig {
@@ -68,14 +74,16 @@ const configPath = arg('config', `tools/pack-${pack}.config.json`);
 const only = arg('only', '').split(',').filter(Boolean).map(Number);
 const dry = process.argv.includes('--dry');
 const config = JSON.parse(readFileSync(configPath, 'utf8')) as PackConfig;
-const dir = `src/content/levels/pack-${pack}`;
+const dir = arg('out', `src/content/levels/pack-${pack}`);
 const rulesets = loadRulesets();
 const world = config.world ?? Number(pack);
 mkdirSync(dir, { recursive: true });
 
 const ids: string[] = [];
 let failures = 0;
-console.log('n   veh col slots vis  target  diff   rpw%   dead depth  matched attempts');
+console.log(
+  'n   veh col slots vis  target  diff   rpw%   dead depth  matched attempts  mys blind% info%',
+);
 config.levels.forEach((entry, index) => {
   const n = index + 1;
   const file = String(n).padStart(PAD, '0');
@@ -111,6 +119,9 @@ config.levels.forEach((entry, index) => {
     ...(c.keys !== undefined && { keys: c.keys }),
     ...(c.keyChainDepth !== undefined && { keyChainDepth: c.keyChainDepth }),
     ...(c.requireHonk !== undefined && { requireHonk: c.requireHonk }),
+    ...(c.mystery !== undefined && { mystery: c.mystery }),
+    ...(c.mysteryMinBlindWin !== undefined && { mysteryMinBlindWin: c.mysteryMinBlindWin }),
+    ...(c.mysteryPlayouts !== undefined && { mysteryPlayouts: c.mysteryPlayouts }),
   };
   let g;
   try {
@@ -137,6 +148,9 @@ config.levels.forEach((entry, index) => {
       (a.avgDeadEndDepth === null ? '-' : a.avgDeadEndDepth.toFixed(2)).padStart(5),
       String(g.matched).padStart(8),
       String(g.attempts).padStart(8),
+      String(g.mystery?.ids.length ?? 0).padStart(4),
+      (g.mystery ? (g.mystery.blindWin * PERCENT).toFixed(0) : '-').padStart(6),
+      (g.mystery ? (g.mystery.informedWin * PERCENT).toFixed(0) : '-').padStart(5),
     ].join(' '),
   );
 });

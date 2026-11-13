@@ -90,15 +90,18 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - URL: `#/play?l=<code>`, Editor: `#/editor` bzw. `#/editor?l=<code>` (Level bearbeiten).
 - `code = "1." + base64url(deflate(JSON(ShareLevel)))` ohne Padding, `fflate` (`deflateSync`/`inflateSync`, Level 9).
 - Format `ShareLevel` (`src/schema/share.ts`): `r` Ruleset, `o` Overrides, `g` [w, h], `c` Zellen, `v` Fahrzeuge
-  `[x, y, dir, typ, farbe(, keyIndex)]`, `k` Farbliste + `p` Fahrgaeste als Indizes, `t` Titel, `a` Autor, `u: 1` ungeprueft.
-  Fahrzeug-IDs werden beim Dekodieren als `v1..vn` (Array-Reihenfolge) neu vergeben; `keyIndex` setzt `locked` + `keyId`.
+  `[x, y, dir, typ, farbe(, keyIndex)]`, `k` Farbliste + `p` Fahrgaeste als Indizes, `m` Mystery-Fahrzeuge als streng
+  aufsteigende Indizes in `v` (optional, fehlt ohne Mystery-Fahrzeuge), `t` Titel, `a` Autor, `u: 1` ungeprueft.
+  Fahrzeug-IDs werden beim Dekodieren als `v1..vn` (Array-Reihenfolge) neu vergeben; `keyIndex` setzt `locked` + `keyId`,
+  ein Index in `m` setzt `mystery: true` (Index ausserhalb von `v`, doppelt oder unsortiert → `schema`).
+  Abwaertskompatibel: Codes ohne `m` dekodieren unveraendert, Level ohne Mystery-Fahrzeuge ergeben bitgleiche Codes.
 - Grenzen: Code ≤ `SHARE_MAX_LENGTH` (2048) Zeichen, entpackt ≤ `SHARE_MAX_INFLATED` Bytes, Titel/Autor ≤ 40 Zeichen.
 - `decodeLevel` wirft nie. Fehlercodes in Pruefreihenfolge: `empty`, `tooLong`, `version`, `encoding`, `inflate`,
   `json`, `schema`, `unknownRuleset`, `invalidLevel` (`validateLevel` meldet Probleme). Das dekodierte Level hat
   `id = "shared"`, Titel `t` oder `SHARED_DEFAULT_TITLE`, `meta.author = a`.
 - Loesbarkeit prueft der Aufrufer per `SolverPort.analyze` (Worker). Ungepruefte Codes (`u`) werden trotzdem gespielt, mit Hinweis.
 - Texte aus geteilten Leveln nur per `textContent`, nie als HTML.
-- Round-Trip-Garantie: `decodeLevel(encodeLevel(L))` ergibt ein Level, das mit `L` bis auf Fahrzeug-IDs, `id`, `seed` und `meta` (ausser `author`) uebereinstimmt;
+- Round-Trip-Garantie: `decodeLevel(encodeLevel(L))` ergibt ein Level, das mit `L` bis auf Fahrzeug-IDs, `id`, `seed`, `meta` (ausser `author`) und `mystery: false` (entfaellt) uebereinstimmt;
   `hashState(createGame(...))` ist nach Umbenennung der IDs gleich.
 
 ## Eigene Level (Spielstand)
@@ -135,3 +138,6 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
   Mechanik im Level (`mechanicsOf`: `fixed`-Zellen → `bollards`, `locked` → `keys`, `mystery` → `mystery`).
 - Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
   (Default 1), `requireHonk` (nur Level, die mit Tipps allein unloesbar und mit Hupe loesbar sind). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.
+  Mystery (nur mit `special.mysteryVehicles`, sonst wirft `generate`): `mystery` (Zahl oder `[min, max]`, Default 0),
+  `mysteryMinBlindWin` (Default 0.25), `mysteryPlayouts` (Default 64). `GenerateResult.mystery` (`MysteryInfo`:
+  `ids`, `blindWin`, `informedWin`, `fair`) fehlt ohne Mystery-Fahrzeuge. Ohne `mystery` bleibt die Ausgabe bitgleich.

@@ -15,6 +15,8 @@ export interface EditorCellVm {
   locked: boolean;
   /** Anderes Fahrzeug haengt von diesem als Schluessel ab. */
   isKey: boolean;
+  /** Mystery-Fahrzeug (Farbe im Spiel verdeckt). */
+  mystery?: boolean;
   label: string;
 }
 
@@ -42,6 +44,9 @@ export interface EditorViewModel {
     keyId: string | null;
     keyOptions: Array<{ id: string; label: string }>;
     canKey: boolean;
+    mystery: boolean;
+    /** Schalter "Mystery" anzeigen (Ruleset erlaubt es oder das Fahrzeug ist schon markiert). */
+    canMystery: boolean;
   } | null;
   rulesets: Array<{ id: string; name: string }>;
   rulesetId: string;
@@ -79,6 +84,7 @@ export interface EditorHandlers {
   onDelete(): void;
   onMove(dx: number, dy: number): void;
   onKey(keyId: string | null): void;
+  onMystery(on: boolean): void;
   onSize(width: number, height: number): void;
   onRuleset(id: string): void;
   onSlots(n: number): void;

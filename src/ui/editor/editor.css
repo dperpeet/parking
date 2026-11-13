@@ -112,6 +112,18 @@
   font-size: 12px;
 }
 
+.ed-badge-mystery {
+  top: auto;
+  right: auto;
+  bottom: 1px;
+  left: 3px;
+  font-weight: 900;
+}
+
+.ed-cell.ed-mystery {
+  border-style: dashed;
+}
+
 .ed-controls {
   display: flex;
   flex-direction: column;

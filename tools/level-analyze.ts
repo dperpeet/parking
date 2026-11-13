@@ -1,6 +1,7 @@
 // CLI: pnpm level:analyze [--honk] <file.json> [...]  (--honk: Hupen gehoeren zum Zustandsraum)
 import { readFileSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
+import { blindAnalysis } from '../src/solver/blind';
 import { Level, resolveRules } from '../src/schema';
 import { loadRulesets, rulesetById } from './lib/rulesets';
 
@@ -24,6 +25,8 @@ for (const file of files) {
   const t0 = performance.now();
   const a = analyze(level, rules, { allowHonk });
   const ms = performance.now() - t0;
+  const mystery = level.vehicles.filter((v) => v.mystery).map((v) => v.id);
+  const blind = mystery.length > 0 ? blindAnalysis(level, rules) : null;
   const rows: Array<[string, string]> = [
     ['level', `${level.id} (${file})`],
     ['solvable', String(a.solvable) + (a.truncated ? ' (truncated)' : '')],
@@ -38,6 +41,13 @@ for (const file of files) {
     ['avgDeadEndDepth', a.avgDeadEndDepth === null ? '-' : a.avgDeadEndDepth.toFixed(2)],
     ['maxQueueUsed', String(a.maxQueueUsedOnBestPath)],
     ['difficulty', a.difficulty.toFixed(1)],
+    ['mystery', mystery.length > 0 ? `${mystery.length} (${mystery.join(' ')})` : '0'],
+    ...(blind
+      ? ([
+          ['blindWin', pct(blind.blindWin)],
+          ['informedWin', pct(blind.informedWin)],
+        ] as Array<[string, string]>)
+      : []),
     ['time', `${ms.toFixed(0)} ms`],
   ];
   for (const [k, v] of rows) console.log(`${k.padEnd(16)} ${v}`);
