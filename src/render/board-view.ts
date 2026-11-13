@@ -41,6 +41,8 @@ const BLOCKER_GROW = 3;
 /** Wie lange das Schluessel-Fahrzeug nach einem Tipp auf ein gesperrtes Fahrzeug hervorgehoben bleibt. */
 const KEY_HINT_MS = 1600;
 const UNLOCK_MS = 480;
+/** Mystery-Fahrzeug aufdecken (Umklappen zur echten Farbe). */
+const REVEAL_MS = 420;
 /** Hupe: Dauer und Staerke des Rucks (Zellanteil, Zyklen), Standzeit der Sprechblase danach, Aufpoppen (Startmass, Ueberschwingen). */
 const HONK_JOLT_MS = 260;
 const HONK_JOLT_AMPLITUDE = 0.07;
@@ -125,6 +127,8 @@ export class BoardView implements BoardAnimator {
         this.vehicles.delete(id);
       } else {
         view.setLock(this.marks.of(id), this.marks.count > 1);
+        // Aufgedeckt bleibt aufgedeckt (auch nach Undo); der Zustand ist massgeblich.
+        view.setHidden(v.hidden);
         // Nach dem Ausweichen (oder Undo davon) steht das Fahrzeug an einer neuen Zelle.
         const rect = vehicleRect(this.layout, v);
         if (rect.x !== view.restX || rect.y !== view.restY) view.placeAt(rect);
@@ -191,6 +195,25 @@ export class BoardView implements BoardAnimator {
         this.host.requestRender();
       },
     });
+  }
+
+  /** Mystery-Fahrzeug klappt um und zeigt seine Farbe; danach ist es aufgedeckt. */
+  reveal(vehicleId: string): Promise<void> {
+    const view = this.vehicles.get(vehicleId);
+    if (this.disposed || !view) return Promise.resolve();
+    return this.host.tweener
+      .run({
+        durationMs: REVEAL_MS,
+        ease: easings.easeInOutQuad,
+        onUpdate: (p) => {
+          view.setRevealProgress(p);
+          this.host.requestRender();
+        },
+      })
+      .then(() => {
+        view.setRevealProgress(1);
+        this.host.requestRender();
+      });
   }
 
   /** Markiert die Fahrspur in Blickrichtung bis zum Rand und das blockierende Fahrzeug. */
@@ -372,6 +395,7 @@ export class BoardView implements BoardAnimator {
       v.color,
       this.layout.cell,
       v.length,
+      v.hidden,
     );
     view.setLock(this.marks.of(v.id), this.marks.count > 1);
     this.vehicles.set(v.id, view);

@@ -1,7 +1,15 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Dir } from '../schema';
-import { PALETTE, THEME } from './theme';
+import { THEME } from './theme';
 import type { Rect } from './layout';
+import {
+  HATCH_SPACING,
+  HATCH_WIDTH,
+  hatchSegments,
+  roundInset,
+  vehicleLook,
+} from './mystery-style';
+import type { VehicleLook } from './mystery-style';
 import { LockDecor } from './lock-decor';
 import type { LockMark } from './lock-marks';
 import {
@@ -25,6 +33,9 @@ const HEADLIGHT_OUTLINE = 1.5;
 /** Leuchtrahmen des Tipps: Abstand zum Fahrzeug und Strichstaerke in px. */
 const HINT_GLOW_GROW = 5;
 const HINT_GLOW_WIDTH = 7;
+/** Aufdecken: Ab diesem Fortschritt zeigt die Flaeche die echte Farbe; kleinste Breite beim Umklappen. */
+const REVEAL_SWAP = 0.5;
+const REVEAL_MIN_SCALE = 0.05;
 
 export class VehicleView extends Container {
   /** Ruheposition (obere linke Ecke des Rechtecks), Basis fuer Animationen. */
@@ -35,39 +46,94 @@ export class VehicleView extends Container {
   private decorKey = '';
   private readonly size: { w: number; h: number; radius: number };
 
+  /** Farbe verdeckt (Mystery-Fahrzeug)? */
+  private hiddenColor: boolean;
+  /** Fahrzeugflaeche mit Scheibe, Lichtern, Chevrons und Symbol; beim Aufdecken ersetzt. */
+  private body: Container;
+
   constructor(
     readonly vehicleId: string,
     rect: Rect,
     private readonly dir: Dir,
-    colorId: string,
+    private readonly colorId: string,
     private readonly cell: number,
     private readonly length = 1,
+    hidden = false,
   ) {
     super();
-    const style = PALETTE[colorId] ?? { fill: '#CCCCCC', ink: THEME.ink, glyph: '?' };
     const radius = Math.min(THEME.vehicleRadius, Math.min(rect.w, rect.h) / 2);
     this.restX = rect.x;
     this.restY = rect.y;
     this.position.set(rect.x, rect.y);
     this.size = { w: rect.w, h: rect.h, radius };
+    this.hiddenColor = hidden;
+    this.body = this.drawBody(vehicleLook(colorId, hidden));
+    this.addChild(this.body);
+  }
 
+  get hidden(): boolean {
+    return this.hiddenColor;
+  }
+
+  /** Deckt die Farbe sofort auf (ohne Animation), z. B. beim Abgleich mit dem Zustand. */
+  setHidden(hidden: boolean): void {
+    if (hidden === this.hiddenColor) return;
+    this.hiddenColor = hidden;
+    this.replaceBody(vehicleLook(this.colorId, hidden));
+  }
+
+  /**
+   * Fortschritt 0..1 des Aufdeckens: Die Flaeche klappt quer zur Laengsachse zu (bis 0,5), wechselt
+   * zur echten Farbe und klappt wieder auf. Bei 1 ist das Fahrzeug aufgedeckt.
+   */
+  setRevealProgress(p: number): void {
+    if (this.hiddenColor && p >= REVEAL_SWAP) this.setHidden(false);
+    const fold = Math.abs(1 - 2 * Math.min(1, Math.max(0, p)));
+    const flat = REVEAL_MIN_SCALE + (1 - REVEAL_MIN_SCALE) * fold;
+    if (this.dir === 'E' || this.dir === 'W') this.body.scale.set(1, flat);
+    else this.body.scale.set(flat, 1);
+  }
+
+  private replaceBody(look: VehicleLook): void {
+    const index = this.getChildIndex(this.body);
+    const scale = { x: this.body.scale.x, y: this.body.scale.y };
+    this.body.destroy({ children: true });
+    this.body = this.drawBody(look);
+    this.body.scale.set(scale.x, scale.y);
+    this.addChildAt(this.body, index);
+  }
+
+  /** Zeichnet die Flaeche um die Mitte (Pivot), damit das Aufklappen symmetrisch wirkt. */
+  private drawBody(style: VehicleLook): Container {
+    const { w, h, radius } = this.size;
+    const { cell, dir, length } = this;
+    const body = new Container();
+    body.pivot.set(w / 2, h / 2);
+    body.position.set(w / 2, h / 2);
     const g = new Graphics();
-    g.roundRect(THEME.shadowOffset, THEME.shadowOffset, rect.w, rect.h, radius).fill(THEME.outline);
-    g.roundRect(0, 0, rect.w, rect.h, radius)
-      .fill(style.fill)
-      .stroke({ width: THEME.outlineWidth, color: THEME.outline });
+    g.roundRect(THEME.shadowOffset, THEME.shadowOffset, w, h, radius).fill(THEME.outline);
+    g.roundRect(0, 0, w, h, radius).fill(style.fill);
+    if (style.hatched) {
+      const inset = roundInset(radius);
+      const inner = { x: inset, y: inset, w: w - 2 * inset, h: h - 2 * inset };
+      for (const [a, b] of hatchSegments(inner, cell * HATCH_SPACING)) {
+        g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
+      }
+      g.stroke({ width: cell * HATCH_WIDTH, color: THEME.mysteryStripe, cap: 'round' });
+    }
+    g.roundRect(0, 0, w, h, radius).stroke({ width: THEME.outlineWidth, color: THEME.outline });
     const t = cell * WINDSHIELD_THICKNESS;
     const m = cell * WINDSHIELD_MARGIN;
     const s = cell * WINDSHIELD_SIDE_INSET;
-    const ws = windshield(dir, rect.w, rect.h, t, m, s);
+    const ws = windshield(dir, w, h, t, m, s);
     g.roundRect(ws.x, ws.y, ws.w, ws.h, t / 2).fill(THEME.windshield);
     // Scheinwerfer an der Front (mit Kontur), Chevrons in Kontrastfarbe auf dem Dach.
-    for (const [lx, ly] of headlightCenters(dir, rect.w, rect.h, cell)) {
+    for (const [lx, ly] of headlightCenters(dir, w, h, cell)) {
       g.circle(lx, ly, cell * HEADLIGHT_RADIUS)
         .fill(THEME.star)
         .stroke({ width: HEADLIGHT_OUTLINE, color: THEME.outline });
     }
-    for (const [cx, cy] of chevronCenters(dir, length, rect.w, rect.h, cell)) {
+    for (const [cx, cy] of chevronCenters(dir, length, w, h, cell)) {
       const [a, tip, b] = chevronPoints(dir, cx, cy, cell * CHEVRON_SIZE);
       g.moveTo(a[0], a[1])
         .lineTo(tip[0], tip[1])
@@ -79,7 +145,7 @@ export class VehicleView extends Container {
           join: 'round',
         });
     }
-    this.addChild(g);
+    body.addChild(g);
 
     const glyph = new Text({
       text: style.glyph,
@@ -91,8 +157,9 @@ export class VehicleView extends Container {
       },
     });
     glyph.anchor.set(0.5);
-    glyph.position.set(...glyphCenter(dir, length, rect.w, rect.h, cell));
-    this.addChild(glyph);
+    glyph.position.set(...glyphCenter(dir, length, w, h, cell));
+    body.addChild(glyph);
+    return body;
   }
 
   /** Setzt die Ruheposition neu (nach dem Ausweichen) und stellt das Fahrzeug dorthin. */
