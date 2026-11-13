@@ -49,6 +49,12 @@ export interface LevelConfig {
   /** Fairness-Filter: Mindest-Siegquote des blinden Spielers (Default 0.25). */
   mysteryMinBlindWin?: number;
   mysteryPlayouts?: number;
+  /** Abbiegepfeile: Zahl oder [min, max] (Ruleset mit special.oneWay und movement.model turns). */
+  oneWay?: number | [number, number];
+  /** Laenge der Pfeil-Strassenstuecke: Zahl oder [min, max] (Default 1). */
+  oneWayStreets?: number | [number, number];
+  /** Hoechstzahl Knicke je Ausfahrweg (Default unbegrenzt). */
+  maxTurns?: number;
 }
 
 export interface PackConfig {
@@ -107,6 +113,9 @@ export function levelJob(config: PackConfig, n: number, rulesets: Map<string, Ru
     ...(c.mystery !== undefined && { mystery: c.mystery }),
     ...(c.mysteryMinBlindWin !== undefined && { mysteryMinBlindWin: c.mysteryMinBlindWin }),
     ...(c.mysteryPlayouts !== undefined && { mysteryPlayouts: c.mysteryPlayouts }),
+    ...(c.oneWay !== undefined && { oneWay: c.oneWay }),
+    ...(c.oneWayStreets !== undefined && { oneWayStreets: c.oneWayStreets }),
+    ...(c.maxTurns !== undefined && { maxTurns: c.maxTurns }),
   };
   return { config: c, rules, params };
 }

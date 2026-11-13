@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { blindAnalysis } from '../src/solver/blind';
+import { arrowStats } from '../src/solver/generator-oneway';
 import { Level, resolveRules } from '../src/schema';
 import { loadRulesets, rulesetById } from './lib/rulesets';
 
@@ -27,6 +28,7 @@ for (const file of files) {
   const ms = performance.now() - t0;
   const mystery = level.vehicles.filter((v) => v.mystery).map((v) => v.id);
   const blind = mystery.length > 0 ? blindAnalysis(level, rules) : null;
+  const arrows = arrowStats(level);
   const rows: Array<[string, string]> = [
     ['level', `${level.id} (${file})`],
     ['solvable', String(a.solvable) + (a.truncated ? ' (truncated)' : '')],
@@ -42,6 +44,8 @@ for (const file of files) {
     ['maxQueueUsed', String(a.maxQueueUsedOnBestPath)],
     ['difficulty', a.difficulty.toFixed(1)],
     ['mystery', mystery.length > 0 ? `${mystery.length} (${mystery.join(' ')})` : '0'],
+    ['arrows', String(arrows.arrows)],
+    ['maxTurns', String(arrows.maxTurns)],
     ...(blind
       ? ([
           ['blindWin', pct(blind.blindWin)],

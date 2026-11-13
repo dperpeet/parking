@@ -1,11 +1,14 @@
 // Seed-deterministischer Level-Generator (Rueckwaerts-Konstruktion, siehe docs/DESIGN.md).
 import { createRng, nextRandom, validateLevel } from '../engine';
+import { cellKey } from '../engine/geometry';
 import type { Dir, Level, ResolvedRules } from '../schema';
 import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
 import { applyHonkLayout, honkPlanHolds } from './generator-honk';
 import type { HonkPlan } from './generator-honk';
 import { DEFAULT_MYSTERY_MIN_BLIND_WIN, applyMystery } from './generator-mystery';
+import { arrowCells, arrowsHaveRole, chooseArrows, traceExit } from './generator-oneway';
+import type { ArrowLayout } from './generator-oneway';
 import {
   DEFAULT_KEY_CHAIN_DEPTH,
   assignKeys,
@@ -40,6 +43,10 @@ const SOFT_PENALTY = 50;
 const FAIRNESS_PENALTY = 200;
 /** Trennt den Mystery-Zufall vom Zufall der Konstruktion (Level ohne Mystery bleiben bitgleich). */
 const MYSTERY_SALT = 0x6d797374;
+/** Trennt den Zufall der Abbiegepfeile ab (Level ohne Pfeile bleiben bitgleich). */
+const ONE_WAY_SALT = 0x6f6e6577;
+/** Mit Pfeilen werden abbiegende Wege bevorzugt: Sie zaehlen bei der Platzierung wie eine Blockade mehr. */
+const TURN_BONUS = 1;
 const SEED_MIX = 0x9e3779b1;
 const UINT32_RANGE = 0x100000000;
 const MIN_SHUFFLE = 1;
@@ -109,6 +116,23 @@ function pathOf(head: [number, number], dir: Dir, w: number, h: number): Array<[
   return path;
 }
 
+/**
+ * Gebogener Weg einer Kandidatenposition oder null, wenn sie auf einem Pfeil steht, falsch faehrt, in einer
+ * Schleife landet, ueber die eigenen Zellen fuehrt oder mehr als `maxTurns` Knicke hat.
+ */
+function bentPath(
+  layout: ArrowLayout,
+  head: [number, number],
+  dir: Dir,
+  cells: Array<[number, number]>,
+): { path: Array<[number, number]>; turns: number } | null {
+  if (cells.some(([cx, cy]) => layout.keys.has(cellKey(cx, cy)))) return null;
+  const t = traceExit(layout, head, dir);
+  if (!t || t.turns > layout.maxTurns) return null;
+  const own = new Set(cells.map(([cx, cy]) => key(cx, cy)));
+  return t.path.some(([cx, cy]) => own.has(key(cx, cy))) ? null : t;
+}
+
 /** Platziert Fahrzeuge in umgekehrter Ausfahr-Reihenfolge; null, wenn das Raster nicht reicht. */
 function placeVehicles(
   p: GeneratorOptions,
@@ -117,6 +141,7 @@ function placeVehicles(
   types: string[],
   colors: string[],
   bollards: Pos[],
+  layout: ArrowLayout | null,
 ): Placed[] | null {
   const n = types.length;
   const blockiness = p.blockiness ?? DEFAULT_BLOCKINESS;
@@ -144,10 +169,12 @@ function placeVehicles(
               continue;
             }
             if (cells.some(([cx, cy]) => occupied.has(key(cx, cy)))) continue;
-            const path = pathOf(head, dir, p.width, p.height);
+            const bent = layout ? bentPath(layout, head, dir, cells) : null;
+            if (layout && !bent) continue;
+            const path = bent?.path ?? pathOf(head, dir, p.width, p.height);
             // Der eigene Weg darf nur von frueher ausfahrenden (spaeter platzierten) Fahrzeugen blockiert sein.
             if (path.some(([cx, cy]) => occupied.has(key(cx, cy)))) continue;
-            let score = 0;
+            let score = bent && bent.turns > 0 ? TURN_BONUS : 0;
             for (const set of paths) if (cells.some(([cx, cy]) => set.has(key(cx, cy)))) score += 1;
             cands.push({
               pl: { id: `v${k + 1}`, type: t, color: colors[k]!, head, dir, cells, path },
@@ -222,6 +249,27 @@ function effectiveRules(rules: ResolvedRules, p: GeneratorTuning): ResolvedRules
   };
 }
 
+/** Pfeile aus eigenem Zufall; null ohne Pfeile (Zahl 0), undefined, wenn sie nicht passen. */
+function arrowsFor(
+  p: GeneratorOptions,
+  attemptSeed: number,
+  bollards: Pos[],
+): ArrowLayout | null | undefined {
+  const ar: Rng = { state: createRng((attemptSeed ^ ONE_WAY_SALT) >>> 0) };
+  const count = resolveCount(ar, p.oneWay);
+  if (count === 0) return null;
+  const layout = chooseArrows(
+    ar,
+    p.width,
+    p.height,
+    count,
+    p.oneWayStreets,
+    bollards,
+    p.maxTurns ?? Number.POSITIVE_INFINITY,
+  );
+  return layout ?? undefined;
+}
+
 function buildAttempt(
   p: GeneratorOptions,
   rules: ResolvedRules,
@@ -247,9 +295,12 @@ function buildAttempt(
   shuffleInPlace(r, colors);
 
   const bollards = chooseBollards(r, p.width, p.height, resolveCount(r, p.bollards));
-  const placed = placeVehicles(p, rules, r, types, colors, bollards);
+  const layout = p.oneWay === undefined ? null : arrowsFor(p, attemptSeed, bollards);
+  if (layout === undefined) return null;
+  const placed = placeVehicles(p, rules, r, types, colors, bollards, layout);
   if (!placed) return null;
   if (!bollardHasRole(bollards, placed)) return null;
+  if (layout && !arrowsHaveRole(layout, placed)) return null;
   // Pflicht-Hupe: ein Blocker startet dort, wo ihn die Hupe von seinem Platz verdraengt haette.
   const honk = p.requireHonk ? applyHonkLayout(r, placed, bollards, p.width, p.height) : null;
   if (p.requireHonk && !honk) return null;
@@ -278,7 +329,10 @@ function buildAttempt(
     grid: {
       width: p.width,
       height: p.height,
-      cells: bollards.map(([x, y]) => ({ x, y, type: 'fixed' as const })),
+      cells: [
+        ...bollards.map(([x, y]) => ({ x, y, type: 'fixed' as const })),
+        ...arrowCells(layout),
+      ],
     },
     vehicles: placed.map((v, i) => ({
       id: v.id,
@@ -308,6 +362,15 @@ export function generate(p: GeneratorOptions, baseRules: ResolvedRules): Generat
   const mysteryMax = typeof p.mystery === 'number' ? p.mystery : Math.max(...(p.mystery ?? [0]));
   if (mysteryMax > 0 && !rules.special.mysteryVehicles) {
     throw new Error('generate: mystery needs special.mysteryVehicles in the ruleset');
+  }
+  const oneWayMax = typeof p.oneWay === 'number' ? p.oneWay : Math.max(...(p.oneWay ?? [0]));
+  if (oneWayMax > 0 && !(rules.special.oneWay && rules.movement.model === 'turns')) {
+    throw new Error(
+      'generate: oneWay needs special.oneWay and movement.model turns in the ruleset',
+    );
+  }
+  if (oneWayMax > 0 && p.requireHonk) {
+    throw new Error('generate: oneWay together with requireHonk is not supported');
   }
   let best: {
     level: Level;
