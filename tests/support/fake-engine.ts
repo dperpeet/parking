@@ -149,6 +149,7 @@ function createGame(level: Level, rules: ResolvedRules, seed = level.seed ?? 1):
       status: 'parked',
       locked: lv.locked ?? false,
       keyId: lv.keyId ?? null,
+      hidden: false,
     };
   });
   const powerUps = Object.fromEntries(

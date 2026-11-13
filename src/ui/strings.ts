@@ -154,8 +154,10 @@ export function announce(event: GameEvent, state: GameState): string | null {
     }
     case 'invalidAction':
       return honkErrorText(event.reason);
+    // vehicleRevealed (Mystery-Fahrzeuge): Ansage folgt mit Welt 4.
     case 'powerUpUsed':
     case 'slotShifted':
+    case 'vehicleRevealed':
       return null;
   }
 }

@@ -103,7 +103,6 @@ describe('validateLevel', () => {
     ['vehicles.departOnFull', { vehicles: { departOnFull: false } }],
     ['special.oneWay', { special: { oneWay: true } }],
     ['special.barriers', { special: { barriers: true } }],
-    ['special.mysteryVehicles', { special: { mysteryVehicles: true } }],
   ];
   it.each(unsupported)('reports unsupportedRule for %s', (_name, overrides) => {
     expect(codes({ ...BASIC, overrides })).toContain('unsupportedRule');
@@ -120,9 +119,26 @@ describe('validateLevel', () => {
     expect(codes(spec).filter((c) => c === 'unsupportedRule')).toHaveLength(2);
   });
 
-  it('allows special.fixed and special.keyVehicles', () => {
-    const overrides = { special: { fixed: true, keyVehicles: true } };
+  it('allows special.fixed, special.keyVehicles and special.mysteryVehicles', () => {
+    const overrides = { special: { fixed: true, keyVehicles: true, mysteryVehicles: true } };
     expect(codes({ ...BASIC, overrides })).toEqual([]);
+  });
+
+  it('reports mysteryDisabled per mystery vehicle without special.mysteryVehicles', () => {
+    const mystery = {
+      ...BASIC,
+      vehicles: [
+        v('a', 5, 0, 'E', 's', 'blue', { mystery: true }),
+        v('b', 5, 1, 'E', 's', 'green', { mystery: false }),
+      ],
+    };
+    const issues = validateLevel(makeLevel(mystery), rulesWith());
+    expect(issues).toEqual([
+      expect.objectContaining({ code: 'mysteryDisabled', vehicleId: 'a' }) as LevelIssue,
+    ]);
+    expect(() => createGame(makeLevel(mystery), rulesWith())).toThrow(LevelError);
+    const allowed = { ...mystery, overrides: { special: { mysteryVehicles: true } } };
+    expect(codes(allowed)).toEqual([]);
   });
 
   it('createGame throws LevelError carrying the issues', () => {

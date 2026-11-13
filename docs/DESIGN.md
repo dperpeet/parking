@@ -52,7 +52,7 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 | Bewegung           | `model = straight`, `exits = edges`, `reversible = false`                             | `turns`, `pathfinding`, `gates`, `reversible`                                             |
 | Passagiere         | `order = strict`, `boardPolicy = firstMatch`, `visible`                               | `order` `lookahead`/`free`, `boardPolicy` `largestFree`/`playerChoice`, `mysteryRate > 0` |
 | Limits und Wertung | `limits.moves`, `limits.timeSec` (Aktion `timeUp` der App), `starMode` `powerupsUsed` | -                                                                                         |
-| Spezialobjekte     | `fixed` (Poller), `keyVehicles` (Schloss/Schlüssel)                                   | `oneWay`, `barriers`, `mysteryVehicles` (auch die Zelltypen `oneWay` und `barrier`)       |
+| Spezialobjekte     | `fixed` (Poller), `keyVehicles` (Schloss/Schlüssel), `mysteryVehicles` (`mystery`)    | `oneWay`, `barriers` (auch die Zelltypen `oneWay` und `barrier`)                          |
 | Power-Ups          | `undo`, `shuffle`, `extraSlot`, `honk`                                                | -                                                                                         |
 
 `starMode` `moves` und `time` sind zulässig, aber nur eingeschränkt umgesetzt: `moves` wertet die rohe Zugzahl ohne Par, `time` liefert in der Engine immer 3 Sterne.
@@ -62,12 +62,13 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 - Poller: Zellen vom Typ `fixed` im Raster. Sie blockieren Fahrzeuge und bewegen sich nie.
 - Schloss/Schlüssel: Ein Fahrzeug mit `locked: true` und `keyId` lässt sich erst antippen, wenn das Fahrzeug `keyId` ausgefahren ist. Schlüsselketten müssen azyklisch sein.
 - Hupe (Power-Up `honk`): Ein Fahrzeug hupt, das erste Fahrzeug auf seinem Weg rutscht entlang seiner Achse so weit wie nötig zur Seite. Poller und gesperrte Fahrzeuge weichen nicht aus, Poller versperren auch die Ausweichstrecke. Zählt nicht als Zug; Undo nimmt sie zurück und gibt die Hupe zurück (Zähler + 1, `powerUpsUsed` − 1; das Undo selbst zählt als Power-Up, im Snapshot als `honk: true` markiert). Regeln im Detail: [INTERFACES.md](INTERFACES.md).
+- Mystery-Fahrzeuge (`mystery: true`, nur mit `special.mysteryVehicles`): Die Farbe ist verdeckt, bis der Weg des Fahrzeugs zum Rand frei ist; dann wird sie aufgedeckt (Event `vehicleRevealed`) und bleibt es, auch nach Undo. Reine Darstellung: Antippen, Einsteigen und Hupe verhalten sich wie bei normalen Fahrzeugen, ein verdecktes Fahrzeug ist daher nie antippbar. Regeln im Detail: [INTERFACES.md](INTERFACES.md).
 - Ruleset `world2` (`src/content/rulesets/world2.json`): wie `classic`, mit `special.fixed`, `special.keyVehicles` und einer Hupe. Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhängig davon.
 - Ruleset `world3` (`src/content/rulesets/world3.json`, „Hupe"): wie `world2`, mit 1 Hupe pro Level (`powerups.honk`). `starMode` = `powerupsUsed` mit `three` = 1: Eine Hupe kostet keinen Stern (3 Sterne bei höchstens 1 genutztem Power-Up, 2 Sterne bei höchstens 3). Die Level von Welt 3 sind Pflicht-Hupe-Level (siehe `requireHonk`).
 
 ## Level-Format und Validierung
 
-Ein Level (`src/schema/level.ts`) besteht aus `id`, `title`, `ruleset`, optionalen `overrides`, `grid` (Breite, Höhe, Zellen), `vehicles` (Kopfzelle `pos`, Blickrichtung `dir`, Typ, Farbe, optional `locked`/`keyId`), `passengers` (Farbfolge) und `meta` (zum Beispiel `difficulty`). `x` zählt nach rechts, `y` nach unten, die Länge erstreckt sich nach hinten. Ein vollständiges Beispiel ist `src/content/levels/pack-01/007.json`.
+Ein Level (`src/schema/level.ts`) besteht aus `id`, `title`, `ruleset`, optionalen `overrides`, `grid` (Breite, Höhe, Zellen), `vehicles` (Kopfzelle `pos`, Blickrichtung `dir`, Typ, Farbe, optional `locked`/`keyId` und `mystery`), `passengers` (Farbfolge) und `meta` (zum Beispiel `difficulty`). `x` zählt nach rechts, `y` nach unten, die Länge erstreckt sich nach hinten. Ein vollständiges Beispiel ist `src/content/levels/pack-01/007.json`.
 
 Validierung in zwei Stufen:
 

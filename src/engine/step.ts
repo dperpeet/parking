@@ -6,6 +6,7 @@ import { applyExtraSlot } from './rules/powerups/extraSlot';
 import { applyShuffle } from './rules/powerups/shuffle';
 import type { PowerUpOutcome } from './rules/powerups/types';
 import { applyUndo } from './rules/powerups/undo';
+import { revealVehicles } from './rules/mystery';
 import { evaluateOutcome, loseGame } from './rules/outcome';
 import { applyExit, checkTap } from './rules/tap';
 import type { Action, GameEvent, GameState, PowerUpId, StepResult } from './types';
@@ -45,6 +46,7 @@ function tap(state: GameState, vehicleId: string, rules: ResolvedRules): StepRes
   const events: GameEvent[] = [];
   s.history = [...s.history, takeSnapshot(state)];
   applyExit(s, vehicleId, check.path, rules, events);
+  revealVehicles(s, events);
   settle(s, rules, events);
   return { state: s, events };
 }
@@ -84,6 +86,7 @@ function usePowerUp(
   s.powerUps[powerUp] -= 1;
   s.powerUpsUsed += 1;
   events.push({ type: 'powerUpUsed', powerUp, remaining: s.powerUps[powerUp] });
+  revealVehicles(s, events);
   if (outcome.settle) settle(s, rules, events);
   return { state: s, events };
 }

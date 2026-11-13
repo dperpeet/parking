@@ -1,5 +1,6 @@
 import type { Level, ResolvedRules } from '../schema';
 import { createRng } from './rng';
+import { revealVehicles } from './rules/mystery';
 import { evaluateOutcome } from './rules/outcome';
 import { initialSlots } from './rules/slots';
 import { LevelError } from './types';
@@ -36,6 +37,7 @@ export function createGame(level: Level, rules: ResolvedRules, seed?: number): G
         status: 'parked',
         locked: v.locked ?? false,
         keyId: v.keyId ?? null,
+        hidden: v.mystery === true,
       };
     }),
     slots: initialSlots(rules),
@@ -50,6 +52,8 @@ export function createGame(level: Level, rules: ResolvedRules, seed?: number): G
     loseReason: null,
     stars: 0,
   };
+  // Mystery-Fahrzeuge mit schon freiem Weg starten aufgedeckt (ohne Event).
+  revealVehicles(state, []);
   // Ein Level ohne einen einzigen moeglichen Zug ist sofort verloren.
   evaluateOutcome(state, rules, []);
   return state;

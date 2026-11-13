@@ -94,6 +94,8 @@ const ISSUE_KEYS: Record<EditorIssue['code'], StringKey> = {
   unknownVehicleType: 'edIssueOther',
   unknownColor: 'edIssueOther',
   duplicateId: 'edIssueOther',
+  // Mystery-Fahrzeuge kennt der Editor noch nicht (eigener Text folgt mit dem Editor-Ausbau).
+  mysteryDisabled: 'edIssueOther',
   unsupportedRule: 'edIssueOther',
 };
 /** Nachkommastellen der angezeigten Schwierigkeit. */
