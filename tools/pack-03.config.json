@@ -84,6 +84,96 @@
       "target": 6.9,
       "bollards": [1, 2],
       "keys": 1
+    },
+    {
+      "seed": 316,
+      "grid": 6,
+      "vehicles": 10,
+      "colors": 5,
+      "target": 5.8,
+      "tolerance": 0.3,
+      "bollards": [1, 2],
+      "keys": 1
+    },
+    {
+      "seed": 317,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 6.2,
+      "tolerance": 0.3,
+      "bollards": 2,
+      "keys": 1
+    },
+    {
+      "seed": 320,
+      "grid": 6,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 6.5,
+      "tolerance": 0.3,
+      "bollards": 2,
+      "keys": 2
+    },
+    {
+      "seed": 423,
+      "grid": 7,
+      "vehicles": 11,
+      "colors": 5,
+      "target": 6.8,
+      "tolerance": 0.1,
+      "bollards": [2, 3],
+      "keys": 1
+    },
+    {
+      "seed": 320,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 6.9,
+      "tolerance": 0.3,
+      "bollards": [2, 3],
+      "keys": [1, 2]
+    },
+    {
+      "seed": 321,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 5,
+      "target": 6.8,
+      "tolerance": 0.3,
+      "bollards": 2,
+      "keys": 2
+    },
+    {
+      "seed": 324,
+      "grid": 7,
+      "vehicles": 12,
+      "colors": 6,
+      "target": 7.2,
+      "tolerance": 0.2,
+      "bollards": [2, 3],
+      "keys": 2
+    },
+    {
+      "seed": 625,
+      "grid": 7,
+      "vehicles": 13,
+      "colors": 6,
+      "target": 7.3,
+      "tolerance": 0.1,
+      "bollards": [2, 3],
+      "keys": 2
+    },
+    {
+      "seed": 525,
+      "grid": 7,
+      "vehicles": 13,
+      "colors": 6,
+      "target": 7.5,
+      "tolerance": 0.1,
+      "bollards": [2, 3],
+      "keys": 2
     }
   ]
 }

@@ -9,14 +9,28 @@ import { hintMove } from '../../src/solver/hint';
 import type { LevelAnalysis } from '../../src/solver/types';
 
 const PACK = 'src/content/levels/pack-03';
-const COUNT = 15;
-const SECTION = 5;
+const COUNT = 24;
+/** Abschnitte der Rampe (erstes und letztes Level, jeweils inklusive). */
+const SECTIONS: Array<[number, number]> = [
+  [1, 5],
+  [6, 10],
+  [11, 15],
+  [16, 20],
+  [21, 24],
+];
 const THREE_STARS = 3;
 const MAX_ANALYZE_MS = 2000;
 /** Erlaubter Rueckschritt der Schwierigkeit innerhalb eines Abschnitts. */
 const SECTION_DROP_TOLERANCE = 0.6;
 const FIRST_BOLLARD_LEVEL = 6;
 const FIRST_KEY_LEVEL = 11;
+/** Spaetabschnitt (016-024): groessere Raster, bis zu zwei Schluessel, Schwierigkeit 5,8-7,5. */
+const LATE_FIRST = 16;
+const LATE_MIN_DIFFICULTY = 5.8;
+const LATE_MAX_DIFFICULTY = 7.5;
+const LARGE_GRID = 7;
+const MIN_LARGE_LEVELS = 4;
+const MAX_LOCKS = 2;
 
 interface PackEntry {
   n: number;
@@ -57,7 +71,7 @@ describe('pack-03 (Hupe)', () => {
   const pack = loadPack();
   const at = (n: number): PackEntry => pack[n - 1]!;
 
-  it('lists 001-015 in index.json with intro, ids, titles and meta', () => {
+  it('lists 001-024 in index.json with intro, ids, titles and meta', () => {
     const index = PackIndex.parse(JSON.parse(readFileSync(join(PACK, 'index.json'), 'utf8')));
     expect(index.world).toBe(3);
     expect(index.name).toEqual({ de: 'Hupe', en: 'Honk' });
@@ -93,9 +107,10 @@ describe('pack-03 (Hupe)', () => {
   });
 
   it('needs exactly one horn in the solution and wins with three stars', () => {
-    for (const { level, rules, withHonk } of pack) {
+    for (const { n, level, rules, withHonk } of pack) {
       const solution = withHonk.solution ?? [];
       expect(solution.filter((id) => id.startsWith(HONK_PREFIX))).toHaveLength(1);
+      expect(solution[0]?.startsWith(HONK_PREFIX), `level ${n}`).toBe(false);
       let state = createGame(level, rules);
       for (const id of solution) {
         const r = step(state, actionOf(id), rules);
@@ -121,15 +136,28 @@ describe('pack-03 (Hupe)', () => {
   });
 
   it('rises in difficulty inside each section', () => {
-    for (let s = 0; s < COUNT / SECTION; s++) {
-      const first = at(s * SECTION + 1).withHonk.difficulty;
-      const last = at((s + 1) * SECTION).withHonk.difficulty;
-      expect(last).toBeGreaterThan(first);
-      for (let k = 1; k < SECTION; k++) {
-        const prev = at(s * SECTION + k).withHonk.difficulty;
-        const cur = at(s * SECTION + k + 1).withHonk.difficulty;
-        expect(cur).toBeGreaterThanOrEqual(prev - SECTION_DROP_TOLERANCE);
+    for (const [from, to] of SECTIONS) {
+      expect(at(to).withHonk.difficulty).toBeGreaterThan(at(from).withHonk.difficulty);
+      for (let n = from + 1; n <= to; n++) {
+        const prev = at(n - 1).withHonk.difficulty;
+        expect(at(n).withHonk.difficulty).toBeGreaterThanOrEqual(prev - SECTION_DROP_TOLERANCE);
       }
     }
+    expect(SECTIONS.at(-1)?.[1]).toBe(COUNT);
+  });
+
+  it('ends with larger grids, up to two keys and difficulty 5.8-7.5', () => {
+    const late = pack.filter((e) => e.n >= LATE_FIRST);
+    for (const { n, level, withHonk, locks } of late) {
+      expect(withHonk.difficulty, `level ${n}`).toBeGreaterThanOrEqual(LATE_MIN_DIFFICULTY);
+      expect(withHonk.difficulty, `level ${n}`).toBeLessThanOrEqual(LATE_MAX_DIFFICULTY);
+      expect(level.grid.width).toBeLessThanOrEqual(LARGE_GRID);
+      expect(locks).toBeLessThanOrEqual(MAX_LOCKS);
+    }
+    const large = late.filter((e) => e.level.grid.width === LARGE_GRID);
+    expect(large.length).toBeGreaterThanOrEqual(MIN_LARGE_LEVELS);
+    expect(at(COUNT).level.grid.width).toBe(LARGE_GRID);
+    expect(late.some((e) => e.locks === MAX_LOCKS)).toBe(true);
+    expect(at(COUNT).withHonk.difficulty).toBe(Math.max(...pack.map((e) => e.withHonk.difficulty)));
   });
 });

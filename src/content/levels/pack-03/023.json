@@ -1,0 +1,175 @@
+{
+  "schema": "parking.level/1",
+  "id": "w3-23",
+  "title": {
+    "de": "Level 23",
+    "en": "Level 23"
+  },
+  "seed": 3125023654,
+  "ruleset": "world3",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 7,
+    "height": 7,
+    "cells": [
+      {
+        "x": 2,
+        "y": 5,
+        "type": "fixed"
+      },
+      {
+        "x": 4,
+        "y": 4,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [2, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "purple"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "purple"
+    },
+    {
+      "id": "v4",
+      "pos": [5, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v6",
+      "pos": [1, 6],
+      "dir": "S",
+      "type": "l",
+      "color": "orange",
+      "locked": true,
+      "keyId": "v2"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v8",
+      "pos": [6, 6],
+      "dir": "E",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v9",
+      "pos": [0, 3],
+      "dir": "N",
+      "type": "m",
+      "color": "yellow",
+      "locked": true,
+      "keyId": "v8"
+    },
+    {
+      "id": "v10",
+      "pos": [3, 6],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v11",
+      "pos": [3, 4],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v12",
+      "pos": [5, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v13",
+      "pos": [6, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    }
+  ],
+  "passengers": [
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "purple",
+    "purple",
+    "purple",
+    "purple",
+    "orange",
+    "orange",
+    "pink",
+    "pink",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "pink",
+    "pink",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "blue",
+    "blue",
+    "green",
+    "green",
+    "pink",
+    "pink",
+    "orange",
+    "orange"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 13
+    },
+    "difficulty": 7.3,
+    "solverVersion": "1.0"
+  }
+}
