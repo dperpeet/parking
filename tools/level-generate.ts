@@ -4,6 +4,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
+import { arrowStats } from '../src/solver/generator-oneway';
 import { PackIndex } from '../src/schema';
 import { levelJob, readPackConfig } from './lib/pack-config';
 import { loadRulesets } from './lib/rulesets';
@@ -29,7 +30,7 @@ mkdirSync(dir, { recursive: true });
 const ids: string[] = [];
 let failures = 0;
 console.log(
-  'n   veh col slots vis  target  diff   rpw%   dead depth  matched attempts  mys blind% info%',
+  'n   veh col slots vis  target  diff   rpw%   dead depth  matched attempts  mys blind% info% arr trn',
 );
 config.levels.forEach((entry, index) => {
   const n = index + 1;
@@ -51,6 +52,7 @@ config.levels.forEach((entry, index) => {
   if (!g.matched) failures++;
   if (!dry) writeFileSync(`${dir}/${file}.json`, JSON.stringify(g.level, null, 2) + '\n');
   const a = g.analysis;
+  const arrows = arrowStats(g.level);
   console.log(
     [
       String(n).padEnd(3),
@@ -68,6 +70,8 @@ config.levels.forEach((entry, index) => {
       String(g.mystery?.ids.length ?? 0).padStart(4),
       (g.mystery ? (g.mystery.blindWin * PERCENT).toFixed(0) : '-').padStart(6),
       (g.mystery ? (g.mystery.informedWin * PERCENT).toFixed(0) : '-').padStart(5),
+      String(arrows.arrows).padStart(3),
+      String(arrows.maxTurns).padStart(3),
     ].join(' '),
   );
 });

@@ -2,6 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { analyze } from '../src/solver/analyze';
 import { blindWinRate } from '../src/solver/blind';
+import { arrowStats } from '../src/solver/generator-oneway';
 import { Level, resolveRules } from '../src/schema';
 import { loadRulesets, rulesetById } from './lib/rulesets';
 
@@ -14,7 +15,7 @@ const files = readdirSync(dir)
   .filter((f) => f.endsWith('.json') && f !== 'index.json')
   .sort();
 console.log(
-  'id      grid vehs cols boll keys mys slots vis  diff  rpw%    dead avgDepth  states   winningPaths  ms blind%',
+  'id      grid vehs cols boll keys mys arr trn slots vis  diff  rpw%    dead avgDepth  states   winningPaths  ms blind%',
 );
 for (const f of files) {
   const level = Level.parse(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')));
@@ -24,6 +25,7 @@ for (const f of files) {
   const ms = performance.now() - t0;
   const cols = new Set(level.passengers).size;
   const mystery = level.vehicles.filter((v) => v.mystery).length;
+  const arrows = arrowStats(level);
   const blind = mystery > 0 ? (blindWinRate(level, rules) * PERCENT).toFixed(0) : '-';
   console.log(
     [
@@ -34,6 +36,8 @@ for (const f of files) {
       String(level.grid.cells.filter((c) => c.type === 'fixed').length).padStart(4),
       String(level.vehicles.filter((v) => v.locked).length).padStart(4),
       String(mystery).padStart(3),
+      String(arrows.arrows).padStart(3),
+      String(arrows.maxTurns).padStart(3),
       String(rules.queue.slots).padStart(5),
       String(rules.passengers.visible).padStart(3),
       a.difficulty.toFixed(1).padStart(5),
