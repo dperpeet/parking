@@ -124,13 +124,45 @@ let cached: Campaign | null = null;
 
 /** Die ausgelieferte Kampagne (einmal gebaut). */
 export function getCampaign(): Campaign {
-  cached ??= buildCampaign(
-    import.meta.glob(['../content/levels/*/*.json', '!../content/levels/*/index.json'], {
+  const rulesets = import.meta.glob('../content/rulesets/*.json', {
+    eager: true,
+    import: 'default',
+  });
+  cached ??= withE2eFixtures(
+    buildCampaign(
+      import.meta.glob(['../content/levels/*/*.json', '!../content/levels/*/index.json'], {
+        eager: true,
+        import: 'default',
+      }),
+      import.meta.glob('../content/levels/*/index.json', { eager: true, import: 'default' }),
+      rulesets,
+    ),
+    rulesets,
+  );
+  return cached;
+}
+
+/**
+ * Nur in E2E-Builds (`VITE_E2E_FIXTURES=1`, siehe playwright.config.ts): Test-Level aus
+ * `tests/e2e/fixtures/levels` sind per Route erreichbar (`find`), erscheinen aber in keiner Welt.
+ * In normalen Builds entfaellt der Zweig samt Fixture-Dateien beim Bundling.
+ */
+function withE2eFixtures(campaign: Campaign, rulesets: Modules): Campaign {
+  if (import.meta.env.VITE_E2E_FIXTURES !== '1') return campaign;
+  const fixtures = buildCampaign(
+    import.meta.glob(
+      ['../../tests/e2e/fixtures/levels/*/*.json', '!../../tests/e2e/fixtures/levels/*/index.json'],
+      { eager: true, import: 'default' },
+    ),
+    import.meta.glob('../../tests/e2e/fixtures/levels/*/index.json', {
       eager: true,
       import: 'default',
     }),
-    import.meta.glob('../content/levels/*/index.json', { eager: true, import: 'default' }),
-    import.meta.glob('../content/rulesets/*.json', { eager: true, import: 'default' }),
+    rulesets,
   );
-  return cached;
+  return {
+    ...campaign,
+    find: (pack, fileId) => campaign.find(pack, fileId) ?? fixtures.find(pack, fileId),
+    after: (entry) => campaign.after(entry) ?? fixtures.after(entry),
+  };
 }

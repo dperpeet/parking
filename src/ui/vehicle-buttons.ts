@@ -104,6 +104,9 @@ export function createVehicleButtons(
           layer.append(btn);
         }
         markTarget(v.id, btn);
+        // Mystery-Fahrzeug: nur "verdeckt" markieren, die Farbe steht nie im DOM.
+        if (v.hidden) btn.setAttribute('data-hidden', 'true');
+        else btn.removeAttribute('data-hidden');
         const r = vehicleRect(layout, v);
         btn.style.left = `${r.x}px`;
         btn.style.top = `${r.y}px`;

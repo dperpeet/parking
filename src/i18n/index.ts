@@ -110,6 +110,10 @@ const de = {
   annSlotAdded: 'Zusätzlicher Halteplatz',
   annWon: 'Geschafft! {stars} von 3 Sternen in {moves} Zügen',
   annVehicleGeneric: 'Fahrzeug',
+  annRevealed: 'Aufgedeckt: {vehicle}',
+  vehicleUnknown: 'Fahrzeug mit unbekannter Farbe',
+  colorUnknownDefinite: 'unbekannte',
+  colorUnknownDative: 'unbekannten',
   vehicleLabel: '{vehicle}, Reihe {row}, Spalte {col}, fährt nach {dir}',
   vehicleLocked: 'gesperrt',
   vehicleLockedN: 'gesperrt, Schloss {n}',
@@ -147,6 +151,9 @@ const de = {
   introHonkTitle: 'Hupe',
   introHonkText:
     'Steckt ein Auto fest? Lass es hupen! Dann macht das Auto davor Platz. Hier brauchst du die Hupe.',
+  introMysteryTitle: 'Mystery-Autos',
+  introMysteryText:
+    'Graue Autos mit „?“ zeigen ihre Farbe erst, sobald ihr Weg nach draußen frei ist. Mach ihnen Platz und schau, wer drinsitzt!',
   introStart: 'Los geht’s',
   introReplay: 'Einführung ansehen: {name}',
   noStorage: 'Fortschritt wird in diesem Browser nicht gespeichert',
@@ -371,6 +378,10 @@ const en: Record<StringKey, string> = {
   annSlotAdded: 'Extra parking spot',
   annWon: 'Well done! {stars} of 3 stars in {moves} moves',
   annVehicleGeneric: 'Vehicle',
+  annRevealed: 'Revealed: {vehicle}',
+  vehicleUnknown: 'Vehicle of unknown colour',
+  colorUnknownDefinite: 'unknown',
+  colorUnknownDative: 'unknown',
   vehicleLabel: '{vehicle}, row {row}, column {col}, heading {dir}',
   vehicleLocked: 'locked',
   vehicleLockedN: 'locked, lock {n}',
@@ -407,6 +418,9 @@ const en: Record<StringKey, string> = {
   introHonkTitle: 'Honk',
   introHonkText:
     'Is a car stuck? Let it honk! The car in front makes room. You need the horn here.',
+  introMysteryTitle: 'Mystery cars',
+  introMysteryText:
+    'Grey cars with a “?” show their colour as soon as their way out is free. Clear the way and see what they are!',
   introStart: 'Let’s go',
   introReplay: 'Show introduction: {name}',
   noStorage: 'Progress is not saved in this browser',

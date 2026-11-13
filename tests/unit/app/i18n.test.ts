@@ -71,12 +71,12 @@ describe('Ansagen in beiden Sprachen', () => {
   const state = fakeEngine.createGame(level, rules);
 
   it('Tipp: das blaue Fahrzeug', () => {
-    expect(hintAnnouncement('blue')).toBe('Tipp: das blaue Fahrzeug');
-    expect(hintAnnouncement('red')).toBe('Tipp: das rote Fahrzeug');
+    expect(hintAnnouncement({ color: 'blue' })).toBe('Tipp: das blaue Fahrzeug');
+    expect(hintAnnouncement({ color: 'red' })).toBe('Tipp: das rote Fahrzeug');
     expect(colorDefinite('purple')).toBe('lila');
     expect(colorDefinite('orange')).toBe('orange');
     setLanguage('en');
-    expect(hintAnnouncement('blue')).toBe('Hint: the blue vehicle');
+    expect(hintAnnouncement({ color: 'blue' })).toBe('Hint: the blue vehicle');
   });
 
   it('Fahrzeug- und Ereignistexte', () => {

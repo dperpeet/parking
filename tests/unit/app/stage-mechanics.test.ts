@@ -295,6 +295,18 @@ describe('Intro-Karten in generierten Leveln', () => {
     expect(progress.hasSeenIntro('bollards') && progress.hasSeenIntro('keys')).toBe(true);
   });
 
+  it('mechanicsOf erkennt Mystery-Fahrzeuge (nach Pollern und Schluesseln)', () => {
+    const mysteryLevel = {
+      ...world2Level,
+      vehicles: world2Level.vehicles.map((v, i) => (i === 0 ? { ...v, mystery: true } : v)),
+    };
+    expect(mechanicsOf(mysteryLevel)).toEqual(['bollards', 'keys', 'mystery']);
+    const plain = { ...classicLevel, vehicles: [{ ...classicLevel.vehicles[0]!, mystery: true }] };
+    expect(mechanicsOf(plain)).toEqual(['mystery']);
+    const off = { ...classicLevel, vehicles: [{ ...classicLevel.vehicles[0]!, mystery: false }] };
+    expect(mechanicsOf(off)).toEqual([]);
+  });
+
   it('bereits gesehene Intros erscheinen nicht erneut', async () => {
     const solver = new FakeSolver();
     solver.generateImpl = (p) => Promise.resolve({ ...world2Level, id: p.id ?? 'x' });

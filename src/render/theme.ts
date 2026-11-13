@@ -52,4 +52,12 @@ export const THEME = {
   bollardCap: '#FF5A5F',
   bollardRing: '#FFFFFF',
   bollardCore: '#1A1A1A',
+  /**
+   * Mystery-Fahrzeug mit verdeckter Farbe: neutrale Flaeche (keine Palettenfarbe) mit Schraffur,
+   * Kontrastfarbe und eigenes Symbol (kein Palettensymbol), damit es auch ohne Farbsehen eindeutig ist.
+   */
+  mysteryFill: '#D4D0C8',
+  mysteryStripe: 'rgba(26,26,26,0.16)',
+  mysteryInk: '#1A1A1A',
+  mysteryGlyph: '?',
 } as const;

@@ -21,6 +21,9 @@ export function applyThemeVars(el: HTMLElement): void {
     '--t-star': THEME.star,
     '--t-star-off': THEME.starOff,
     '--t-overlay': THEME.overlay,
+    '--t-mystery-fill': THEME.mysteryFill,
+    '--t-mystery-stripe': THEME.mysteryStripe,
+    '--t-mystery-ink': THEME.mysteryInk,
   };
   for (const [id, c] of Object.entries(PALETTE)) {
     vars[`--c-${id}-fill`] = c.fill;

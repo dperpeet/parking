@@ -11,6 +11,8 @@ export interface BoardAnimator {
   unlock?(vehicleId: string): Promise<void>;
   /** Optional: Hupe am hupenden Fahrzeug (Schallzacken mit kleinem Ruck). */
   honk?(vehicleId: string): Promise<void>;
+  /** Optional: ein Mystery-Fahrzeug deckt seine Farbe auf (Animation vor dem Abgleich mit dem Zustand). */
+  reveal?(vehicleId: string): Promise<void>;
   /** Optional: der Blocker gleitet von Kopfzelle `from` nach `to`. */
   yield?(vehicleId: string, from: [number, number], to: [number, number]): Promise<void>;
   /** Faehrt das Fahrzeug entlang `path` vom Brett und entfernt es. */
@@ -89,6 +91,10 @@ export class EventPlayer {
         case 'vehicleUnlocked':
           this.hud.onEvent(event, state);
           await this.board.unlock?.(event.vehicleId);
+          break;
+        case 'vehicleRevealed':
+          this.hud.onEvent(event, state);
+          await this.board.reveal?.(event.vehicleId);
           break;
         default:
           this.hud.onEvent(event, state);

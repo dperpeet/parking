@@ -56,7 +56,17 @@ export function colorDative(colorId: string): string {
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
-function vehicleNoun(colorId: string): string {
+/** Was Texte ueber ein Fahrzeug wissen: die Farbe und ob sie verdeckt ist (Mystery-Fahrzeug). */
+export interface ShownVehicle {
+  color: string;
+  hidden?: boolean;
+}
+
+/** Farbe, die ein Text nennen darf; null bei verdeckter Farbe (nie die echte Farbe verraten). */
+const shownColor = (v: ShownVehicle): string | null => (v.hidden === true ? null : v.color);
+
+function vehicleNoun(colorId: string | null): string {
+  if (colorId === null) return t('vehicleUnknown');
   if (getLanguage() === 'de') return `${colorAdjective(colorId, 'es')} ${t('annVehicleGeneric')}`;
   return `${capitalize(colorName(colorId))} ${t('annVehicleGeneric').toLowerCase()}`;
 }
@@ -73,11 +83,11 @@ export interface VehicleLockInfo {
 }
 
 export function vehicleLabel(
-  v: { color: string; x: number; y: number; dir: Dir },
+  v: ShownVehicle & { x: number; y: number; dir: Dir },
   lock?: VehicleLockInfo,
 ): string {
   const base = t('vehicleLabel', {
-    vehicle: vehicleNoun(v.color),
+    vehicle: vehicleNoun(shownColor(v)),
     row: v.y + 1,
     col: v.x + 1,
     dir: t(DIR_KEYS[v.dir]),
@@ -94,10 +104,21 @@ export function vehicleLabel(
   return parts.join(', ');
 }
 
-/** Ansage fuer den Tipp; bei `honk` soll mit dem Fahrzeug gehupt statt es angetippt werden. */
-export function hintAnnouncement(color: string, action: 'tap' | 'honk' = 'tap'): string {
-  if (action === 'honk') return t('hintHonk', { color: colorDative(color) });
-  return t('hintVehicle', { color: colorDefinite(color) });
+/**
+ * Ansage fuer den Tipp; bei `honk` soll mit dem Fahrzeug gehupt statt es angetippt werden.
+ * Ein verdecktes (oder unbekanntes) Fahrzeug heisst "das unbekannte Fahrzeug".
+ */
+export function hintAnnouncement(
+  vehicle: ShownVehicle | undefined,
+  action: 'tap' | 'honk' = 'tap',
+): string {
+  const color = vehicle ? shownColor(vehicle) : null;
+  if (action === 'honk') {
+    return t('hintHonk', { color: color === null ? t('colorUnknownDative') : colorDative(color) });
+  }
+  return t('hintVehicle', {
+    color: color === null ? t('colorUnknownDefinite') : colorDefinite(color),
+  });
 }
 
 const HONK_ERROR_KEYS: Record<string, StringKey> = {
@@ -118,7 +139,7 @@ export function honkErrorText(reason: string): string | null {
 export function announce(event: GameEvent, state: GameState): string | null {
   const veh = (id: string): string => {
     const v = state.vehicles.find((o) => o.id === id);
-    return v ? vehicleNoun(v.color) : t('annVehicleGeneric');
+    return v ? vehicleNoun(shownColor(v)) : t('annVehicleGeneric');
   };
   switch (event.type) {
     case 'vehicleBlocked':
@@ -149,15 +170,19 @@ export function announce(event: GameEvent, state: GameState): string | null {
     case 'lost':
       return loseTitle(event.reason);
     case 'vehicleYielded': {
-      const color = state.vehicles.find((o) => o.id === event.vehicleId)?.color;
-      return color ? t('annYielded', { color: colorDefinite(color) }) : null;
+      const v = state.vehicles.find((o) => o.id === event.vehicleId);
+      if (!v) return null;
+      const color = shownColor(v);
+      return t('annYielded', {
+        color: color === null ? t('colorUnknownDefinite') : colorDefinite(color),
+      });
     }
+    case 'vehicleRevealed':
+      return t('annRevealed', { vehicle: vehicleNoun(event.color) });
     case 'invalidAction':
       return honkErrorText(event.reason);
-    // vehicleRevealed (Mystery-Fahrzeuge): Ansage folgt mit Welt 4.
     case 'powerUpUsed':
     case 'slotShifted':
-    case 'vehicleRevealed':
       return null;
   }
 }

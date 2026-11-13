@@ -13,6 +13,8 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${PORT}`, trace: 'on-first-retry', locale: 'de-DE' },
   webServer: {
     command: `pnpm build && pnpm preview --port ${PORT} --strictPort`,
+    // Test-Level aus tests/e2e/fixtures (z. B. Mystery-Fahrzeuge) per Route erreichbar machen.
+    env: { VITE_E2E_FIXTURES: '1' },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

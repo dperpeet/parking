@@ -94,6 +94,17 @@ describe('cueFor', () => {
     expect(cueFor({ type: 'slotShifted', vehicleId: 'v1', from: 1, to: 0 })).toBeNull();
     expect(cueFor({ type: 'powerUpUsed', powerUp: 'undo', remaining: 1 })).toBeNull();
   });
+
+  it('Aufdecken eines Mystery-Fahrzeugs hat einen eigenen kurzen Klang', () => {
+    const revealed: GameEvent = { type: 'vehicleRevealed', vehicleId: 'v2', color: 'red' };
+    expect(cueFor(revealed)).toEqual({ id: 'reveal', step: 0 });
+    const fake = fakeContext();
+    const sound = createSound({ createContext: () => fake.ctx });
+    sound.setEnabled(true);
+    sound.cue(revealed);
+    expect(fake.started.length).toBe(2);
+    expect(fake.started.every((s) => s.type === 'sine')).toBe(true);
+  });
 });
 
 describe('createSound', () => {

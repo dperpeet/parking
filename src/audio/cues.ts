@@ -8,6 +8,7 @@ export type CueId =
   | 'depart'
   | 'honk'
   | 'unlock'
+  | 'reveal'
   | 'undo'
   | 'shuffle'
   | 'slot'
@@ -48,10 +49,10 @@ export function cueFor(event: GameEvent): Cue | null {
       return cue('won');
     case 'lost':
       return cue('lost');
-    // vehicleRevealed (Mystery-Fahrzeuge): eigener Klang folgt mit Welt 4.
+    case 'vehicleRevealed':
+      return cue('reveal');
     case 'slotShifted':
     case 'powerUpUsed':
-    case 'vehicleRevealed':
       return null;
   }
 }

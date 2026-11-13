@@ -1,18 +1,21 @@
-// Intro-Karte einer neuen Mechanik (Poller, Schluessel): kurzer Text, kleine Illustration aus CSS/SVG.
+// Intro-Karte einer neuen Mechanik (Poller, Schluessel, Hupe, Mystery): kurzer Text, kleine Illustration aus CSS/SVG.
 import { t } from '../../i18n';
 import type { StringKey } from '../../i18n';
 import type { Mechanic } from '../../schema';
+import { THEME } from '../../render/theme';
 import { h, icon } from '../dom';
 
 const TITLE_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsTitle',
   keys: 'introKeysTitle',
   honk: 'introHonkTitle',
+  mystery: 'introMysteryTitle',
 };
 const TEXT_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsText',
   keys: 'introKeysText',
   honk: 'introHonkText',
+  mystery: 'introMysteryText',
 };
 
 export const mechanicTitle = (mechanic: Mechanic): string => t(TITLE_KEYS[mechanic]);
@@ -95,7 +98,20 @@ function honkArt(): HTMLElement {
   );
 }
 
+/** Graues Auto mit "?" und Blocker davor; daneben, mit freiem Weg, dasselbe Auto in Farbe. */
+function mysteryArt(): HTMLElement {
+  const hidden = h('span', { class: 'art-car art-mystery' }, THEME.mysteryGlyph);
+  return h(
+    'div',
+    { class: 'intro-art art-mystery-scene', 'aria-hidden': 'true' },
+    hidden,
+    h('span', { class: 'art-detour' }, '→'),
+    car('pink', h('span', { class: 'art-chevron' }, '›')),
+  );
+}
+
 function art(mechanic: Mechanic): HTMLElement {
+  if (mechanic === 'mystery') return mysteryArt();
   if (mechanic === 'bollards') {
     return h(
       'div',
