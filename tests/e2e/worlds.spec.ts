@@ -2,14 +2,11 @@ import { expect, test } from '@playwright/test';
 import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'json' };
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
 import world2 from '../../src/content/levels/pack-02/index.json' with { type: 'json' };
-import { seedSave, tapAll } from './support';
+import world3 from '../../src/content/levels/pack-03/index.json' with { type: 'json' };
+import { completedSave, seedSave, tapAll } from './support';
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
-function worldOneDone(): string {
-  const levels: Record<string, { stars: number; bestMoves: number; completed: boolean }> = {};
-  for (const id of world1.levels) levels[`01/${id}`] = { stars: 3, bestMoves: 20, completed: true };
-  return JSON.stringify({ version: 1, levels });
-}
+const worldOneDone = (): string => completedSave({ '01': world1.levels });
 
 test('Frischer Stand: Welt 2 ist sichtbar, aber gesperrt, mit Hinweis', async ({ page }) => {
   await page.goto('/');
@@ -83,12 +80,8 @@ test('Gesperrtes Fahrzeug ist fuer Screenreader beschriftet', async ({ page }) =
 });
 
 /** Spielstand, in dem alle Level von Welt 1 und 2 geschafft sind. */
-function worldsOneAndTwoDone(): string {
-  const levels: Record<string, { stars: number; bestMoves: number; completed: boolean }> = {};
-  for (const id of world1.levels) levels[`01/${id}`] = { stars: 3, bestMoves: 20, completed: true };
-  for (const id of world2.levels) levels[`02/${id}`] = { stars: 3, bestMoves: 20, completed: true };
-  return JSON.stringify({ version: 1, levels });
-}
+const worldsOneAndTwoDone = (): string =>
+  completedSave({ '01': world1.levels, '02': world2.levels });
 
 test('Welt 3 ist nach Welt 1 und 2 offen, Intro-Karte Hupe erscheint vor Level 1', async ({
   page,
@@ -145,4 +138,41 @@ test('Welt 3 Level 1: Sackgasse zeigt Hilfe-Karte, Hupen fuehrt zum Sieg mit 3 S
   const win = page.getByTestId('win-dialog');
   await expect(win).toBeVisible();
   await expect(win.locator('.star-on')).toHaveCount(3);
+});
+
+test('Welt 4 bleibt gesperrt, bis alle 24 Level von Welt 3 geschafft sind', async ({ page }) => {
+  const allButLast = world3.levels.slice(0, -1);
+  await seedSave(
+    page,
+    completedSave({ '01': world1.levels, '02': world2.levels, '03': allButLast }),
+  );
+  await page.goto('/');
+  const world4 = page.getByTestId('world-4');
+  await expect(world4).toBeVisible();
+  await expect(world4).toHaveAttribute('data-state', 'locked');
+  await expect(world4).toContainText('Welt 4');
+  await expect(world4).toContainText('Mystery');
+  await expect(page.getByTestId('world-hint-4')).toHaveText('Schaffe alle Level von Welt 3');
+  await expect(page.getByTestId('tile-4-1')).toHaveCount(0);
+});
+
+test('Welt 4 ist nach Welt 3 offen, Intro-Karte Mystery erscheint vor Level 1', async ({
+  page,
+}) => {
+  expect(world3.levels).toHaveLength(24);
+  await seedSave(
+    page,
+    completedSave({ '01': world1.levels, '02': world2.levels, '03': world3.levels }),
+  );
+  await page.goto('/');
+  await expect(page.getByTestId('world-4')).toHaveAttribute('data-state', 'open');
+  await expect(page.getByTestId('world-stars-4')).toBeVisible();
+  await expect(page.getByTestId('tile-4-1')).toBeEnabled();
+  await expect(page.getByTestId('tile-4-2')).toBeDisabled();
+  await page.getByTestId('tile-4-1').click();
+  const intro = page.getByTestId('intro-dialog');
+  await expect(intro).toHaveAttribute('data-mechanic', 'mystery');
+  await page.getByTestId('intro-start').click();
+  await expect(intro).toHaveCount(0);
+  await expect(page.getByTestId('vehicle-v1')).toBeVisible();
 });

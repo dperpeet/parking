@@ -32,3 +32,12 @@ export async function seedSave(page: Page, save: string): Promise<void> {
     [SAVE_KEY, save],
   );
 }
+
+/** Spielstand, in dem alle Level der angegebenen Packs (Route-Segment -> Level-IDs) geschafft sind. */
+export function completedSave(packs: Record<string, readonly string[]>): string {
+  const levels: Record<string, { stars: number; bestMoves: number; completed: boolean }> = {};
+  for (const [pack, ids] of Object.entries(packs)) {
+    for (const id of ids) levels[`${pack}/${id}`] = { stars: 3, bestMoves: 20, completed: true };
+  }
+  return JSON.stringify({ version: 1, levels });
+}

@@ -1,6 +1,7 @@
 import classicJson from '../../src/content/rulesets/classic.json';
 import world2Json from '../../src/content/rulesets/world2.json';
 import world3Json from '../../src/content/rulesets/world3.json';
+import world4Json from '../../src/content/rulesets/world4.json';
 import level007 from '../../src/content/levels/pack-01/007.json';
 import { Level, Ruleset, resolveRules } from '../../src/schema';
 import type { ResolvedRules } from '../../src/schema';
@@ -8,6 +9,7 @@ import type { ResolvedRules } from '../../src/schema';
 export const classicRuleset = Ruleset.parse(classicJson);
 export const world2Ruleset = Ruleset.parse(world2Json);
 export const world3Ruleset = Ruleset.parse(world3Json);
+export const world4Ruleset = Ruleset.parse(world4Json);
 
 /** Loest die Regeln eines Levels gegen sein Ruleset (Standard: classic) auf. */
 export function rulesFor(level: Level, ruleset: Ruleset = classicRuleset): ResolvedRules {

@@ -61,9 +61,11 @@ describe('Kampagne laden', () => {
   });
 
   it('Welten nach Nummer, mit Intro-Mechanik je Level', () => {
-    expect(campaign.worlds.map((w) => w.world)).toEqual([1, 2, 3]);
+    expect(campaign.worlds.map((w) => w.world)).toEqual([1, 2, 3, 4]);
     expect(campaign.worlds[1]?.levels[0]?.intro).toBe('bollards');
     expect(campaign.worlds[2]?.levels[0]?.intro).toBe('honk');
+    expect(campaign.worlds[3]?.levels[0]?.intro).toBe('mystery');
+    expect(campaign.worlds[3]?.levels).toHaveLength(24);
     expect(campaign.worlds[0]?.levels.every((l) => l.intro === undefined)).toBe(true);
     const lastOfWorld1 = campaign.find('01', '030');
     expect(lastOfWorld1 && campaign.after(lastOfWorld1)).toBeUndefined();

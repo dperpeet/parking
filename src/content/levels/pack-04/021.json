@@ -1,0 +1,168 @@
+{
+  "schema": "parking.level/1",
+  "id": "w4-21",
+  "title": {
+    "de": "Level 21",
+    "en": "Level 21"
+  },
+  "seed": 4187305041,
+  "ruleset": "world4",
+  "overrides": {
+    "queue": {
+      "slots": 4
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 7,
+    "height": 7,
+    "cells": [
+      {
+        "x": 1,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 5,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 6,
+        "y": 2,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [4, 4],
+      "dir": "S",
+      "type": "l",
+      "color": "green"
+    },
+    {
+      "id": "v2",
+      "pos": [6, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v3",
+      "pos": [5, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [3, 1],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [4, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v6",
+      "pos": [3, 2],
+      "dir": "N",
+      "type": "s",
+      "color": "green",
+      "mystery": true
+    },
+    {
+      "id": "v7",
+      "pos": [1, 4],
+      "dir": "W",
+      "type": "m",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v3"
+    },
+    {
+      "id": "v8",
+      "pos": [3, 5],
+      "dir": "N",
+      "type": "s",
+      "color": "yellow",
+      "mystery": true
+    },
+    {
+      "id": "v9",
+      "pos": [1, 5],
+      "dir": "E",
+      "type": "s",
+      "color": "pink",
+      "mystery": true
+    },
+    {
+      "id": "v10",
+      "pos": [0, 6],
+      "dir": "W",
+      "type": "m",
+      "color": "pink",
+      "locked": true,
+      "keyId": "v1"
+    },
+    {
+      "id": "v11",
+      "pos": [0, 2],
+      "dir": "S",
+      "type": "m",
+      "color": "pink",
+      "mystery": true
+    }
+  ],
+  "passengers": [
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "blue",
+    "orange",
+    "blue",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "green",
+    "pink",
+    "blue",
+    "pink",
+    "yellow",
+    "yellow",
+    "green",
+    "pink",
+    "pink",
+    "blue",
+    "blue",
+    "green",
+    "pink",
+    "pink",
+    "pink",
+    "pink",
+    "blue",
+    "pink",
+    "pink",
+    "pink",
+    "pink"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 11
+    },
+    "difficulty": 7.1,
+    "solverVersion": "1.0"
+  }
+}

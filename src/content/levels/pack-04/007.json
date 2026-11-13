@@ -1,0 +1,126 @@
+{
+  "schema": "parking.level/1",
+  "id": "w4-07",
+  "title": {
+    "de": "Level 7",
+    "en": "Level 7"
+  },
+  "seed": 96356485,
+  "ruleset": "world4",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 5,
+        "y": 4,
+        "type": "fixed"
+      },
+      {
+        "x": 2,
+        "y": 5,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 2],
+      "dir": "N",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [1, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v2"
+    },
+    {
+      "id": "v4",
+      "pos": [1, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [4, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v6",
+      "pos": [2, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v7",
+      "pos": [3, 1],
+      "dir": "N",
+      "type": "m",
+      "color": "orange",
+      "mystery": true
+    },
+    {
+      "id": "v8",
+      "pos": [4, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "blue",
+      "mystery": true
+    }
+  ],
+  "passengers": [
+    "blue",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "blue",
+    "green",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "orange"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 4.5,
+    "solverVersion": "1.0"
+  }
+}
