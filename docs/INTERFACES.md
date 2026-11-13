@@ -134,7 +134,9 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
   `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet
   einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk` | `mystery` | `oneWay`) zu: vor diesem Level erscheint die Intro-Karte.
 - Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed`, `special.keyVehicles` und Hupe `powerups.honk` mit 1 Nutzung),
-  `world3` (= `world2` mit Sterne-Schwellen `three: 1`, `two: 3`, damit die Pflicht-Hupe keinen Stern kostet).
+  `world3` (= `world2` mit Sterne-Schwellen `three: 1`, `two: 3`, damit die Pflicht-Hupe keinen Stern kostet),
+  `world4` (= `world2` mit `special.mysteryVehicles`), `world5` (= `world2` mit `movement.model = turns` und
+  `special.oneWay`, ohne Mystery).
   Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine
   verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhaengig davon.
 - Kampagne (`src/app/levels.ts`): `Campaign.worlds: CampaignWorld[]` (aufsteigend), `CampaignLevel.world`,

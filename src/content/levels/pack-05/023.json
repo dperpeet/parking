@@ -1,0 +1,211 @@
+{
+  "schema": "parking.level/1",
+  "id": "w5-23",
+  "title": {
+    "de": "Level 23",
+    "en": "Level 23"
+  },
+  "seed": 1860690348,
+  "ruleset": "world5",
+  "overrides": {
+    "queue": {
+      "slots": 4
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 7,
+    "height": 7,
+    "cells": [
+      {
+        "x": 1,
+        "y": 4,
+        "type": "fixed"
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 5,
+        "y": 5,
+        "type": "fixed"
+      },
+      {
+        "x": 3,
+        "y": 3,
+        "type": "oneWay",
+        "dir": "N"
+      },
+      {
+        "x": 3,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "N"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "E"
+      },
+      {
+        "x": 1,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "E"
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "E"
+      },
+      {
+        "x": 5,
+        "y": 1,
+        "type": "oneWay",
+        "dir": "N"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [4, 6],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v2",
+      "pos": [6, 6],
+      "dir": "E",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v3",
+      "pos": [6, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "purple",
+      "locked": true,
+      "keyId": "v1"
+    },
+    {
+      "id": "v4",
+      "pos": [6, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "purple"
+    },
+    {
+      "id": "v5",
+      "pos": [2, 6],
+      "dir": "S",
+      "type": "l",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [6, 4],
+      "dir": "E",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v7",
+      "pos": [6, 1],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow",
+      "locked": true,
+      "keyId": "v5"
+    },
+    {
+      "id": "v9",
+      "pos": [3, 6],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v10",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v11",
+      "pos": [4, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v12",
+      "pos": [4, 1],
+      "dir": "E",
+      "type": "l",
+      "color": "pink"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "pink",
+    "purple",
+    "blue",
+    "pink",
+    "purple",
+    "purple",
+    "purple",
+    "orange",
+    "orange",
+    "orange",
+    "yellow",
+    "green",
+    "green",
+    "yellow",
+    "yellow",
+    "orange",
+    "orange",
+    "yellow",
+    "yellow",
+    "yellow",
+    "orange",
+    "pink",
+    "pink",
+    "orange",
+    "pink",
+    "pink",
+    "blue",
+    "blue",
+    "pink",
+    "orange",
+    "pink",
+    "blue",
+    "blue",
+    "pink",
+    "pink"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 12
+    },
+    "difficulty": 7.3,
+    "solverVersion": "1.0"
+  }
+}

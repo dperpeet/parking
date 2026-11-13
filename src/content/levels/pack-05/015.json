@@ -1,0 +1,163 @@
+{
+  "schema": "parking.level/1",
+  "id": "w5-15",
+  "title": {
+    "de": "Level 15",
+    "en": "Level 15"
+  },
+  "seed": 2230139368,
+  "ruleset": "world5",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 0,
+        "y": 5,
+        "type": "fixed"
+      },
+      {
+        "x": 5,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "E"
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "type": "oneWay",
+        "dir": "S"
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "type": "oneWay",
+        "dir": "S"
+      },
+      {
+        "x": 1,
+        "y": 1,
+        "type": "oneWay",
+        "dir": "S"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [5, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v2",
+      "pos": [5, 2],
+      "dir": "E",
+      "type": "m",
+      "color": "pink",
+      "locked": true,
+      "keyId": "v1"
+    },
+    {
+      "id": "v3",
+      "pos": [5, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v5",
+      "pos": [1, 0],
+      "dir": "W",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [2, 1],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 5],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v8",
+      "pos": [0, 4],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v9",
+      "pos": [2, 4],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v10",
+      "pos": [1, 3],
+      "dir": "E",
+      "type": "s",
+      "color": "pink"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "pink",
+    "blue",
+    "pink",
+    "pink",
+    "pink",
+    "orange",
+    "yellow",
+    "yellow",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "green",
+    "green",
+    "orange",
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "blue",
+    "blue",
+    "green",
+    "pink",
+    "green",
+    "pink"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 10
+    },
+    "difficulty": 5.4,
+    "solverVersion": "1.0"
+  }
+}

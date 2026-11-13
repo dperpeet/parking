@@ -3,6 +3,7 @@ import { buildCampaign, getCampaign } from '../../../src/app/levels';
 import { Progress, emptySave } from '../../../src/app/progress';
 import { buildSelectModel } from '../../../src/app/select-model';
 import { stageForDifficulty } from '../../../src/app/stages';
+import { levelOpenFlags, worldOpenFlags } from '../../../src/app/unlock';
 import classic from '../../../src/content/rulesets/classic.json';
 import level007 from '../../../src/content/levels/pack-01/007.json';
 import { level } from '../helpers';
@@ -61,14 +62,33 @@ describe('Kampagne laden', () => {
   });
 
   it('Welten nach Nummer, mit Intro-Mechanik je Level', () => {
-    expect(campaign.worlds.map((w) => w.world)).toEqual([1, 2, 3, 4]);
+    expect(campaign.worlds.map((w) => w.world)).toEqual([1, 2, 3, 4, 5]);
     expect(campaign.worlds[1]?.levels[0]?.intro).toBe('bollards');
     expect(campaign.worlds[2]?.levels[0]?.intro).toBe('honk');
     expect(campaign.worlds[3]?.levels[0]?.intro).toBe('mystery');
     expect(campaign.worlds[3]?.levels).toHaveLength(24);
+    expect(campaign.worlds[4]?.levels[0]?.intro).toBe('oneWay');
+    expect(campaign.worlds[4]?.levels).toHaveLength(24);
+    expect(campaign.levels).toHaveLength(126);
     expect(campaign.worlds[0]?.levels.every((l) => l.intro === undefined)).toBe(true);
     const lastOfWorld1 = campaign.find('01', '030');
     expect(lastOfWorld1 && campaign.after(lastOfWorld1)).toBeUndefined();
+  });
+
+  it('Welt 5 oeffnet erst, wenn alle 24 Level von Welt 4 geschafft sind', () => {
+    const done = { stars: 3, bestMoves: 20, completed: true };
+    const results = Object.fromEntries(
+      campaign.worlds.slice(0, 4).flatMap((w) => w.levels.map((l) => [l.key, done])),
+    );
+    expect(worldOpenFlags(campaign.worlds, results)).toEqual([true, true, true, true, true]);
+    const lastOfWorld4 = campaign.worlds[3]?.levels.at(-1)?.key ?? '';
+    expect(lastOfWorld4).toBe('04/024');
+    const allButLast = Object.fromEntries(
+      Object.entries(results).filter(([key]) => key !== lastOfWorld4),
+    );
+    expect(worldOpenFlags(campaign.worlds, allButLast)[4]).toBe(false);
+    const world5 = campaign.worlds[4]!;
+    expect(levelOpenFlags(world5, true, results).slice(0, 2)).toEqual([true, false]);
   });
 });
 
