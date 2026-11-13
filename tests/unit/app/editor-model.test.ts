@@ -19,6 +19,7 @@ import {
   rotateVehicle,
   rulesOfState,
   setKey,
+  setMystery,
   setShuffle,
   shuffleInWindow,
   swapPassengers,
@@ -340,5 +341,52 @@ describe('Level-Umwandlung', () => {
     const level: Level = { ...toLevel(example(), ruleset), title: { de: 'Hallo', en: 'Hello' } };
     expect(fromLevel(level, ruleset).title).toBe('Hallo');
     expect(fromLevel(toLevel(example(), ruleset), ruleset).title).toBe('');
+  });
+});
+
+describe('Mystery-Fahrzeuge', () => {
+  const mysteryRuleset = {
+    ...ruleset,
+    id: 'mystery-test',
+    special: { ...ruleset.special, mysteryVehicles: true },
+  };
+
+  it('setzt und entfernt die Markierung, ohne die Fahrgaeste zu aendern', () => {
+    const s = example();
+    const on = ok(setMystery(s, 'v1', true));
+    expect(on.vehicles[0]).toMatchObject({ id: 'v1', mystery: true });
+    expect(on.passengers).toEqual(s.passengers);
+    const off = ok(setMystery(on, 'v1', false));
+    expect(off.vehicles[0]).not.toHaveProperty('mystery');
+    expect(setMystery(s, 'v9', true)).toEqual({ ok: false, error: 'unknownVehicle' });
+  });
+
+  it('schreibt mystery ins Level und liest es zurueck', () => {
+    const s = { ...ok(setMystery(example(), 'v1', true)), rulesetId: 'mystery-test' };
+    expect(checkLevel(s, mysteryRuleset)).toEqual([]);
+    const level = toLevel(s, mysteryRuleset);
+    expect(level.vehicles.map((v) => v.mystery)).toEqual([true, undefined]);
+    expect(level.overrides).toBeUndefined();
+    const back = fromLevel(level, mysteryRuleset);
+    expect(back).toEqual(s);
+    // Volle Information: Loesbarkeit wie ohne Markierung.
+    expect(analyze(level, rulesOfState(s, mysteryRuleset)).minMoves).toBe(2);
+  });
+
+  it('meldet mysteryDisabled ohne Ruleset-Flag', () => {
+    const s = ok(setMystery(example(), 'v2', true));
+    expect(checkLevel(s, ruleset)).toEqual([{ code: 'mysteryDisabled', vehicleId: 'v2' }]);
+  });
+
+  it('bewahrt einen importierten Mystery-Override', () => {
+    const base = ok(setMystery(example(), 'v1', true));
+    const level = { ...toLevel(base, ruleset), overrides: { special: { mysteryVehicles: true } } };
+    const state = fromLevel(level, ruleset);
+    expect(state.mysteryRule).toBe(true);
+    expect(rulesFor(state).special.mysteryVehicles).toBe(true);
+    expect(checkLevel(state, ruleset)).toEqual([]);
+    expect(toLevel(state, ruleset).overrides).toEqual({ special: { mysteryVehicles: true } });
+    // Auf einem Ruleset mit Flag ist der Override ueberfluessig.
+    expect(fromLevel(level, mysteryRuleset).mysteryRule).toBeUndefined();
   });
 });

@@ -101,6 +101,7 @@ CLI: `pnpm level:analyze [--honk]` analysiert Level-Dateien (`--honk`: mit Hupen
 - Ähnliches Level: Der Generator erzeugt ein neues Level mit ähnlicher Schwierigkeit (± 0,5) oder, bei „Stufe halten", aus der gewählten Stufe. Ohne „Stufe halten" bleiben Ruleset sowie Zahl der Poller und Schlüssel des Ausgangslevels erhalten. Schlägt die Generierung fehl, wird das aktuelle Level gespiegelt und umgefärbt (Poller und Schlüssel bleiben dabei erhalten).
 - Tipps: bis zu 3 pro Level, berechnet vom Solver-Worker.
 - Editor: Fahrzeuge setzen und drehen, Ruleset und Overrides wählen, Lösbarkeit per Solver prüfen. Eigene Level werden lokal gespeichert (höchstens 50).
+  Mystery-Fahrzeuge: Schalter „Mystery“ am ausgewählten Fahrzeug, sobald das Regelwerk (bzw. ein importierter Override) `special.mysteryVehicles` erlaubt; markierte Zellen sind gestrichelt mit „?“. Ohne Flag bleibt der Schalter nur zum Entfernen sichtbar, die Prüfung meldet `mysteryDisabled`. Die Lösbarkeitsprüfung bleibt bei voller Information.
 - Teilen per URL: Das Level wird minimiert, mit deflate gepackt und als base64url im Fragment abgelegt (`#/play?l=<code>`). Das Fragment geht nie an einen Server; beim Import prüfen Schema, Semantik und Solver das Level. Details und Grenzen: [INTERFACES.md](INTERFACES.md).
 - Spielstand-Import: Der Export ist eine JSON-Datei. Beim Import mit vorhandenem Stand lässt sich zusammenführen oder ersetzen.
 
