@@ -1,12 +1,13 @@
 // Ansichtsmodell und Handler des Level-Editors (DOM-Seite). Der Screen in src/app baut das Modell.
 import type { Dir } from '../../schema';
 
-export type EditorTool = 'place' | 'select' | 'fixed';
+export type EditorTool = 'place' | 'select' | 'fixed' | 'arrow';
 
 export interface EditorCellVm {
   x: number;
   y: number;
-  kind: 'empty' | 'fixed' | 'vehicle';
+  /** `oneWay`: Abbiegepfeil in Richtung `dir`. */
+  kind: 'empty' | 'fixed' | 'vehicle' | 'oneWay';
   color?: string;
   vehicleId?: string;
   head: boolean;
@@ -34,6 +35,8 @@ export interface EditorViewModel {
   /** Zeilenweise (y, dann x). */
   cells: EditorCellVm[];
   tool: EditorTool;
+  /** Angebotene Werkzeuge (Pfeil nur mit erlaubten oder vorhandenen Pfeilen). */
+  tools: EditorTool[];
   types: Array<{ id: string; label: string }>;
   colors: Array<{ id: string; label: string }>;
   type: string;
@@ -53,6 +56,8 @@ export interface EditorViewModel {
   size: { width: StepperVm; height: StepperVm };
   slots: StepperVm;
   visible: StepperVm;
+  /** Schalter "Abbiegepfeile" (Override); null, wenn das Ruleset sie selbst erlaubt. */
+  turnsRule: boolean | null;
   passengers: {
     colors: string[];
     labels: string[];
@@ -82,6 +87,9 @@ export interface EditorHandlers {
   onDir(dir: Dir): void;
   onRotate(): void;
   onDelete(): void;
+  /** Taste R bzw. Entf auf einer Rasterzelle. */
+  onRotateAt(x: number, y: number): void;
+  onDeleteAt(x: number, y: number): void;
   onMove(dx: number, dy: number): void;
   onKey(keyId: string | null): void;
   onMystery(on: boolean): void;
@@ -89,6 +97,7 @@ export interface EditorHandlers {
   onRuleset(id: string): void;
   onSlots(n: number): void;
   onVisible(n: number): void;
+  onTurnsRule(on: boolean): void;
   onShuffle(enabled: boolean): void;
   onShuffleWindow(n: number): void;
   onReseed(): void;

@@ -10,6 +10,7 @@ import type {
   StatusTone,
 } from '../ui/editor';
 import { colorName } from '../ui/strings';
+import { cellKey } from '../engine/geometry';
 import { SHARE_TEXT_MAX, resolveRules } from '../schema';
 import type { Dir, ResolvedRules, Ruleset } from '../schema';
 import { createLiveCheck } from './editor-check';
@@ -17,21 +18,27 @@ import type { CheckStatus, LiveCheck } from './editor-check';
 import {
   EDITOR_LIMITS,
   SHUFFLE_WINDOW_MAX,
+  arrowMap,
+  arrowsAllowed,
   checkLevel,
   fromLevel,
   moveVehicle,
   newEditorState,
   placeVehicle,
   regeneratePassengers,
+  removeArrow,
   removeVehicle,
   resizeGrid,
+  rotateArrow,
   rotateVehicle,
   rulesOfState,
   setKey,
   setMystery,
   setShuffle,
+  setTurnsRule,
   swapPassengers,
   toLevel,
+  toggleArrow,
   toggleFixed,
   vehicleCellsOf,
 } from './editor-model';
@@ -83,6 +90,8 @@ const ERROR_KEYS: Record<EditError, StringKey> = {
   unknownColor: 'edErrOther',
   unknownVehicle: 'edErrOther',
   badIndex: 'edErrOther',
+  oneWayDisabled: 'edErrOneWayDisabled',
+  noArrow: 'edErrOther',
 };
 const ISSUE_KEYS: Record<EditorIssue['code'], StringKey> = {
   empty: 'edStatusEmpty',
@@ -96,8 +105,8 @@ const ISSUE_KEYS: Record<EditorIssue['code'], StringKey> = {
   unknownColor: 'edIssueOther',
   duplicateId: 'edIssueOther',
   mysteryDisabled: 'edIssueMystery',
-  oneWayDisabled: 'edIssueOther',
-  oneWayInvalid: 'edIssueOther',
+  oneWayDisabled: 'edIssueOneWayDisabled',
+  oneWayInvalid: 'edIssueOneWayInvalid',
   unsupportedRule: 'edIssueOther',
 };
 /** Nachkommastellen der angezeigten Schwierigkeit. */
@@ -218,6 +227,20 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
         label: t('edCellFixed', { row, col }),
       };
     }
+    const arrow = arrowMap(state).get(cellKey(x, y));
+    if (arrow !== undefined) {
+      return {
+        x,
+        y,
+        kind: 'oneWay',
+        dir: arrow,
+        head: false,
+        selected: false,
+        locked: false,
+        isKey: false,
+        label: t('edCellArrow', { row, col, dir: t(DIR_KEYS[arrow]) }),
+      };
+    }
     const id = vehicleAt(x, y);
     const v = state.vehicles.find((o) => o.id === id);
     if (!v) {
@@ -265,8 +288,16 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
     max: number,
   ): { value: number; min: number; max: number } => ({ value, min, max });
 
+  /** Pfeil-Werkzeug nur, wenn Pfeile erlaubt sind oder noch welche zum Entfernen da sind. */
+  const toolsOf = (r: ResolvedRules): EditorTool[] =>
+    arrowsAllowed(r) || state.arrows.length > 0
+      ? ['place', 'select', 'fixed', 'arrow']
+      : ['place', 'select', 'fixed'];
+
   const buildVm = (): EditorViewModel => {
     const r = rules();
+    const tools = toolsOf(r);
+    if (!tools.includes(tool)) tool = 'place';
     const cells: EditorCellVm[] = [];
     for (let y = 0; y < state.height; y++)
       for (let x = 0; x < state.width; x++) cells.push(cellVm(x, y));
@@ -279,6 +310,7 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       height: state.height,
       cells,
       tool,
+      tools,
       types: Object.entries(r.vehicles.types).map(([id, vt]) => ({
         id,
         label: t('edTypeLabel', { type: id.toUpperCase(), len: vt.length, cap: vt.capacity }),
@@ -316,6 +348,7 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       },
       slots: stepper(r.queue.slots, slots.min, slots.max),
       visible: stepper(r.passengers.visible, visible.min, visible.max),
+      turnsRule: arrowsAllowed(rulesetOf()) ? null : state.turnsRule === true,
       passengers: {
         colors: state.passengers,
         labels: state.passengers.map((c, i) =>
@@ -405,6 +438,18 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
     return { code: res.code, verified };
   };
 
+  const rotateSelected = (): void => {
+    const id = selectedId;
+    if (id !== null) apply(rotateVehicle(state, rules(), id));
+  };
+  const deleteSelected = (): void => {
+    const id = selectedId;
+    if (id !== null) apply(removeVehicle(state, rules(), id));
+  };
+  /** Tasten R/Entf wirken mit dem Pfeil-Werkzeug auf den Pfeil der fokussierten Zelle. */
+  const arrowTarget = (x: number, y: number): boolean =>
+    tool === 'arrow' && arrowMap(state).has(cellKey(x, y));
+
   const displayTitle = (): string => state.title.trim() || t('edDefaultTitle');
 
   const view: EditorView = createEditorView({
@@ -414,6 +459,10 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       const hit = vehicleAt(x, y);
       if (tool === 'fixed') {
         apply(toggleFixed(state, rules(), x, y));
+        return;
+      }
+      if (tool === 'arrow') {
+        apply(toggleArrow(state, rules(), x, y, dir));
         return;
       }
       if (hit !== undefined) {
@@ -450,13 +499,15 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       dir = next;
       render();
     },
-    onRotate() {
-      const id = selectedId;
-      if (id !== null) apply(rotateVehicle(state, rules(), id));
+    onRotate: () => rotateSelected(),
+    onDelete: () => deleteSelected(),
+    onRotateAt(x, y) {
+      if (arrowTarget(x, y)) apply(rotateArrow(state, rules(), x, y));
+      else rotateSelected();
     },
-    onDelete() {
-      const id = selectedId;
-      if (id !== null) apply(removeVehicle(state, rules(), id));
+    onDeleteAt(x, y) {
+      if (arrowTarget(x, y)) apply(removeArrow(state, rules(), x, y));
+      else deleteSelected();
     },
     onMove(dx, dy) {
       const v = state.vehicles.find((o) => o.id === selectedId);
@@ -501,6 +552,7 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
         state: { ...state, visible: value === rulesetOf().passengers.visible ? null : value },
       });
     },
+    onTurnsRule: (on) => apply({ ok: true, state: setTurnsRule(state, on) }),
     onShuffle: (enabled) => apply({ ok: true, state: setShuffle(state, rules(), { enabled }) }),
     onShuffleWindow: (n) => apply({ ok: true, state: setShuffle(state, rules(), { window: n }) }),
     onReseed: () =>
@@ -547,12 +599,12 @@ export function mountEditorScreen(root: HTMLElement, deps: EditorScreenDeps): Ed
       void share(url, note);
     },
     onNew() {
-      if (!newArmed && state.vehicles.length + state.fixed.length > 0) {
+      if (!newArmed && state.vehicles.length + state.fixed.length + state.arrows.length > 0) {
         newArmed = true;
         render();
         return;
       }
-      state = newEditorState(state.rulesetId);
+      state = setTurnsRule(newEditorState(state.rulesetId), state.turnsRule === true);
       savedId = null;
       selectedId = null;
       swapIndex = null;

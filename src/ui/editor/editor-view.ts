@@ -5,27 +5,22 @@ import { t } from '../../i18n';
 import { PALETTE } from '../../render/theme';
 import type { Dir } from '../../schema';
 import { h, icon } from '../dom';
-import type {
-  EditorCellVm,
-  EditorHandlers,
-  EditorTool,
-  EditorView,
-  EditorViewModel,
-  StepperVm,
-} from './types';
+import type { EditorCellVm, EditorHandlers, EditorView, EditorViewModel, StepperVm } from './types';
 
 export const DIR_ARROWS: Record<Dir, string> = { N: '↑', E: '→', S: '↓', W: '←' };
 const DIRS: Dir[] = ['N', 'E', 'S', 'W'];
 const DIR_KEYS = { N: 'dirN', E: 'dirE', S: 'dirS', W: 'dirW' } as const;
-const TOOLS: Array<[EditorTool, 'edToolPlace' | 'edToolSelect' | 'edToolFixed']> = [
-  ['place', 'edToolPlace'],
-  ['select', 'edToolSelect'],
-  ['fixed', 'edToolFixed'],
-];
+const TOOL_KEYS = {
+  place: 'edToolPlace',
+  select: 'edToolSelect',
+  fixed: 'edToolFixed',
+  arrow: 'edToolArrow',
+} as const;
 const TOOL_HINTS = {
   place: 'edHintPlace',
   select: 'edHintSelect',
   fixed: 'edHintFixed',
+  arrow: 'edHintArrow',
 } as const;
 const ARROW_STEPS: Record<string, [number, number]> = {
   ArrowUp: [0, -1],
@@ -37,6 +32,8 @@ const ARROW_STEPS: Record<string, [number, number]> = {
 const FIXED_GLYPH = '▮';
 const LOCK_GLYPH = '🔒';
 const KEY_GLYPH = '🔑';
+/** Abbiegepfeile: Doppelpfeile, deutlich von den Fahrzeugpfeilen unterscheidbar. */
+export const ONE_WAY_ARROWS: Record<Dir, string> = { N: '⇧', E: '⇨', S: '⇩', W: '⇦' };
 /** Markierung fuer Mystery-Fahrzeuge (unten links, damit sie Schloss/Schluessel nicht verdeckt). */
 const MYSTERY_GLYPH = '?';
 
@@ -214,6 +211,9 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
       }
     } else if (c.kind === 'fixed') {
       b.append(FIXED_GLYPH);
+    } else if (c.kind === 'oneWay' && c.dir) {
+      b.dataset.dir = c.dir;
+      b.append(h('span', { 'aria-hidden': 'true' }, ONE_WAY_ARROWS[c.dir]));
     }
     if (c.selected) b.classList.add('ed-selected');
     b.setAttribute('aria-pressed', String(c.selected));
@@ -247,10 +247,10 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
       const ny = Math.min(Math.max(y + step[1], 0), gridRows - 1);
       focusCell(nx, ny);
     } else if (ev.key === 'r' || ev.key === 'R') {
-      handlers.onRotate();
+      handlers.onRotateAt(x, y);
     } else if (ev.key === 'Delete' || ev.key === 'Backspace') {
       ev.preventDefault();
-      handlers.onDelete();
+      handlers.onDeleteAt(x, y);
     }
   });
   // Roving tabindex: nur die zuletzt fokussierte Zelle ist per Tab erreichbar.
@@ -282,10 +282,23 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
 
   // --- Steuerung ---
 
+  const turnsToggle = (on: boolean | null): HTMLElement | null => {
+    if (on === null) return null;
+    const b = button(
+      'ed-btn',
+      'turns-rule',
+      t('edTurnsRule'),
+      () => handlers.onTurnsRule(!on),
+      t('edTurnsRule'),
+    );
+    b.setAttribute('aria-pressed', String(on));
+    return h('div', { class: 'ed-row' }, b);
+  };
+
   const renderControls = (vm: EditorViewModel): void => {
     const tools = choiceRow(
       t('edToolsLabel'),
-      TOOLS.map(([id, key]) => ({ id, text: t(key), aria: t(key) })),
+      vm.tools.map((id) => ({ id, text: t(TOOL_KEYS[id]), aria: t(TOOL_KEYS[id]) })),
       vm.tool,
       'tool',
       handlers.onTool,
@@ -442,6 +455,7 @@ export function createEditorView(handlers: EditorHandlers): EditorView {
         ),
         stepper(t('edSlots'), 'slots', vm.slots, handlers.onSlots),
         stepper(t('edVisible'), 'visible', vm.visible, handlers.onVisible),
+        turnsToggle(vm.turnsRule),
       ),
       section(
         t('edPassengers', { n: p.colors.length }),
