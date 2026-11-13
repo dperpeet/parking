@@ -131,6 +131,18 @@ export interface GeneratorTuning {
   mysteryMinBlindWin?: number;
   /** Playouts pro Fairness-Bewertung (Default 64). */
   mysteryPlayouts?: number;
+  /**
+   * Anzahl Abbiegepfeile (Zellen `oneWay` mit `dir`), Zahl oder Bereich [min, max] (eigener,
+   * seed-deterministischer Zufall; Default 0). Erfordert `special.oneWay` und `movement.model = turns`,
+   * sonst wirft `generate`; nicht zusammen mit `requireHonk`. Ohne `oneWay` bleibt die Ausgabe bitgleich.
+   * Mindestens ein Pfeil lenkt einen Ausfahrweg um, und mindestens ein Fahrzeug ist auf einem
+   * abbiegenden Weg blockiert (siehe docs/adr/0002-einbahn-und-abbiegen.md).
+   */
+  oneWay?: number | [number, number];
+  /** Laenge der Pfeil-Strassenstuecke (gleich gerichtete Pfeile in Reihe), Zahl oder Bereich; Default 1. */
+  oneWayStreets?: number | [number, number];
+  /** Hoechstzahl Knicke je Ausfahrweg (Default: unbegrenzt). */
+  maxTurns?: number;
 }
 
 /** Generator-Eingabe inklusive Tuning. */

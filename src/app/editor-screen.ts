@@ -96,6 +96,8 @@ const ISSUE_KEYS: Record<EditorIssue['code'], StringKey> = {
   unknownColor: 'edIssueOther',
   duplicateId: 'edIssueOther',
   mysteryDisabled: 'edIssueMystery',
+  oneWayDisabled: 'edIssueOther',
+  oneWayInvalid: 'edIssueOther',
   unsupportedRule: 'edIssueOther',
 };
 /** Nachkommastellen der angezeigten Schwierigkeit. */

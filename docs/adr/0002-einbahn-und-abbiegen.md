@@ -1,7 +1,7 @@
 # ADR 0002: Einbahnstraßen und Abbiegen (Welt 5)
 
-- Status: vorgeschlagen (2026-11-13)
-- Entscheidung von: Dominik (Projektinhaber), Bestätigung ausstehend
+- Status: angenommen (2026-11-13)
+- Entscheidung von: Dominik (Projektinhaber): Abbiegepfeile, Welt 5 ohne Mystery
 
 ## Kontext
 

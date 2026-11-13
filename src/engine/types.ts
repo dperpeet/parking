@@ -85,7 +85,18 @@ export type GameEvent =
       reason: 'path' | 'queueFull' | 'locked';
       blockerId: string | null;
     }
-  | { type: 'vehicleExited'; vehicleId: string; slotIndex: number; path: Array<[number, number]> }
+  /**
+   * `path`: Zellen vor der Kopfzelle bis zur letzten Zelle im Raster (bei `movement.model = turns` ein
+   * zusammenhaengender Linienzug mit Knicken). `exitDir`: Richtung beim Verlassen des Rasters, nur gesetzt,
+   * wenn sie von `dir` des Fahrzeugs abweicht (Abbiegepfeile, siehe docs/adr/0002-einbahn-und-abbiegen.md).
+   */
+  | {
+      type: 'vehicleExited';
+      vehicleId: string;
+      slotIndex: number;
+      path: Array<[number, number]>;
+      exitDir?: Dir;
+    }
   | { type: 'vehicleUnlocked'; vehicleId: string }
   /** Mystery-Fahrzeug aufgedeckt (Weg frei); `color` = nun sichtbare Farbe. */
   | { type: 'vehicleRevealed'; vehicleId: string; color: ColorId }
@@ -134,6 +145,10 @@ export interface LevelIssue {
     | 'unknownKey'
     | 'keyCycle'
     | 'mysteryDisabled'
+    /** `oneWay`-Zelle, aber Regeln ohne `special.oneWay` oder mit `movement.model` != `turns`. */
+    | 'oneWayDisabled'
+    /** `oneWay`-Zelle ohne `dir`, oder ein Weg ueber Pfeilzellen bildet eine Schleife. */
+    | 'oneWayInvalid'
     | 'unsupportedRule';
   message: string;
   vehicleId?: string;

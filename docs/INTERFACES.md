@@ -57,13 +57,21 @@ nextRandom(rng: number): [value: number, next: number]   // value in [0, 1)
    - Aufdecken ist dauerhaftes Wissen: Undo stellt den Snapshot wieder her, verdeckt aber nichts erneut (`hidden` nach Undo = `hidden` im Snapshot **und** `hidden` jetzt).
    - Level ohne Mystery-Fahrzeuge: alle `hidden = false`, Verhalten und Event-Ströme unverändert.
 
+9. **Abbiegepfeile** (Zellen `{ type: "oneWay", dir }`, nur mit `special.oneWay` und `movement.model = turns`; Entscheidung: [ADR 0002](adr/0002-einbahn-und-abbiegen.md)):
+   - Kein Fahrzeug steht auf einer Pfeilzelle (`overlap`). Pfeile sind kein Hindernis, sie lenken um.
+   - Ausfahrweg (`exitPath` in `src/engine/geometry.ts`): ab der Kopfzelle in Richtung `d` Zelle für Zelle bis aus dem Raster. Betritt das Fahrzeug eine Pfeilzelle mit Richtung `p`: `p = d` oder quer zu `d` → `d := p` (geradeaus bzw. abbiegen); `p` entgegen `d` → Falschfahrt, die Zelle ist für dieses Fahrzeug ein Hindernis wie ein Poller. Die Richtung ändert sich nur auf Pfeilzellen. Ohne Pfeilzellen ist der Weg genau der gerade Weg.
+   - Antippen, Mystery-Aufdecken, `legalMoves` und Hupe nutzen diesen Weg. Blockiert: geparktes Fahrzeug, `fixed`-Zelle oder Falschfahrt-Pfeil auf dem Weg (`vehicleBlocked` `reason: path`, `blockerId` = Fahrzeug oder `null`).
+   - Hupe: erstes Hindernis auf dem gebogenen Weg; ist es ein Falschfahrt-Pfeil → `invalidAction` `wrongWay` (Prüfreihenfolge direkt nach `blockedByBollard`). Beim Ausweichen gelten Pfeilzellen als belegt.
+   - Fahrzeuge folgen dem Weg wie ein Zug; die Länge spielt beim Abbiegen keine Rolle. Jede Lösung braucht weiter einen Zug je Fahrzeug.
+   - `movement.model = turns` ohne Pfeilzellen verhält sich exakt wie `straight`.
+
 ## Nicht unterstützte Regeln
 
-`createGame` liefert `LevelIssue` `unsupportedRule` für: `movement.model ≠ straight`, `movement.exits ≠ edges`, `movement.reversible`, `passengers.order ≠ strict`, `passengers.boardPolicy ≠ firstMatch`, `passengers.mysteryRate > 0`, `vehicles.dualColor`, `vehicles.departOnFull = false`, `special.oneWay|barriers`. Unterstützt: `special.fixed` (Zellen `fixed`), `special.keyVehicles` (`locked`/`keyId`) und `special.mysteryVehicles` (`mystery`).
+`createGame` liefert `LevelIssue` `unsupportedRule` für: `movement.model = pathfinding`, `movement.exits ≠ edges`, `movement.reversible`, `passengers.order ≠ strict`, `passengers.boardPolicy ≠ firstMatch`, `passengers.mysteryRate > 0`, `vehicles.dualColor`, `vehicles.departOnFull = false`, `special.barriers`, Zellen `barrier` und `gate`. Unterstützt: `special.fixed` (Zellen `fixed`), `special.keyVehicles` (`locked`/`keyId`), `special.mysteryVehicles` (`mystery`) sowie `movement.model = turns` mit `special.oneWay` (Zellen `oneWay`).
 
 ## Level-Validierung (`validateLevel`)
 
-Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen außerhalb des Rasters, Überlappungen (Fahrzeug/Fahrzeug, Fahrzeug/`fixed`), doppelte IDs, Fahrgäste je Farbe ≠ Kapazität je Farbe (außer `meta.allowSurplus`, dann ≤), `keyId` unbekannt, Schlüsselzyklen, `locked` ohne `keyId`, `mysteryDisabled` (Fahrzeug mit `mystery: true`, aber `special.mysteryVehicles = false`; je Fahrzeug, mit `vehicleId`), nicht unterstützte Regeln.
+Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen außerhalb des Rasters, Überlappungen (Fahrzeug/Fahrzeug, Fahrzeug/`fixed`), doppelte IDs, Fahrgäste je Farbe ≠ Kapazität je Farbe (außer `meta.allowSurplus`, dann ≤), `keyId` unbekannt, Schlüsselzyklen, `locked` ohne `keyId`, `mysteryDisabled` (Fahrzeug mit `mystery: true`, aber `special.mysteryVehicles = false`; je Fahrzeug, mit `vehicleId`), `oneWayDisabled` (Zelle `oneWay`, aber nicht `special.oneWay` und `movement.model = turns`), `oneWayInvalid` (Zelle `oneWay` ohne `dir`, oder ein Ausfahrweg betritt eine Zelle zweimal in gleicher Richtung: Pfeil-Schleife), Fahrzeug auf Pfeilzelle (`overlap`), nicht unterstützte Regeln.
 
 ## Renderer-Vertrag
 
@@ -75,9 +83,10 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 ## Details zu Events und Zustand
 
 - `vehicleExited.path`: Zellen **vor** der Kopfzelle bis zur letzten Zelle im Raster (ohne Kopfzelle; leer, wenn der Kopf schon am Rand steht).
+- `vehicleExited.exitDir` (optional): Richtung, in der das Fahrzeug das Raster verlässt; nur gesetzt, wenn sie von seiner Blickrichtung abweicht (Abbiegepfeile). Gerade Wege: Feld fehlt, Event-Ströme bitgleich. `path` ist dann ein Linienzug orthogonal benachbarter Zellen.
 - `passengersShuffled.to` ist exklusiv.
 - `invalidAction.vehicleId` (optional): das in der Aktion genannte Fahrzeug, wenn es eins gibt (bei `tapVehicle` und `honk`, auch `unknownVehicle` traegt die genannte ID); der Renderer laesst ein vorhandenes Fahrzeug wackeln.
-- `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `noTarget`, `notBlocked`, `blockedByBollard`, `blockerLocked`, `cannotYield`.
+- `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `noTarget`, `notBlocked`, `blockedByBollard`, `wrongWay`, `blockerLocked`, `cannotYield`.
 - `vehicleRevealed`: `vehicleId` = aufgedecktes Mystery-Fahrzeug, `color` = seine Farbe (siehe Spielregeln 8).
 - `hashState` enthält `hidden` nicht: Verdecken ändert die Mechanik nicht, und der Solver soll Zustände, die sich nur darin unterscheiden, nicht doppelt durchsuchen. Hashes von Leveln ohne Mystery-Fahrzeuge bleiben bitgleich.
 - `vehicleYielded`: `vehicleId` = ausweichender Blocker, `byVehicleId` = hupendes Fahrzeug, `from`/`to` = Kopfzelle vorher/nachher.
@@ -100,6 +109,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
   `json`, `schema`, `unknownRuleset`, `invalidLevel` (`validateLevel` meldet Probleme). Das dekodierte Level hat
   `id = "shared"`, Titel `t` oder `SHARED_DEFAULT_TITLE`, `meta.author = a`.
 - Loesbarkeit prueft der Aufrufer per `SolverPort.analyze` (Worker). Ungepruefte Codes (`u`) werden trotzdem gespielt, mit Hinweis.
+- Abbiegepfeile brauchen keine Formatänderung: Zellen `[x, y, "oneWay", dir]` sind schon Teil von `c`.
 - Texte aus geteilten Leveln nur per `textContent`, nie als HTML.
 - Round-Trip-Garantie: `decodeLevel(encodeLevel(L))` ergibt ein Level, das mit `L` bis auf Fahrzeug-IDs, `id`, `seed`, `meta` (ausser `author`) und `mystery: false` (entfaellt) uebereinstimmt;
   `hashState(createGame(...))` ist nach Umbenennung der IDs gleich.
@@ -141,3 +151,6 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
   Mystery (nur mit `special.mysteryVehicles`, sonst wirft `generate`): `mystery` (Zahl oder `[min, max]`, Default 0),
   `mysteryMinBlindWin` (Default 0.25), `mysteryPlayouts` (Default 64). `GenerateResult.mystery` (`MysteryInfo`:
   `ids`, `blindWin`, `informedWin`, `fair`) fehlt ohne Mystery-Fahrzeuge. Ohne `mystery` bleibt die Ausgabe bitgleich.
+  Abbiegepfeile (nur mit `special.oneWay` und `movement.model = turns`, sonst wirft `generate`; nicht mit `requireHonk`): `oneWay` (Zahl oder
+  `[min, max]` Pfeile, Default 0), `oneWayStreets` (Länge der Pfeil-Straßenstücke, Default 1), `maxTurns` (Knicke je Weg, Default unbegrenzt).
+  Ohne `oneWay` bleibt die Ausgabe bitgleich.
