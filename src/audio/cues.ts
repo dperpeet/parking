@@ -3,6 +3,7 @@ import type { GameEvent } from '../engine/types';
 
 export type CueId =
   | 'exit'
+  | 'exitTurn'
   | 'bump'
   | 'board'
   | 'depart'
@@ -27,7 +28,8 @@ const cue = (id: CueId, step = 0): Cue => ({ id, step });
 export function cueFor(event: GameEvent): Cue | null {
   switch (event.type) {
     case 'vehicleExited':
-      return cue('exit');
+      // Abbiegen (Abbiegepfeile): eigener Klang; gerade Ausfahrten klingen wie bisher.
+      return cue(event.exitDir === undefined ? 'exit' : 'exitTurn');
     case 'vehicleBlocked':
     case 'invalidAction':
       return cue('bump');

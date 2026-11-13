@@ -38,6 +38,8 @@ const C6 = 1046.5;
 
 export const RECIPES = {
   exit: [tone('triangle', 220, 520, 0, 0.18, 0.35)],
+  // Ausfahrt mit Knick: derselbe Anlauf, dazu ein kurzes Reifenquietschen in der Kurve.
+  exitTurn: [tone('triangle', 220, 520, 0, 0.18, 0.35), tone('sine', 1400, 1100, 0.1, 0.08, 0.12)],
   bump: [tone('square', 150, 90, 0, 0.09, 0.18)],
   board: [tone('sine', 660, 880, 0, 0.07, 0.3)],
   depart: [tone('sawtooth', 110, 260, 0, 0.35, 0.14), tone('triangle', 220, 520, 0, 0.35, 0.2)],
