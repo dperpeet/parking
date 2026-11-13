@@ -1,0 +1,6 @@
+{
+  "world": 99,
+  "name": { "de": "E2E", "en": "E2E" },
+  "levels": ["mystery"],
+  "intros": { "mystery": "mystery" }
+}
