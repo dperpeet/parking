@@ -79,6 +79,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Er berechnet keine Spiellogik; Eingaben werden als `Action` an den Game-Controller (`src/app`) gegeben.
 - Farben/Symbole/Tokens nur aus `src/render/theme.ts`.
 - Verdeckte Mystery-Fahrzeuge (`hidden = true`) zeichnet der Renderer mit `THEME.mysteryFill`, Schraffur `THEME.mysteryStripe` und Symbol `THEME.mysteryGlyph` (`?`, Farbe `THEME.mysteryInk`), nie mit Palettenfarbe oder -symbol. `vehicleRevealed` spielt er als kurzes Aufdecken ab (bei reduzierter Bewegung sofort). DOM- und Screenreader-Texte nennen die Farbe eines verdeckten Fahrzeugs nie.
+- Abbiegepfeile (Zellen `oneWay`) zeichnet der Renderer als Fahrbahnfläche `THEME.oneWayRoad` mit Blockpfeil `THEME.oneWayArrow` (Kontur `THEME.outline`) in Richtung `dir`. `vehicleExited` mit `exitDir` spielt er entlang `path` ab (Kopf vorn, Drehung an den Knicken, danach in `exitDir` hinaus); ohne `exitDir` wie bisher geradeaus. Er wertet keine Pfeile aus. Screenreader-Texte beschreiben Pfeilzellen („Einbahn nach oben“).
 
 ## Details zu Events und Zustand
 
