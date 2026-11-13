@@ -4,7 +4,10 @@ import type { PowerUpOutcome } from './types';
 export function applyUndo(s: GameState, events: GameEvent[]): PowerUpOutcome {
   const snapshot = s.history[s.history.length - 1];
   if (!snapshot) return { ok: false, reason: 'noHistory' };
-  s.vehicles = snapshot.vehicles;
+  // Aufgedeckte Mystery-Fahrzeuge bleiben aufgedeckt (hidden = im Snapshot und jetzt verdeckt).
+  s.vehicles = snapshot.vehicles.map((v, i) =>
+    v.hidden && !s.vehicles[i]!.hidden ? { ...v, hidden: false } : v,
+  );
   // Per Power-Up hinzugefuegte oder entsperrte Slots bleiben erhalten (Undo nimmt nur Zuege zurueck).
   const slots = snapshot.slots.map((sl, i) =>
     sl.kind === 'locked' && s.slots[i]?.kind !== 'locked' ? { kind: 'empty' as const } : sl,

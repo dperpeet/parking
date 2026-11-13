@@ -17,7 +17,7 @@ export function rulesWith(overrides: RulesetOverrides = {}): ResolvedRules {
   return resolveRules(classic, overrides);
 }
 
-type VehicleExtras = Pick<LevelVehicle, 'locked' | 'keyId'>;
+type VehicleExtras = Pick<LevelVehicle, 'locked' | 'keyId' | 'mystery'>;
 
 /** Fahrzeug-Kurzform: Kopf (x, y), Blickrichtung, Typ (s/m/l), Farbe. */
 export function v(

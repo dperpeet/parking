@@ -27,7 +27,11 @@ function cyrb53(text: string): number {
   return (HI_MASK & h2) * LO_RANGE + (h1 >>> 0);
 }
 
-/** Kanonischer Hash ohne history, powerUps und rng. */
+/**
+ * Kanonischer Hash ohne history, powerUps, rng und hidden. `hidden` (Mystery-Fahrzeuge) ist reine
+ * Darstellung: Es aendert keine Mechanik, und der Solver soll Zustaende, die sich nur darin
+ * unterscheiden, nicht getrennt durchsuchen.
+ */
 export function hashState(state: GameState): string {
   const canonical = JSON.stringify([
     state.levelId,

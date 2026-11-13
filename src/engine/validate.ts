@@ -27,7 +27,6 @@ function unsupportedRules(level: Level, rules: ResolvedRules): LevelIssue[] {
   if (!rules.vehicles.departOnFull) issues.push(unsupported('vehicles.departOnFull=false'));
   if (rules.special.oneWay) issues.push(unsupported('special.oneWay'));
   if (rules.special.barriers) issues.push(unsupported('special.barriers'));
-  if (rules.special.mysteryVehicles) issues.push(unsupported('special.mysteryVehicles'));
   for (const c of level.grid.cells) {
     if (c.type === 'oneWay' || c.type === 'barrier') {
       issues.push(unsupported(`Zelltyp "${c.type}" bei ${c.x},${c.y}`));
@@ -167,11 +166,24 @@ function keyIssues(level: Level): LevelIssue[] {
   return issues;
 }
 
+/** Mystery-Fahrzeuge nur, wenn das Ruleset sie einsetzt. */
+function mysteryIssues(level: Level, rules: ResolvedRules): LevelIssue[] {
+  if (rules.special.mysteryVehicles) return [];
+  return level.vehicles
+    .filter((v) => v.mystery === true)
+    .map((v) => ({
+      code: 'mysteryDisabled' as const,
+      message: `Fahrzeug ${v.id} ist ein Mystery-Fahrzeug, special.mysteryVehicles ist aus`,
+      vehicleId: v.id,
+    }));
+}
+
 export function validateLevel(level: Level, rules: ResolvedRules): LevelIssue[] {
   return [
     ...vehicleIssues(level, rules),
     ...passengerIssues(level, rules),
     ...keyIssues(level),
+    ...mysteryIssues(level, rules),
     ...unsupportedRules(level, rules),
   ];
 }
