@@ -1,0 +1,134 @@
+{
+  "schema": "parking.level/1",
+  "id": "w4-10",
+  "title": {
+    "de": "Level 10",
+    "en": "Level 10"
+  },
+  "seed": 715339819,
+  "ruleset": "world4",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 5,
+        "y": 0,
+        "type": "fixed"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [5, 1],
+      "dir": "E",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v2",
+      "pos": [3, 1],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v3",
+      "pos": [5, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v4",
+      "pos": [4, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "green",
+      "locked": true,
+      "keyId": "v3"
+    },
+    {
+      "id": "v5",
+      "pos": [4, 3],
+      "dir": "S",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v7",
+      "pos": [0, 1],
+      "dir": "N",
+      "type": "l",
+      "color": "yellow",
+      "mystery": true
+    },
+    {
+      "id": "v8",
+      "pos": [1, 3],
+      "dir": "W",
+      "type": "m",
+      "color": "yellow",
+      "mystery": true
+    },
+    {
+      "id": "v9",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "orange",
+      "locked": true,
+      "keyId": "v1"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "yellow",
+    "yellow",
+    "green",
+    "green",
+    "green",
+    "blue",
+    "blue",
+    "blue",
+    "orange",
+    "orange",
+    "yellow",
+    "green",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "orange",
+    "orange",
+    "yellow"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 9
+    },
+    "difficulty": 4.7,
+    "solverVersion": "1.0"
+  }
+}
