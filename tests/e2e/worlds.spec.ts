@@ -3,6 +3,7 @@ import level005 from '../../src/content/levels/pack-02/005.json' with { type: 'j
 import world1 from '../../src/content/levels/pack-01/index.json' with { type: 'json' };
 import world2 from '../../src/content/levels/pack-02/index.json' with { type: 'json' };
 import world3 from '../../src/content/levels/pack-03/index.json' with { type: 'json' };
+import world4 from '../../src/content/levels/pack-04/index.json' with { type: 'json' };
 import { completedSave, seedSave, tapAll } from './support';
 
 /** Spielstand, in dem alle Level von Welt 1 geschafft sind. */
@@ -175,4 +176,51 @@ test('Welt 4 ist nach Welt 3 offen, Intro-Karte Mystery erscheint vor Level 1', 
   await page.getByTestId('intro-start').click();
   await expect(intro).toHaveCount(0);
   await expect(page.getByTestId('vehicle-v1')).toBeVisible();
+});
+
+test('Welt 5 bleibt gesperrt, bis alle 24 Level von Welt 4 geschafft sind', async ({ page }) => {
+  await seedSave(
+    page,
+    completedSave({
+      '01': world1.levels,
+      '02': world2.levels,
+      '03': world3.levels,
+      '04': world4.levels.slice(0, -1),
+    }),
+  );
+  await page.goto('/');
+  const world5 = page.getByTestId('world-5');
+  await expect(world5).toBeVisible();
+  await expect(world5).toHaveAttribute('data-state', 'locked');
+  await expect(world5).toContainText('Welt 5');
+  await expect(world5).toContainText('Einbahn');
+  await expect(page.getByTestId('world-hint-5')).toHaveText('Schaffe alle Level von Welt 4');
+  await expect(page.getByTestId('tile-5-1')).toHaveCount(0);
+});
+
+test('Welt 5 ist nach Welt 4 offen, Intro-Karte Abbiegepfeile erscheint vor Level 1', async ({
+  page,
+}) => {
+  expect(world4.levels).toHaveLength(24);
+  await seedSave(
+    page,
+    completedSave({
+      '01': world1.levels,
+      '02': world2.levels,
+      '03': world3.levels,
+      '04': world4.levels,
+    }),
+  );
+  await page.goto('/');
+  await expect(page.getByTestId('world-5')).toHaveAttribute('data-state', 'open');
+  await expect(page.getByTestId('world-stars-5')).toBeVisible();
+  await expect(page.getByTestId('tile-5-1')).toBeEnabled();
+  await expect(page.getByTestId('tile-5-2')).toBeDisabled();
+  await page.getByTestId('tile-5-1').click();
+  const intro = page.getByTestId('intro-dialog');
+  await expect(intro).toHaveAttribute('data-mechanic', 'oneWay');
+  await page.getByTestId('intro-start').click();
+  await expect(intro).toHaveCount(0);
+  await expect(page.getByTestId('vehicle-v1')).toBeVisible();
+  await expect(page.getByTestId('arrow-note')).toContainText('Einbahn');
 });
