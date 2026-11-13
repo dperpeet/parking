@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import classic from '../../src/content/rulesets/classic.json';
 import world2 from '../../src/content/rulesets/world2.json';
 import world3 from '../../src/content/rulesets/world3.json';
+import world4 from '../../src/content/rulesets/world4.json';
 import { validateLevel } from '../../src/engine';
 import { Level, PackIndex, Ruleset, resolveRules } from '../../src/schema';
 import { analyze } from '../../src/solver/analyze';
@@ -12,7 +13,7 @@ import type { LevelAnalysis } from '../../src/solver/types';
 const ROOT = 'src/content/levels';
 /** Level dieses Rulesets sind nur mit Hupe loesbar. */
 const HONK_RULESET = 'world3';
-const RULESETS = new Map([classic, world2, world3].map((r) => [r.id, Ruleset.parse(r)]));
+const RULESETS = new Map([classic, world2, world3, world4].map((r) => [r.id, Ruleset.parse(r)]));
 
 function rulesetOf(level: Level): Ruleset {
   const ruleset = RULESETS.get(level.ruleset);

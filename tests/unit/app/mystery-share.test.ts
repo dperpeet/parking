@@ -1,25 +1,21 @@
 import { deflateSync, inflateSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
+import { loadRulesets } from '../../../src/app/editor-rulesets';
 import { decodeLevel, encodeLevel } from '../../../src/app/share';
 import type { EncodeOptions, RulesLookup } from '../../../src/app/share';
 import { createGame } from '../../../src/engine';
 import { SHARE_PREFIX, resolveRules } from '../../../src/schema';
-import type { Level, Ruleset, ShareError } from '../../../src/schema';
+import type { Level, ShareError } from '../../../src/schema';
 import {
   classicRuleset as classic,
   level as level007,
   world2Ruleset as world2,
   world3Ruleset as world3,
+  world4Ruleset as world4,
 } from '../helpers';
 import fixtures from './fixtures/share-codes-v1.json';
 
-/** Test-Ruleset mit Mystery-Fahrzeugen (die Welt-4-Datei kommt spaeter). */
-const mysteryRuleset: Ruleset = {
-  ...world2,
-  id: 'mystery-test',
-  special: { ...world2.special, mysteryVehicles: true },
-};
-const RULESETS = new Map([classic, world2, world3, mysteryRuleset].map((r) => [r.id, r]));
+const RULESETS = new Map([classic, world2, world3, world4].map((r) => [r.id, r]));
 const lookup: RulesLookup = (id, overrides) => {
   const ruleset = RULESETS.get(id);
   return ruleset ? resolveRules(ruleset, overrides) : null;
@@ -41,7 +37,7 @@ const errorOf = (code: string): ShareError | 'ok' => {
 
 const mysteryLevel: Level = {
   ...level007,
-  ruleset: mysteryRuleset.id,
+  ruleset: world4.id,
   vehicles: level007.vehicles.map((v, i) => (i === 1 || i === 3 ? { ...v, mystery: true } : v)),
 };
 
@@ -86,7 +82,7 @@ describe('Share-Format: Mystery-Fahrzeuge', () => {
     expect(enc).toEqual(encodeLevel(level007, { unchecked: false }));
   });
 
-  const base = { r: mysteryRuleset.id, g: [4, 4], k: ['blue'], p: [0, 0, 0, 0] };
+  const base = { r: world4.id, g: [4, 4], k: ['blue'], p: [0, 0, 0, 0] };
   const v = [
     [1, 0, 'E', 's', 'blue'],
     [1, 2, 'E', 's', 'blue'],
@@ -108,5 +104,16 @@ describe('Share-Format: Mystery-Fahrzeuge', () => {
 
   it('meldet invalidLevel, wenn das Ruleset keine Mystery-Fahrzeuge kennt', () => {
     expect(errorOf(codeOf({ ...base, r: 'world2', v, m: [0] }))).toBe('invalidLevel');
+  });
+});
+
+describe('world4 (Welt 4, Mystery)', () => {
+  it('steht im Editor-Rulesetmenue und erlaubt Mystery-Fahrzeuge', () => {
+    const editor = loadRulesets().find((r) => r.id === 'world4');
+    expect(editor).toEqual(world4);
+    expect(world4.special.mysteryVehicles).toBe(true);
+    expect({ ...world4.special, mysteryVehicles: false }).toEqual(world2.special);
+    expect(world4.powerups).toEqual(world2.powerups);
+    expect(world4.scoring).toEqual(world2.scoring);
   });
 });
