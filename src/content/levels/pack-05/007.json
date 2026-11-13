@@ -1,0 +1,134 @@
+{
+  "schema": "parking.level/1",
+  "id": "w5-07",
+  "title": {
+    "de": "Level 7",
+    "en": "Level 7"
+  },
+  "seed": 2519280359,
+  "ruleset": "world5",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 5,
+    "height": 5,
+    "cells": [
+      {
+        "x": 4,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 4,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "S"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "N"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [4, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v2",
+      "pos": [0, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [3, 1],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v4",
+      "pos": [0, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v5",
+      "pos": [0, 0],
+      "dir": "W",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v6",
+      "pos": [4, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 2],
+      "dir": "E",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v8",
+      "pos": [1, 4],
+      "dir": "W",
+      "type": "m",
+      "color": "orange"
+    }
+  ],
+  "passengers": [
+    "green",
+    "green",
+    "green",
+    "yellow",
+    "yellow",
+    "blue",
+    "green",
+    "blue",
+    "green",
+    "green",
+    "blue",
+    "green",
+    "blue",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "orange",
+    "orange",
+    "orange"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 4,
+    "solverVersion": "1.0"
+  }
+}

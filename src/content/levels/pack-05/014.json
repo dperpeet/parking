@@ -1,0 +1,158 @@
+{
+  "schema": "parking.level/1",
+  "id": "w5-14",
+  "title": {
+    "de": "Level 14",
+    "en": "Level 14"
+  },
+  "seed": 997063987,
+  "ruleset": "world5",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 5,
+        "y": 2,
+        "type": "fixed"
+      },
+      {
+        "x": 4,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "N"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "N"
+      },
+      {
+        "x": 5,
+        "y": 5,
+        "type": "oneWay",
+        "dir": "E"
+      },
+      {
+        "x": 3,
+        "y": 3,
+        "type": "oneWay",
+        "dir": "E"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [5, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "pink"
+    },
+    {
+      "id": "v2",
+      "pos": [2, 0],
+      "dir": "E",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 3],
+      "dir": "W",
+      "type": "s",
+      "color": "blue"
+    },
+    {
+      "id": "v4",
+      "pos": [5, 1],
+      "dir": "E",
+      "type": "m",
+      "color": "blue"
+    },
+    {
+      "id": "v5",
+      "pos": [0, 5],
+      "dir": "W",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v6",
+      "pos": [0, 0],
+      "dir": "N",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v7",
+      "pos": [4, 5],
+      "dir": "S",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v8",
+      "pos": [1, 2],
+      "dir": "W",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v9",
+      "pos": [0, 4],
+      "dir": "W",
+      "type": "l",
+      "color": "green",
+      "locked": true,
+      "keyId": "v6"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "pink",
+    "green",
+    "green",
+    "blue",
+    "yellow",
+    "blue",
+    "blue",
+    "yellow",
+    "orange",
+    "pink",
+    "blue",
+    "blue",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "green",
+    "green",
+    "yellow",
+    "yellow",
+    "green",
+    "green",
+    "yellow",
+    "green",
+    "green",
+    "yellow",
+    "green"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 9
+    },
+    "difficulty": 5.2,
+    "solverVersion": "1.0"
+  }
+}

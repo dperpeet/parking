@@ -1,0 +1,141 @@
+{
+  "schema": "parking.level/1",
+  "id": "w5-09",
+  "title": {
+    "de": "Level 9",
+    "en": "Level 9"
+  },
+  "seed": 3753943763,
+  "ruleset": "world5",
+  "overrides": {
+    "queue": {
+      "slots": 5
+    },
+    "passengers": {
+      "visible": 8
+    }
+  },
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "cells": [
+      {
+        "x": 0,
+        "y": 3,
+        "type": "fixed"
+      },
+      {
+        "x": 2,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "W"
+      },
+      {
+        "x": 3,
+        "y": 2,
+        "type": "oneWay",
+        "dir": "W"
+      },
+      {
+        "x": 3,
+        "y": 4,
+        "type": "oneWay",
+        "dir": "S"
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "v1",
+      "pos": [0, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "orange"
+    },
+    {
+      "id": "v2",
+      "pos": [4, 0],
+      "dir": "N",
+      "type": "m",
+      "color": "green"
+    },
+    {
+      "id": "v3",
+      "pos": [0, 2],
+      "dir": "W",
+      "type": "s",
+      "color": "blue",
+      "locked": true,
+      "keyId": "v2"
+    },
+    {
+      "id": "v4",
+      "pos": [4, 3],
+      "dir": "N",
+      "type": "s",
+      "color": "green"
+    },
+    {
+      "id": "v5",
+      "pos": [5, 5],
+      "dir": "E",
+      "type": "m",
+      "color": "orange"
+    },
+    {
+      "id": "v6",
+      "pos": [5, 3],
+      "dir": "S",
+      "type": "m",
+      "color": "yellow"
+    },
+    {
+      "id": "v7",
+      "pos": [1, 5],
+      "dir": "S",
+      "type": "s",
+      "color": "yellow"
+    },
+    {
+      "id": "v8",
+      "pos": [2, 3],
+      "dir": "S",
+      "type": "m",
+      "color": "green"
+    }
+  ],
+  "passengers": [
+    "blue",
+    "orange",
+    "green",
+    "orange",
+    "blue",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "yellow",
+    "green",
+    "yellow",
+    "green",
+    "green",
+    "green",
+    "orange",
+    "green",
+    "orange",
+    "orange",
+    "green"
+  ],
+  "meta": {
+    "author": "generator",
+    "par": {
+      "moves": 8
+    },
+    "difficulty": 4.4,
+    "solverVersion": "1.0"
+  }
+}
