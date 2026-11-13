@@ -70,6 +70,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Der Renderer bekommt `GameState` zum Aufbau und spielt danach nur `GameEvent[]` ab (Animationen in Event-Reihenfolge).
 - Er berechnet keine Spiellogik; Eingaben werden als `Action` an den Game-Controller (`src/app`) gegeben.
 - Farben/Symbole/Tokens nur aus `src/render/theme.ts`.
+- Verdeckte Mystery-Fahrzeuge (`hidden = true`) zeichnet der Renderer mit `THEME.mysteryFill`, Schraffur `THEME.mysteryStripe` und Symbol `THEME.mysteryGlyph` (`?`, Farbe `THEME.mysteryInk`), nie mit Palettenfarbe oder -symbol. `vehicleRevealed` spielt er als kurzes Aufdecken ab (bei reduzierter Bewegung sofort). DOM- und Screenreader-Texte nennen die Farbe eines verdeckten Fahrzeugs nie.
 
 ## Details zu Events und Zustand
 
