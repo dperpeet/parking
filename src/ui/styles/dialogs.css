@@ -259,6 +259,21 @@
     var(--t-mystery-fill);
 }
 
+/* Abbiegepfeil: flache Fahrbahnkachel ohne Schatten mit weissem Blockpfeil (wie auf dem Brett) */
+.art-road {
+  width: 48px;
+  height: 48px;
+  background: var(--t-one-way-road);
+  border-radius: 8px;
+}
+
+.art-road-arrow {
+  fill: var(--t-one-way-arrow);
+  stroke: var(--t-outline);
+  stroke-width: var(--t-outline-w);
+  stroke-linejoin: round;
+}
+
 .art-post {
   width: 40px;
   height: 40px;

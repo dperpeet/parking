@@ -124,10 +124,26 @@ export function hintAnnouncement(
 const HONK_ERROR_KEYS: Record<string, StringKey> = {
   notBlocked: 'honkErrNotBlocked',
   blockedByBollard: 'honkErrBollard',
+  wrongWay: 'honkErrWrongWay',
   blockerLocked: 'honkErrBlockerLocked',
   cannotYield: 'honkErrCannotYield',
   noTarget: 'honkErrNoTarget',
 };
+
+/** Screenreader-Text einer Pfeilzelle: "Reihe 2, Spalte 5: Einbahn nach oben". */
+export function oneWayCellText(x: number, y: number, dir: Dir): string {
+  return t('oneWayCell', { row: y + 1, col: x + 1, dir: t(DIR_KEYS[dir]) });
+}
+
+/** Beschreibung aller Abbiegepfeile des Bretts (zeilenweise); null, wenn es keine gibt. */
+export function oneWayNote(cells: GameState['grid']['cells']): string | null {
+  const arrows = cells
+    .flatMap((c) => (c.type === 'oneWay' && c.dir !== undefined ? [{ ...c, dir: c.dir }] : []))
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  if (arrows.length === 0) return null;
+  const list = arrows.map((c) => oneWayCellText(c.x, c.y, c.dir)).join('; ');
+  return t('oneWayNote', { list });
+}
 
 /** Verstaendliche Meldung zu einem abgelehnten Hupen (null: kein Hupen-Grund). */
 export function honkErrorText(reason: string): string | null {

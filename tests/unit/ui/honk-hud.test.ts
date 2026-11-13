@@ -248,6 +248,7 @@ describe('Meldungen', () => {
       de: {
         notBlocked: 'Das Auto kann doch fahren!',
         blockedByBollard: 'Der Poller bleibt stehen.',
+        wrongWay: 'Gegen die Einbahn kommt keiner weiter.',
         blockerLocked: 'Das Auto davor ist abgeschlossen.',
         cannotYield: 'Hier hilft Hupen nicht.',
         noTarget: 'Tippe ein Auto an.',
@@ -255,6 +256,7 @@ describe('Meldungen', () => {
       en: {
         notBlocked: 'This car can already drive!',
         blockedByBollard: 'The post won’t move.',
+        wrongWay: 'No way through against a one-way.',
         blockerLocked: 'The car in front is locked.',
         cannotYield: 'Honking won’t help here.',
         noTarget: 'Tap a car.',
@@ -275,6 +277,7 @@ describe('Meldungen', () => {
       for (const reason of [
         'notBlocked',
         'blockedByBollard',
+        'wrongWay',
         'blockerLocked',
         'cannotYield',
         'noTarget',
