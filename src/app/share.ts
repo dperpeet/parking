@@ -129,6 +129,8 @@ export function encodeLevel(level: Level, opts: EncodeOptions): EncodeResult {
   };
   if (level.overrides) payload.o = level.overrides;
   if (level.grid.cells.length > 0) payload.c = level.grid.cells.map(toShareCell);
+  const mystery = level.vehicles.flatMap((v, i) => (v.mystery ? [i] : []));
+  if (mystery.length > 0) payload.m = mystery;
   const title = clipText(opts.title);
   const author = clipText(opts.author);
   if (title) payload.t = title;
@@ -160,8 +162,15 @@ function parseJson(bytes: Uint8Array): unknown {
   }
 }
 
+/** `m` muss streng aufsteigend sein und auf vorhandene Fahrzeuge zeigen. */
+function validMystery(s: ShareLevel): boolean {
+  const m = s.m ?? [];
+  return m.every((i, n) => i < s.v.length && (n === 0 || i > (m[n - 1] ?? i)));
+}
+
 function buildLevel(s: ShareLevel): Level {
   const ids = s.v.map((_, i) => `v${i + 1}`);
+  const mystery = new Set(s.m ?? []);
   const vehicles: LevelVehicle[] = s.v.map((v, i) => {
     const out: LevelVehicle = {
       id: ids[i] ?? '',
@@ -175,6 +184,7 @@ function buildLevel(s: ShareLevel): Level {
       out.locked = true;
       out.keyId = `v${key + 1}`;
     }
+    if (mystery.has(i)) out.mystery = true;
     return out;
   });
   const cells: Cell[] = (s.c ?? []).map((c) => {
@@ -214,7 +224,7 @@ export function decodeLevel(code: string, rulesOf: RulesLookup): DecodeResult {
   const parsed = ShareLevel.safeParse(raw);
   if (!parsed.success) return fail('schema');
   const share = parsed.data;
-  if (share.p.some((i) => i >= share.k.length)) return fail('schema');
+  if (share.p.some((i) => i >= share.k.length) || !validMystery(share)) return fail('schema');
 
   let rules: ResolvedRules | null;
   try {
