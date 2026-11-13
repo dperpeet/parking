@@ -25,6 +25,11 @@ export const LevelVehicle = z.object({
   /** Gesperrt, bis das Fahrzeug `keyId` das Spielfeld verlassen hat. */
   locked: z.boolean().optional(),
   keyId: z.string().optional(),
+  /**
+   * Mystery-Fahrzeug: Farbe verdeckt, bis der Weg zum Rand frei ist (nur mit special.mysteryVehicles).
+   * Reine Darstellung, die Mechanik bleibt unveraendert.
+   */
+  mystery: z.boolean().optional(),
 });
 export type LevelVehicle = z.infer<typeof LevelVehicle>;
 

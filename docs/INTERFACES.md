@@ -51,14 +51,19 @@ nextRandom(rng: number): [value: number, next: number]   // value in [0, 1)
      - Erlaubt auch im Zustand `lost` mit `loseReason = noMoves` (setzt auf `playing` zurueck und bewertet neu); bei anderen Niederlagen → `gameLost`.
        Jede erfolgreiche Nutzung: Zähler − 1, `powerUpsUsed + 1`, Event `powerUpUsed`.
 7. Aktionen im Zustand `won` bzw. `lost` (außer Undo bei `lost`) → `invalidAction`.
+8. **Mystery-Fahrzeuge** (Level-Fahrzeug `mystery: true`, nur mit `special.mysteryVehicles`): Die Farbe ist verdeckt (`VehicleState.hidden = true`), bis das Fahrzeug `parked` ist und sein Weg frei ist (gleiche Wegprüfung wie beim Antippen: Kopfzelle in Blickrichtung bis zum Rand ohne `parked`-Fahrzeuge und `fixed`-Zellen; das Schloss ist egal). `color` steht trotzdem im Zustand (die Engine kennt alles, Verdecken ist reine Darstellung); Antippen, Einsteigen und Hupe ignorieren `hidden`. Folge: Ein verdecktes Fahrzeug ist nie antippbar.
+   - `createGame`: Mystery-Fahrzeuge mit schon freiem Weg starten aufgedeckt (ohne Event), alle anderen verdeckt.
+   - Nach jeder erfolgreichen zustandsändernden Aktion (Ausfahren, Power-Up inkl. Undo) wird neu geprüft; jedes neu aufgedeckte Fahrzeug erzeugt `vehicleRevealed` (`vehicleId`, `color`), in Reihenfolge von `state.vehicles`. Position im Event-Strom: nach `vehicleExited`/`vehicleUnlocked` bzw. nach `vehicleYielded`/`powerUpUsed`, vor `passengerBoarded`.
+   - Aufdecken ist dauerhaftes Wissen: Undo stellt den Snapshot wieder her, verdeckt aber nichts erneut (`hidden` nach Undo = `hidden` im Snapshot **und** `hidden` jetzt).
+   - Level ohne Mystery-Fahrzeuge: alle `hidden = false`, Verhalten und Event-Ströme unverändert.
 
 ## Nicht unterstützte Regeln
 
-`createGame` liefert `LevelIssue` `unsupportedRule` für: `movement.model ≠ straight`, `movement.exits ≠ edges`, `movement.reversible`, `passengers.order ≠ strict`, `passengers.boardPolicy ≠ firstMatch`, `passengers.mysteryRate > 0`, `vehicles.dualColor`, `vehicles.departOnFull = false`, `special.oneWay|barriers|mysteryVehicles`. Unterstützt: `special.fixed` (Zellen `fixed`) und `special.keyVehicles` (`locked`/`keyId`).
+`createGame` liefert `LevelIssue` `unsupportedRule` für: `movement.model ≠ straight`, `movement.exits ≠ edges`, `movement.reversible`, `passengers.order ≠ strict`, `passengers.boardPolicy ≠ firstMatch`, `passengers.mysteryRate > 0`, `vehicles.dualColor`, `vehicles.departOnFull = false`, `special.oneWay|barriers`. Unterstützt: `special.fixed` (Zellen `fixed`), `special.keyVehicles` (`locked`/`keyId`) und `special.mysteryVehicles` (`mystery`).
 
 ## Level-Validierung (`validateLevel`)
 
-Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen außerhalb des Rasters, Überlappungen (Fahrzeug/Fahrzeug, Fahrzeug/`fixed`), doppelte IDs, Fahrgäste je Farbe ≠ Kapazität je Farbe (außer `meta.allowSurplus`, dann ≤), `keyId` unbekannt, Schlüsselzyklen, `locked` ohne `keyId`, nicht unterstützte Regeln.
+Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen außerhalb des Rasters, Überlappungen (Fahrzeug/Fahrzeug, Fahrzeug/`fixed`), doppelte IDs, Fahrgäste je Farbe ≠ Kapazität je Farbe (außer `meta.allowSurplus`, dann ≤), `keyId` unbekannt, Schlüsselzyklen, `locked` ohne `keyId`, `mysteryDisabled` (Fahrzeug mit `mystery: true`, aber `special.mysteryVehicles = false`; je Fahrzeug, mit `vehicleId`), nicht unterstützte Regeln.
 
 ## Renderer-Vertrag
 
@@ -72,6 +77,8 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - `passengersShuffled.to` ist exklusiv.
 - `invalidAction.vehicleId` (optional): das in der Aktion genannte Fahrzeug, wenn es eins gibt (bei `tapVehicle` und `honk`, auch `unknownVehicle` traegt die genannte ID); der Renderer laesst ein vorhandenes Fahrzeug wackeln.
 - `invalidAction.reason`: `unknownVehicle`, `notParked`, `gameWon`, `gameLost`, `noUsesLeft`, `noHistory`, `nothingToShuffle`, `noTarget`, `notBlocked`, `blockedByBollard`, `blockerLocked`, `cannotYield`.
+- `vehicleRevealed`: `vehicleId` = aufgedecktes Mystery-Fahrzeug, `color` = seine Farbe (siehe Spielregeln 8).
+- `hashState` enthält `hidden` nicht: Verdecken ändert die Mechanik nicht, und der Solver soll Zustände, die sich nur darin unterscheiden, nicht doppelt durchsuchen. Hashes von Leveln ohne Mystery-Fahrzeuge bleiben bitgleich.
 - `vehicleYielded`: `vehicleId` = ausweichender Blocker, `byVehicleId` = hupendes Fahrzeug, `from`/`to` = Kopfzelle vorher/nachher.
 - Undo nimmt Züge, Shuffles und Hupen zurück; nur eine zurückgenommene Hupe wird erstattet: per `extraSlot` hinzugefügte oder entsperrte Slots bleiben erhalten.
 - `createGame` bewertet sofort das Ergebnis; ein Level ohne möglichen ersten Zug startet als `lost`/`noMoves`.

@@ -36,6 +36,7 @@ export function createGame(level: Level, rules: ResolvedRules, seed?: number): G
         status: 'parked',
         locked: v.locked ?? false,
         keyId: v.keyId ?? null,
+        hidden: false,
       };
     }),
     slots: initialSlots(rules),

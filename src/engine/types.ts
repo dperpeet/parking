@@ -16,6 +16,11 @@ export interface VehicleState {
   status: VehicleStatus;
   locked: boolean;
   keyId: string | null;
+  /**
+   * Mystery-Fahrzeug, dessen Farbe noch verdeckt ist (nur Darstellung; `color` bleibt gesetzt, die Mechanik
+   * ignoriert das Feld). Wird aufgedeckt, sobald es `parked` ist und sein Weg zum Rand frei ist; nie wieder verdeckt.
+   */
+  hidden: boolean;
 }
 
 export type SlotState =
@@ -82,6 +87,8 @@ export type GameEvent =
     }
   | { type: 'vehicleExited'; vehicleId: string; slotIndex: number; path: Array<[number, number]> }
   | { type: 'vehicleUnlocked'; vehicleId: string }
+  /** Mystery-Fahrzeug aufgedeckt (Weg frei); `color` = nun sichtbare Farbe. */
+  | { type: 'vehicleRevealed'; vehicleId: string; color: ColorId }
   /** Hupe: `vehicleId` (Blocker) rutscht entlang seiner Achse von Kopfzelle `from` nach `to`; gehupt hat `byVehicleId`. */
   | {
       type: 'vehicleYielded';
@@ -126,6 +133,7 @@ export interface LevelIssue {
     | 'passengerMismatch'
     | 'unknownKey'
     | 'keyCycle'
+    | 'mysteryDisabled'
     | 'unsupportedRule';
   message: string;
   vehicleId?: string;
@@ -147,7 +155,7 @@ export class LevelError extends Error {
  *   - rein, deterministisch, mutiert `state` nicht.
  * validateLevel(level: Level, rules: ResolvedRules): LevelIssue[]
  * legalMoves(state: GameState, rules: ResolvedRules): string[]   // antippbare Fahrzeug-IDs, die ausfahren koennen
- * hashState(state: GameState): string                             // kanonisch, ohne history/powerUps/rng
+ * hashState(state: GameState): string                             // kanonisch, ohne history/powerUps/rng/hidden
  * createRng(seed: number): number; nextRandom(rng: number): [value: number, next: number]
  */
 export type CreateGame = (level: Level, rules: ResolvedRules, seed?: number) => GameState;
