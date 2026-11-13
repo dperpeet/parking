@@ -251,6 +251,14 @@
   padding-bottom: 4px;
 }
 
+/* Mystery-Auto: neutrale Flaeche mit Schraffur und "?" (wie auf dem Brett) */
+.art-mystery {
+  color: var(--t-mystery-ink);
+  background:
+    repeating-linear-gradient(-45deg, var(--t-mystery-stripe) 0 4px, transparent 4px 11px),
+    var(--t-mystery-fill);
+}
+
 .art-post {
   width: 40px;
   height: 40px;
