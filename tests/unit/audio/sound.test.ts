@@ -107,6 +107,19 @@ describe('cueFor', () => {
   });
 });
 
+describe('Abbiegen', () => {
+  it('Ausfahrt mit exitDir quietscht kurz, gerade Ausfahrt bleibt beim alten Klang', () => {
+    const turned: GameEvent = { ...exited, path: [[0, 1]], exitDir: 'S' };
+    expect(cueFor(exited)).toEqual({ id: 'exit', step: 0 });
+    expect(cueFor(turned)).toEqual({ id: 'exitTurn', step: 0 });
+    const fake = fakeContext();
+    const sound = createSound({ createContext: () => fake.ctx });
+    sound.setEnabled(true);
+    sound.cue(turned);
+    expect(fake.started.map((s) => s.type)).toEqual(['triangle', 'sine']);
+  });
+});
+
 describe('createSound', () => {
   it('ausgeschaltet entsteht kein AudioContext', () => {
     let created = 0;

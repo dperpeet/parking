@@ -60,4 +60,11 @@ export const THEME = {
   mysteryStripe: 'rgba(26,26,26,0.16)',
   mysteryInk: '#1A1A1A',
   mysteryGlyph: '?',
+  /**
+   * Abbiegepfeil (Zelle `oneWay`): flache Fahrbahn ohne Schatten mit weissem Blockpfeil und Comic-Kontur.
+   * Bewusst kein Chevron und keine Palettenfarbe, damit er sich von Fahrzeugpfeilen und Pollern abhebt;
+   * die Richtung steckt allein in der Form.
+   */
+  oneWayRoad: '#56657A',
+  oneWayArrow: '#FFFFFF',
 } as const;

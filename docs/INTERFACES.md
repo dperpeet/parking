@@ -79,6 +79,7 @@ Unbekannter Fahrzeugtyp oder Farbe (nicht in `rules.vehicles.colors`), Zellen au
 - Er berechnet keine Spiellogik; Eingaben werden als `Action` an den Game-Controller (`src/app`) gegeben.
 - Farben/Symbole/Tokens nur aus `src/render/theme.ts`.
 - Verdeckte Mystery-Fahrzeuge (`hidden = true`) zeichnet der Renderer mit `THEME.mysteryFill`, Schraffur `THEME.mysteryStripe` und Symbol `THEME.mysteryGlyph` (`?`, Farbe `THEME.mysteryInk`), nie mit Palettenfarbe oder -symbol. `vehicleRevealed` spielt er als kurzes Aufdecken ab (bei reduzierter Bewegung sofort). DOM- und Screenreader-Texte nennen die Farbe eines verdeckten Fahrzeugs nie.
+- Abbiegepfeile (Zellen `oneWay`) zeichnet der Renderer als Fahrbahnfläche `THEME.oneWayRoad` mit Blockpfeil `THEME.oneWayArrow` (Kontur `THEME.outline`) in Richtung `dir`. `vehicleExited` mit `exitDir` spielt er entlang `path` ab (Kopf vorn, Drehung an den Knicken, danach in `exitDir` hinaus); ohne `exitDir` wie bisher geradeaus. Er wertet keine Pfeile aus. Screenreader-Texte beschreiben Pfeilzellen („Einbahn nach oben“).
 
 ## Details zu Events und Zustand
 
@@ -131,7 +132,7 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
 
 - Pack-Index `src/content/levels/pack-XX/index.json` = `PackIndex` (`src/schema/pack.ts`):
   `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet
-  einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk` | `mystery`) zu: vor diesem Level erscheint die Intro-Karte.
+  einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk` | `mystery` | `oneWay`) zu: vor diesem Level erscheint die Intro-Karte.
 - Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed`, `special.keyVehicles` und Hupe `powerups.honk` mit 1 Nutzung),
   `world3` (= `world2` mit Sterne-Schwellen `three: 1`, `two: 3`, damit die Pflicht-Hupe keinen Stern kostet).
   Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine
@@ -145,7 +146,8 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
 - Intro-Karte: einmal pro Mechanik vor dem ersten Start des Levels mit `intro`; gesehen wird im
   Spielstand gemerkt (additiv, `seenIntros: Mechanic[]`), ueber die Levelauswahl erneut abrufbar.
   Generierte Level (Tageslevel, Endlos, Aehnliches Level) zeigen die Karte zur ersten noch nicht gesehenen
-  Mechanik im Level (`mechanicsOf`: `fixed`-Zellen → `bollards`, `locked` → `keys`, `mystery` → `mystery`).
+  Mechanik im Level (`mechanicsOf`: `fixed`-Zellen → `bollards`, `locked` → `keys`, `mystery` → `mystery`,
+  `oneWay`-Zellen → `oneWay`).
 - Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
   (Default 1), `requireHonk` (nur Level, die mit Tipps allein unloesbar und mit Hupe loesbar sind). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.
   Mystery (nur mit `special.mysteryVehicles`, sonst wirft `generate`): `mystery` (Zahl oder `[min, max]`, Default 0),

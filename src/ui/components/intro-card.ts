@@ -1,8 +1,9 @@
-// Intro-Karte einer neuen Mechanik (Poller, Schluessel, Hupe, Mystery): kurzer Text, kleine Illustration aus CSS/SVG.
+// Intro-Karte einer neuen Mechanik (Poller, Schluessel, Hupe, Mystery, Abbiegepfeile): kurzer Text, kleine Illustration aus CSS/SVG.
 import { t } from '../../i18n';
 import type { StringKey } from '../../i18n';
 import type { Mechanic } from '../../schema';
 import { THEME } from '../../render/theme';
+import { roadArrowPoints } from '../../render/road-arrow';
 import { h, icon } from '../dom';
 
 const TITLE_KEYS: Record<Mechanic, StringKey> = {
@@ -10,12 +11,14 @@ const TITLE_KEYS: Record<Mechanic, StringKey> = {
   keys: 'introKeysTitle',
   honk: 'introHonkTitle',
   mystery: 'introMysteryTitle',
+  oneWay: 'introOneWayTitle',
 };
 const TEXT_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsText',
   keys: 'introKeysText',
   honk: 'introHonkText',
   mystery: 'introMysteryText',
+  oneWay: 'introOneWayText',
 };
 
 export const mechanicTitle = (mechanic: Mechanic): string => t(TITLE_KEYS[mechanic]);
@@ -110,8 +113,31 @@ function mysteryArt(): HTMLElement {
   );
 }
 
+/** Seitenlaenge der Fahrbahnkachel im SVG (viewBox). */
+const ROAD_TILE = 48;
+
+/** Auto faehrt nach rechts auf eine Fahrbahnkachel mit Pfeil nach oben: dort biegt es ab. */
+function oneWayArt(): HTMLElement {
+  const points = roadArrowPoints('N', { x: 0, y: 0, w: ROAD_TILE, h: ROAD_TILE })
+    .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(' ');
+  const road = svg(
+    'svg',
+    { class: 'art-road', viewBox: `0 0 ${ROAD_TILE} ${ROAD_TILE}`, 'aria-hidden': 'true' },
+    svg('polygon', { class: 'art-road-arrow', points }),
+  );
+  return h(
+    'div',
+    { class: 'intro-art art-one-way', 'aria-hidden': 'true' },
+    car('green', h('span', { class: 'art-chevron' }, '›')),
+    h('span', { class: 'art-detour' }, '→'),
+    road,
+  );
+}
+
 function art(mechanic: Mechanic): HTMLElement {
   if (mechanic === 'mystery') return mysteryArt();
+  if (mechanic === 'oneWay') return oneWayArt();
   if (mechanic === 'bollards') {
     return h(
       'div',

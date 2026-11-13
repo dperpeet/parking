@@ -1,10 +1,13 @@
 import { Container, Graphics } from 'pixi.js';
 import type { GameState, VehicleState } from '../engine/types';
+import type { Dir } from '../schema';
 import type { BoardAnimator } from './event-player';
 import { dashSegments, laneCells } from './direction';
 import { DIR_VECTOR, cellRect, computeBoardLayout, vehicleRect } from './layout';
 import type { BoardLayout, Rect } from './layout';
 import { computeLockMarks } from './lock-marks';
+import { dirAngle, exitDistance, exitPose, exitTrack } from './exit-path';
+import { ROAD_RADIUS, roadArrowPoints } from './road-arrow';
 import type { LockMarks } from './lock-marks';
 import { THEME } from './theme';
 import { Tweener, easings } from './tween';
@@ -60,6 +63,11 @@ const POST_RADIUS = 0.34;
 const POST_RING = 0.21;
 const POST_RING_WIDTH = 0.1;
 const POST_CORE = 0.08;
+
+/** Mitte einer Zelle in px. */
+function cellCenter(l: BoardLayout, c: readonly [number, number]): [number, number] {
+  return [l.originX + (c[0] + 0.5) * l.cell, l.originY + (c[1] + 0.5) * l.cell];
+}
 
 export class BoardView implements BoardAnimator {
   private readonly root = new Container();
@@ -225,19 +233,23 @@ export class BoardView implements BoardAnimator {
     this.clearLane();
     const g = new Graphics();
     const lineWidth = Math.max(LANE_MIN_WIDTH, layout.cell * LANE_WIDTH_RATIO);
-    const cells = laneCells(veh, layout.cols, layout.rows);
+    const lane = laneCells(veh, layout.cols, layout.rows);
+    // Ein Abbiegepfeil kann den Weg umlenken: Die gerade Spur endet sichtbar auf dem ersten Pfeil (ohne Spitze),
+    // der Pfeil selbst zeigt, wie es weitergeht. Der Renderer wertet die Pfeile nicht aus.
+    const arrowAt = lane.findIndex(([x, y]) => this.oneWayAt(x, y) !== null);
+    const cells = arrowAt < 0 ? lane : lane.slice(0, arrowAt + 1);
     const last = cells[cells.length - 1];
     if (last) {
-      const center = (c: readonly [number, number]): [number, number] => [
-        layout.originX + (c[0] + 0.5) * layout.cell,
-        layout.originY + (c[1] + 0.5) * layout.cell,
-      ];
-      const to = center(last);
+      const to = cellCenter(layout, last);
+      const from = cellCenter(layout, [veh.x, veh.y]);
       const period = layout.cell * LANE_DASH_PERIOD;
-      for (const [a, b] of dashSegments(center([veh.x, veh.y]), to, period, LANE_DASH_RATIO)) {
+      for (const [a, b] of dashSegments(from, to, period, LANE_DASH_RATIO)) {
         g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
       }
       g.stroke({ width: lineWidth, color: THEME.accent, cap: 'round' });
+    }
+    if (last && arrowAt < 0) {
+      const to = cellCenter(layout, last);
       const [dx, dy] = DIR_VECTOR[veh.dir];
       const s = layout.cell * LANE_ARROW;
       g.moveTo(to[0] - dx * s - dy * s, to[1] - dy * s + dx * s)
@@ -358,11 +370,14 @@ export class BoardView implements BoardAnimator {
       });
   }
 
-  exit(vehicleId: string, path: Array<[number, number]>): Promise<void> {
+  exit(vehicleId: string, path: Array<[number, number]>, exitDir?: Dir): Promise<void> {
     const view = this.vehicles.get(vehicleId);
     const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
     const layout = this.layout;
     if (!view || !veh || !layout) return Promise.resolve();
+    if (exitDir !== undefined && exitDir !== veh.dir) {
+      return this.exitTurning(view, veh, layout, path, exitDir);
+    }
     // Das Fahrzeug ist fertig, wenn der Heck den Rand passiert hat: letzte Pfadzelle + Laenge.
     const last = path[path.length - 1] ?? [veh.x, veh.y];
     const [dx, dy] = DIR_VECTOR[veh.dir];
@@ -384,6 +399,56 @@ export class BoardView implements BoardAnimator {
         view.destroy({ children: true });
         this.host.requestRender();
       });
+  }
+
+  /**
+   * Ausfahren mit Knick (Abbiegepfeile): Front und Heck laufen auf dem Linienzug aus dem Event, das Fahrzeug
+   * dreht sich an den Knicken und faehrt in `exitDir` hinaus. Dauer, Beschleunigung und Ausblenden wie geradeaus.
+   */
+  private exitTurning(
+    view: VehicleView,
+    veh: VehicleState,
+    layout: BoardLayout,
+    path: Array<[number, number]>,
+    exitDir: Dir,
+  ): Promise<void> {
+    const track = exitTrack([veh.x, veh.y], veh.dir, path, exitDir, veh.length);
+    const cells = exitDistance(path.length, veh.length);
+    const base = dirAngle(veh.dir);
+    this.vehicles.delete(veh.id);
+    return this.host.tweener
+      .run({
+        durationMs: Math.max(EXIT_MIN_MS, cells * EXIT_MS_PER_CELL),
+        ease: easings.easeInQuad,
+        onUpdate: (p) => {
+          const pose = exitPose(track, veh.length, cells * p);
+          view.setPose(
+            layout.originX + pose.x * layout.cell,
+            layout.originY + pose.y * layout.cell,
+            pose.angle - base,
+          );
+          view.alpha = 1 - Math.max(0, p - EXIT_FADE_FROM) / EXIT_FADE_SPAN;
+          this.host.requestRender();
+        },
+      })
+      .then(() => {
+        view.destroy({ children: true });
+        this.host.requestRender();
+      });
+  }
+
+  /** Richtung des Abbiegepfeils auf Zelle (x, y), sonst null. */
+  private oneWayAt(x: number, y: number): Dir | null {
+    const c = this.state?.grid.cells.find((o) => o.x === x && o.y === y && o.type === 'oneWay');
+    return c?.dir ?? null;
+  }
+
+  /** Abbiegepfeil: flache Fahrbahn (ohne Schatten, anders als Fahrzeuge und Poller) mit weissem Blockpfeil. */
+  private drawRoadArrow(g: Graphics, r: Rect, dir: Dir): void {
+    g.roundRect(r.x, r.y, r.w, r.h, ROAD_RADIUS).fill(THEME.oneWayRoad);
+    g.poly(roadArrowPoints(dir, r).flat())
+      .fill(THEME.oneWayArrow)
+      .stroke({ width: THEME.outlineWidth, color: THEME.outline, join: 'round' });
   }
 
   private addVehicle(v: VehicleState): void {
@@ -434,6 +499,8 @@ export class BoardView implements BoardAnimator {
         const isFixed = fixed.some((c) => c.x === cx && c.y === cy);
         g.roundRect(r.x, r.y, r.w, r.h, 8).fill(THEME.cell);
         if (isFixed) this.drawBollard(g, r);
+        const arrow = this.oneWayAt(cx, cy);
+        if (arrow !== null) this.drawRoadArrow(g, r, arrow);
       }
     }
     return g;

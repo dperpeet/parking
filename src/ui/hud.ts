@@ -14,6 +14,7 @@ import type { Shell } from './shell';
 import { announce, honkErrorText } from './strings';
 import { h, icon } from './dom';
 import { createVehicleButtons } from './vehicle-buttons';
+import { createArrowNote } from './arrow-note';
 
 /** Alles, was das HUD pro Zustand vom Modus (Kampagne, Tageslevel, Endlos ...) erfragt. */
 export interface HudInfo {
@@ -131,6 +132,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     if (last) paint(last);
   };
 
+  const arrowNote = createArrowNote(shell.boardWrap);
   const buttons = createVehicleButtons(shell.vehicleLayer, (vehicleId) => {
     if (!honkMode) {
       actions.dispatch({ type: 'tapVehicle', vehicleId });
@@ -219,6 +221,7 @@ export function createHud(shell: Shell, rules: () => ResolvedRules, actions: Hud
     cardShown = showCard;
     shell.game.toggleAttribute('data-stuck', showCard);
     buttons.update(state);
+    arrowNote.update(state);
     stuckCard.update(state, showCard);
     dialogs.update(state, honkMode || isStuck(state));
     attachShare(state, info.share);

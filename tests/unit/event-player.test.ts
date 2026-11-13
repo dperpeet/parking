@@ -257,3 +257,34 @@ describe('EventPlayer: vehicleYielded', () => {
     expect(log).toEqual(['hud vehicleYielded', 'board.sync']);
   });
 });
+
+describe('EventPlayer: Abbiegepfeile', () => {
+  it('reicht exitDir an exit weiter, gerade Wege ohne drittes Argument', async () => {
+    const calls: unknown[][] = [];
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: (...args: unknown[]) => {
+        calls.push(args);
+        return Promise.resolve();
+      },
+      sync: () => undefined,
+    };
+    const hud: HudSink = { onEvent: () => undefined, render: () => undefined };
+    const turned: Array<[number, number]> = [
+      [1, 0],
+      [2, 0],
+      [2, 1],
+    ];
+    await new EventPlayer(board, hud).play(
+      [
+        { type: 'vehicleExited', vehicleId: 'v1', slotIndex: 0, path: turned, exitDir: 'S' },
+        { type: 'vehicleExited', vehicleId: 'v2', slotIndex: 1, path: [[0, 1]] },
+      ],
+      state,
+    );
+    expect(calls).toEqual([
+      ['v1', turned, 'S'],
+      ['v2', [[0, 1]]],
+    ]);
+  });
+});

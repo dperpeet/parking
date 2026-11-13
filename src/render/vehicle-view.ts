@@ -169,6 +169,16 @@ export class VehicleView extends Container {
     this.position.set(rect.x, rect.y);
   }
 
+  /**
+   * Lage waehrend einer Fahrt mit Knick: Mittelpunkt (px) und Drehung gegenueber der Ruhelage (Bogenmass).
+   * Dreht um die Fahrzeugmitte; danach wird das Fahrzeug nur noch entfernt.
+   */
+  setPose(cx: number, cy: number, rotation: number): void {
+    this.pivot.set(this.size.w / 2, this.size.h / 2);
+    this.position.set(cx, cy);
+    this.rotation = rotation;
+  }
+
   /** Setzt Schloss und Schluessel-Symbol; ohne Aenderung bleibt die Darstellung unveraendert. */
   setLock(mark: LockMark, numbered: boolean): void {
     const key = `${mark.lock ?? '-'}|${mark.key ?? '-'}|${numbered}`;

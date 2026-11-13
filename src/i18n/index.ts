@@ -84,6 +84,7 @@ const de = {
   honkCancel: 'Abbrechen',
   honkErrNotBlocked: 'Das Auto kann doch fahren!',
   honkErrBollard: 'Der Poller bleibt stehen.',
+  honkErrWrongWay: 'Gegen die Einbahn kommt keiner weiter.',
   honkErrBlockerLocked: 'Das Auto davor ist abgeschlossen.',
   honkErrCannotYield: 'Hier hilft Hupen nicht.',
   honkErrNoTarget: 'Tippe ein Auto an.',
@@ -123,6 +124,8 @@ const de = {
   dirS: 'unten',
   dirE: 'rechts',
   dirW: 'links',
+  oneWayCell: 'Reihe {row}, Spalte {col}: Einbahn nach {dir}',
+  oneWayNote: 'Abbiegepfeile: {list}',
   // Levelauswahl
   appName: 'ParKing',
   settings: 'Einstellungen',
@@ -154,6 +157,9 @@ const de = {
   introMysteryTitle: 'Mystery-Autos',
   introMysteryText:
     'Graue Autos mit „?“ zeigen ihre Farbe erst, sobald ihr Weg nach draußen frei ist. Mach ihnen Platz und schau, wer drinsitzt!',
+  introOneWayTitle: 'Abbiegepfeile',
+  introOneWayText:
+    'Pfeile auf der Fahrbahn lenken jedes Auto, das darüberfährt, in ihre Richtung. Gegen den Pfeil geht es nicht weiter: Plane den ganzen Weg nach draußen!',
   introStart: 'Los geht’s',
   introReplay: 'Einführung ansehen: {name}',
   noStorage: 'Fortschritt wird in diesem Browser nicht gespeichert',
@@ -357,6 +363,7 @@ const en: Record<StringKey, string> = {
   honkCancel: 'Cancel',
   honkErrNotBlocked: 'This car can already drive!',
   honkErrBollard: 'The post won’t move.',
+  honkErrWrongWay: 'No way through against a one-way.',
   honkErrBlockerLocked: 'The car in front is locked.',
   honkErrCannotYield: 'Honking won’t help here.',
   honkErrNoTarget: 'Tap a car.',
@@ -395,6 +402,8 @@ const en: Record<StringKey, string> = {
   dirS: 'down',
   dirE: 'right',
   dirW: 'left',
+  oneWayCell: 'row {row}, column {col}: one-way {dir}',
+  oneWayNote: 'Turn arrows: {list}',
   appName: 'ParKing',
   settings: 'Settings',
   dailyTitle: 'Daily level',
@@ -425,6 +434,9 @@ const en: Record<StringKey, string> = {
   introMysteryTitle: 'Mystery cars',
   introMysteryText:
     'Grey cars with a “?” show their colour as soon as their way out is free. Clear the way and see what they are!',
+  introOneWayTitle: 'Turn arrows',
+  introOneWayText:
+    'Arrows on the road steer every car that drives over them in their direction. Against an arrow there is no way through: plan the whole route out!',
   introStart: 'Let’s go',
   introReplay: 'Show introduction: {name}',
   noStorage: 'Progress is not saved in this browser',

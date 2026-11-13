@@ -24,6 +24,8 @@ export function applyThemeVars(el: HTMLElement): void {
     '--t-mystery-fill': THEME.mysteryFill,
     '--t-mystery-stripe': THEME.mysteryStripe,
     '--t-mystery-ink': THEME.mysteryInk,
+    '--t-one-way-road': THEME.oneWayRoad,
+    '--t-one-way-arrow': THEME.oneWayArrow,
   };
   for (const [id, c] of Object.entries(PALETTE)) {
     vars[`--c-${id}-fill`] = c.fill;
