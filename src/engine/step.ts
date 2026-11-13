@@ -45,7 +45,7 @@ function tap(state: GameState, vehicleId: string, rules: ResolvedRules): StepRes
   const s = draft(state);
   const events: GameEvent[] = [];
   s.history = [...s.history, takeSnapshot(state)];
-  applyExit(s, vehicleId, check.path, rules, events);
+  applyExit(s, vehicleId, check.path, check.exitDir, rules, events);
   revealVehicles(s, events);
   settle(s, rules, events);
   return { state: s, events };

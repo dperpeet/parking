@@ -3,7 +3,7 @@
 // Siehe docs/DESIGN.md (Generator, Mystery-Fahrzeuge).
 import { createGame, createRng, legalMoves, nextRandom, step } from '../engine';
 import type { GameState, VehicleState } from '../engine';
-import { cellKey, fixedCells, parkedOccupancy, pathToEdge } from '../engine/geometry';
+import { cellKey, exitPath, fixedCells, parkedOccupancy } from '../engine/geometry';
 import type { Level, ResolvedRules } from '../schema';
 
 /** Playouts pro Bewertung (Default). */
@@ -55,8 +55,10 @@ function freedBy(s: GameState, blocker: VehicleState): VehicleState[] {
   const fixed = fixedCells(s.grid);
   return s.vehicles.filter((u) => {
     if (u.status !== 'parked' || u.id === blocker.id) return false;
+    const exit = exitPath(u, s.grid);
+    if (exit.wrongWay !== null || exit.loop) return false;
     let hit = false;
-    for (const [x, y] of pathToEdge(u, s.grid)) {
+    for (const [x, y] of exit.path) {
       const k = cellKey(x, y);
       if (fixed.has(k)) return false;
       const owner = occupancy.get(k);

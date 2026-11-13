@@ -93,7 +93,7 @@ describe('validateLevel', () => {
   });
 
   const unsupported: Array<[string, RulesetOverrides]> = [
-    ['movement.model', { movement: { model: 'turns' } }],
+    ['movement.model', { movement: { model: 'pathfinding' } }],
     ['movement.exits', { movement: { exits: 'gates' } }],
     ['movement.reversible', { movement: { reversible: true } }],
     ['passengers.order', { passengers: { order: 'lookahead' } }],
@@ -101,22 +101,26 @@ describe('validateLevel', () => {
     ['passengers.mysteryRate', { passengers: { mysteryRate: 0.5 } }],
     ['vehicles.dualColor', { vehicles: { dualColor: true } }],
     ['vehicles.departOnFull', { vehicles: { departOnFull: false } }],
-    ['special.oneWay', { special: { oneWay: true } }],
     ['special.barriers', { special: { barriers: true } }],
   ];
   it.each(unsupported)('reports unsupportedRule for %s', (_name, overrides) => {
     expect(codes({ ...BASIC, overrides })).toContain('unsupportedRule');
   });
 
-  it('reports unsupportedRule for oneWay / barrier cells', () => {
+  it('reports unsupportedRule for barrier / gate cells', () => {
     const spec = {
       ...BASIC,
       cells: [
-        { x: 1, y: 1, type: 'oneWay' as const, dir: 'E' as const },
+        { x: 1, y: 1, type: 'gate' as const },
         { x: 2, y: 2, type: 'barrier' as const },
       ],
     };
     expect(codes(spec).filter((c) => c === 'unsupportedRule')).toHaveLength(2);
+  });
+
+  it('allows movement.model turns and special.oneWay', () => {
+    const overrides: RulesetOverrides = { movement: { model: 'turns' }, special: { oneWay: true } };
+    expect(codes({ ...BASIC, overrides })).toEqual([]);
   });
 
   it('allows special.fixed, special.keyVehicles and special.mysteryVehicles', () => {
