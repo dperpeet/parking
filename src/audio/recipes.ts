@@ -50,6 +50,8 @@ export const RECIPES = {
   ],
   unlock: [tone('sine', 1200, 1200, 0, 0.04, 0.25), tone('sine', 1600, 1600, 0.05, 0.06, 0.25)],
   undo: [tone('triangle', 520, 330, 0, 0.14, 0.3)],
+  // Aufdecken (Mystery-Fahrzeug): kurzes Glitzern, zwei helle Toene aufwaerts.
+  reveal: [tone('sine', E5, E5, 0, 0.06, 0.22), tone('sine', G5, C6, 0.06, 0.12, 0.22)],
   shuffle: [
     tone('sine', 600, 600, 0, 0.05, 0.25),
     tone('sine', 750, 750, 0.05, 0.05, 0.25),
