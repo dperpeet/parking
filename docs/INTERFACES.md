@@ -135,3 +135,6 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
   Spielstand gemerkt (additiv, `seenIntros: Mechanic[]`), ueber die Levelauswahl erneut abrufbar.
 - Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
   (Default 1), `requireHonk` (nur Level, die mit Tipps allein unloesbar und mit Hupe loesbar sind). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.
+  Mystery (nur mit `special.mysteryVehicles`, sonst wirft `generate`): `mystery` (Zahl oder `[min, max]`, Default 0),
+  `mysteryMinBlindWin` (Default 0.25), `mysteryPlayouts` (Default 64). `GenerateResult.mystery` (`MysteryInfo`:
+  `ids`, `blindWin`, `informedWin`, `fair`) fehlt ohne Mystery-Fahrzeuge. Ohne `mystery` bleibt die Ausgabe bitgleich.
