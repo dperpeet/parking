@@ -5,6 +5,7 @@ import { Level as LevelSchema } from '../schema';
 import { SOLVER_VERSION, analyze } from './analyze';
 import { applyHonkLayout, honkPlanHolds } from './generator-honk';
 import type { HonkPlan } from './generator-honk';
+import { DEFAULT_MYSTERY_MIN_BLIND_WIN, applyMystery } from './generator-mystery';
 import {
   DEFAULT_KEY_CHAIN_DEPTH,
   assignKeys,
@@ -16,7 +17,13 @@ import {
   resolveCount,
 } from './generator-special';
 import type { Pos, Rng } from './generator-special';
-import type { GenerateResult, GeneratorOptions, GeneratorTuning, LevelAnalysis } from './types';
+import type {
+  GenerateResult,
+  GeneratorOptions,
+  GeneratorTuning,
+  LevelAnalysis,
+  MysteryInfo,
+} from './types';
 
 const DEFAULT_MAX_ATTEMPTS = 40;
 /** Zustandslimit pro Versuch: groessere Level gelten als zu teuer zu pruefen und werden verworfen. */
@@ -29,6 +36,10 @@ const TRIVIAL_ALLOWED_BELOW = 1.5;
 const TRIVIAL_PENALTY = 100;
 /** Aufschlag auf den Zielabstand, wenn preferDeadEnds nicht erfuellt ist (groesser als jede Toleranz). */
 const SOFT_PENALTY = 50;
+/** Aufschlag, wenn der Mystery-Fairness-Filter nicht erfuellt ist (schwerer als jede andere Strafe). */
+const FAIRNESS_PENALTY = 200;
+/** Trennt den Mystery-Zufall vom Zufall der Konstruktion (Level ohne Mystery bleiben bitgleich). */
+const MYSTERY_SALT = 0x6d797374;
 const SEED_MIX = 0x9e3779b1;
 const UINT32_RANGE = 0x100000000;
 const MIN_SHUFFLE = 1;
@@ -294,13 +305,24 @@ export function generate(p: GeneratorOptions, baseRules: ResolvedRules): Generat
   if (p.requireHonk && !(rules.powerups.honk.enabled && rules.powerups.honk.uses > 0)) {
     throw new Error('generate: requireHonk needs powerups.honk in the ruleset');
   }
-  let best: { level: Level; analysis: LevelAnalysis; dist: number } | null = null;
+  const mysteryMax = typeof p.mystery === 'number' ? p.mystery : Math.max(...(p.mystery ?? [0]));
+  if (mysteryMax > 0 && !rules.special.mysteryVehicles) {
+    throw new Error('generate: mystery needs special.mysteryVehicles in the ruleset');
+  }
+  let best: {
+    level: Level;
+    analysis: LevelAnalysis;
+    dist: number;
+    mystery?: MysteryInfo;
+  } | null = null;
   let attempts = 0;
   for (let i = 0; i < maxAttempts; i++) {
     attempts += 1;
-    const built = buildAttempt(p, rules, deriveSeed(p.seed, i), i);
+    const attemptSeed = deriveSeed(p.seed, i);
+    const built = buildAttempt(p, rules, attemptSeed, i);
     if (!built) continue;
-    const { level, honk } = built;
+    const { honk } = built;
+    let level = built.level;
     if (validateLevel(level, rules).length > 0) continue;
     if (
       honk &&
@@ -327,9 +349,31 @@ export function generate(p: GeneratorOptions, baseRules: ResolvedRules): Generat
       p.maxRandomPlayWin !== undefined && analysis.randomPlayWinProbability > p.maxRandomPlayWin
         ? SOFT_PENALTY
         : 0;
-    const dist =
-      (d < lo ? lo - d : d > hi ? d - hi : 0) + trivialPenalty + deadPenalty + luckPenalty;
-    if (!best || dist < best.dist) best = { level, analysis, dist };
+    let dist = (d < lo ? lo - d : d > hi ? d - hi : 0) + trivialPenalty + deadPenalty + luckPenalty;
+    // Strafen addieren sich nur: ein Kandidat, der schon jetzt nicht besser ist, braucht keine Mystery-Wahl.
+    if (best && dist >= best.dist) continue;
+    let mystery: MysteryInfo | undefined;
+    if (mysteryMax > 0) {
+      const mr: Rng = { state: createRng((attemptSeed ^ MYSTERY_SALT) >>> 0) };
+      const count = resolveCount(mr, p.mystery);
+      if (count > 0) {
+        const picked = applyMystery(
+          mr,
+          level,
+          rules,
+          analysis.solution ?? [],
+          count,
+          p.mysteryMinBlindWin ?? DEFAULT_MYSTERY_MIN_BLIND_WIN,
+          p.mysteryPlayouts,
+        );
+        if (!picked) continue;
+        level = picked.level;
+        mystery = { ids: picked.ids, ...picked.blind, fair: picked.fair };
+        if (!picked.fair) dist += FAIRNESS_PENALTY;
+        if (best && dist >= best.dist) continue;
+      }
+    }
+    best = { level, analysis, dist, ...(mystery && { mystery }) };
     if (dist === 0) break;
   }
   if (!best) throw new Error(`generate: no solvable level found in ${maxAttempts} attempts`);
@@ -344,5 +388,6 @@ export function generate(p: GeneratorOptions, baseRules: ResolvedRules): Generat
     analysis: best.analysis,
     attempts,
     matched: best.dist === 0,
+    ...(best.mystery && { mystery: best.mystery }),
   };
 }
