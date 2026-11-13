@@ -4,65 +4,12 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { generate } from '../src/solver/generator';
-import type { GeneratorOptions } from '../src/solver/types';
-import { PackIndex, resolveRules } from '../src/schema';
-import { loadRulesets, rulesetById } from './lib/rulesets';
+import { PackIndex } from '../src/schema';
+import { levelJob, readPackConfig } from './lib/pack-config';
+import { loadRulesets } from './lib/rulesets';
 
 const PAD = 3;
 const PERCENT = 100;
-const DEFAULT_TOLERANCE = 0.3;
-const DEFAULT_MAX_STATES = 200_000;
-const DEFAULT_MAX_ATTEMPTS = 120;
-const DEFAULT_RULESET = 'classic';
-
-/** Eintrag pro Level; fehlende Felder kommen aus `defaults`. */
-interface LevelConfig {
-  /** Level unveraendert lassen (nur Zielkurve dokumentiert). */
-  keep?: boolean;
-  /** Basis-Seed des Generators; aendern, wenn kein Treffer gefunden wird. */
-  seed: number;
-  /** Kantenlaenge des quadratischen Rasters. */
-  grid: number;
-  vehicles: number;
-  colors: number;
-  /** Ziel-Schwierigkeit; Treffer, wenn |difficulty - target| <= tolerance. */
-  target: number;
-  tolerance?: number;
-  slots?: number;
-  /** Nur Darstellung (Solver kennt volle Information), siehe GeneratorTuning. */
-  visible?: number;
-  shuffleWindow?: number;
-  blockiness?: number;
-  typeWeights?: Record<string, number>;
-  preferDeadEnds?: boolean;
-  minDeadEndDepth?: number;
-  maxRandomPlayWin?: number;
-  maxAttempts?: number;
-  /** Ruleset-ID (Datei unter src/content/rulesets), Default classic. */
-  ruleset?: string;
-  /** Poller: Zahl oder [min, max]. */
-  bollards?: number | [number, number];
-  /** Gesperrte Fahrzeuge: Zahl oder [min, max]. */
-  keys?: number | [number, number];
-  keyChainDepth?: number;
-  /** Pflicht-Hupe: nur Level, die ohne Hupe unloesbar und mit Hupe loesbar sind. */
-  requireHonk?: boolean;
-  /** Mystery-Fahrzeuge: Zahl oder [min, max] (Ruleset mit special.mysteryVehicles). */
-  mystery?: number | [number, number];
-  /** Fairness-Filter: Mindest-Siegquote des blinden Spielers (Default 0.25). */
-  mysteryMinBlindWin?: number;
-  mysteryPlayouts?: number;
-}
-
-interface PackConfig {
-  pack: string;
-  /** Weltnummer fuer das Level-ID-Praefix `w<world>-` und index.json (Default: Pack-Nummer). */
-  world?: number;
-  maxStates?: number;
-  maxAttempts?: number;
-  defaults: Partial<LevelConfig>;
-  levels: LevelConfig[];
-}
 
 function arg(name: string, fallback: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -73,7 +20,7 @@ const pack = arg('pack', '01');
 const configPath = arg('config', `tools/pack-${pack}.config.json`);
 const only = arg('only', '').split(',').filter(Boolean).map(Number);
 const dry = process.argv.includes('--dry');
-const config = JSON.parse(readFileSync(configPath, 'utf8')) as PackConfig;
+const config = readPackConfig(configPath);
 const dir = arg('out', `src/content/levels/pack-${pack}`);
 const rulesets = loadRulesets();
 const world = config.world ?? Number(pack);
@@ -92,37 +39,7 @@ config.levels.forEach((entry, index) => {
     console.log(`${String(n).padEnd(3)} kept ${file}`);
     return;
   }
-  const c = { ...config.defaults, ...entry } as LevelConfig;
-  const rules = resolveRules(rulesetById(rulesets, c.ruleset ?? DEFAULT_RULESET));
-  const tol = c.tolerance ?? DEFAULT_TOLERANCE;
-  const params: GeneratorOptions = {
-    seed: c.seed,
-    width: c.grid,
-    height: c.grid,
-    vehicleCount: c.vehicles,
-    colors: rules.vehicles.colors.slice(0, c.colors),
-    targetDifficulty: [c.target - tol, c.target + tol],
-    maxAttempts: c.maxAttempts ?? config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-    maxStates: config.maxStates ?? DEFAULT_MAX_STATES,
-    id: `w${world}-${String(n).padStart(2, '0')}`,
-    ruleset: rules.id,
-    title: { de: `Level ${n}`, en: `Level ${n}` },
-    ...(c.slots !== undefined && { slots: c.slots }),
-    ...(c.visible !== undefined && { visiblePassengers: c.visible }),
-    ...(c.shuffleWindow !== undefined && { shuffleWindow: c.shuffleWindow }),
-    ...(c.blockiness !== undefined && { blockiness: c.blockiness }),
-    ...(c.typeWeights !== undefined && { typeWeights: c.typeWeights }),
-    ...(c.preferDeadEnds !== undefined && { preferDeadEnds: c.preferDeadEnds }),
-    ...(c.minDeadEndDepth !== undefined && { minDeadEndDepth: c.minDeadEndDepth }),
-    ...(c.maxRandomPlayWin !== undefined && { maxRandomPlayWin: c.maxRandomPlayWin }),
-    ...(c.bollards !== undefined && { bollards: c.bollards }),
-    ...(c.keys !== undefined && { keys: c.keys }),
-    ...(c.keyChainDepth !== undefined && { keyChainDepth: c.keyChainDepth }),
-    ...(c.requireHonk !== undefined && { requireHonk: c.requireHonk }),
-    ...(c.mystery !== undefined && { mystery: c.mystery }),
-    ...(c.mysteryMinBlindWin !== undefined && { mysteryMinBlindWin: c.mysteryMinBlindWin }),
-    ...(c.mysteryPlayouts !== undefined && { mysteryPlayouts: c.mysteryPlayouts }),
-  };
+  const { config: c, rules, params } = levelJob(config, n, rulesets);
   let g;
   try {
     g = generate(params, rules);
