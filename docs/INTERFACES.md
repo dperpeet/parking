@@ -118,7 +118,7 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
 
 - Pack-Index `src/content/levels/pack-XX/index.json` = `PackIndex` (`src/schema/pack.ts`):
   `{ world, name, levels, intros }`. Ein Pack ist eine Welt; `world` ist eindeutig. `intros` ordnet
-  einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk`) zu: vor diesem Level erscheint die Intro-Karte.
+  einer Datei-ID eine `Mechanic` (`bollards` | `keys` | `honk` | `mystery`) zu: vor diesem Level erscheint die Intro-Karte.
 - Rulesets: `classic` (Welt 1), `world2` (= classic mit `special.fixed`, `special.keyVehicles` und Hupe `powerups.honk` mit 1 Nutzung),
   `world3` (= `world2` mit Sterne-Schwellen `three: 1`, `two: 3`, damit die Pflicht-Hupe keinen Stern kostet).
   Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine
@@ -131,5 +131,7 @@ Der Worker-Auftrag `generate` akzeptiert `GeneratorOptions` (= `GeneratorParams 
   geschafft sind. Bereits geschaffte Level bleiben immer spielbar (keine Rueck-Sperre).
 - Intro-Karte: einmal pro Mechanik vor dem ersten Start des Levels mit `intro`; gesehen wird im
   Spielstand gemerkt (additiv, `seenIntros: Mechanic[]`), ueber die Levelauswahl erneut abrufbar.
+  Generierte Level (Tageslevel, Endlos, Aehnliches Level) zeigen die Karte zur ersten noch nicht gesehenen
+  Mechanik im Level (`mechanicsOf`: `fixed`-Zellen → `bollards`, `locked` → `keys`, `mystery` → `mystery`).
 - Generator (`GeneratorTuning`): `bollards`, `keys` (Zahl oder `[min, max]`), `keyChainDepth`
   (Default 1), `requireHonk` (nur Level, die mit Tipps allein unloesbar und mit Hupe loesbar sind). Generierte Level setzen `ruleset` aus `GeneratorParams.ruleset`.
