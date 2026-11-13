@@ -3,9 +3,10 @@ import {
   DIR_VECTORS,
   cellKey,
   fixedCells,
+  exitPath,
   inBounds,
+  oneWayCells,
   parkedOccupancy,
-  pathToEdge,
 } from '../../geometry';
 import type { Point } from '../../geometry';
 import type { GameEvent, GameState, VehicleState } from '../../types';
@@ -15,10 +16,12 @@ import type { PowerUpOutcome } from './types';
 /**
  * Kleinste Verschiebung des Blockers entlang seiner Achse (positiv = Blickrichtung), nach der
  * keine seiner Zellen mehr auf dem Weg liegt. Gleichstand: vorwaerts. `null`, wenn unmoeglich.
+ * Pfeilzellen gelten als belegt (kein Fahrzeug steht auf einem Pfeil).
  */
 function findShift(s: GameState, blocker: VehicleState, pathKeys: Set<string>): number | null {
   const occupancy = parkedOccupancy(s);
   const fixed = fixedCells(s.grid);
+  const arrows = oneWayCells(s.grid);
   const [dx, dy] = DIR_VECTORS[blocker.dir];
   const tailOffset = blocker.length - 1;
 
@@ -31,7 +34,7 @@ function findShift(s: GameState, blocker: VehicleState, pathKeys: Set<string>): 
   };
   const isFree = (x: number, y: number): boolean => {
     const key = cellKey(x, y);
-    return inBounds(s.grid, x, y) && !fixed.has(key) && !occupancy.has(key);
+    return inBounds(s.grid, x, y) && !fixed.has(key) && !arrows.has(key) && !occupancy.has(key);
   };
 
   /** Zellzahl der kleinsten Verschiebung in Richtung `sign` (+1 vorwaerts, -1 rueckwaerts). */
@@ -66,10 +69,11 @@ export function applyHonk(
   const obstacle = firstObstacle(s, honker);
   if (!obstacle) return { ok: false, reason: 'notBlocked' };
   if (obstacle.kind === 'fixed') return { ok: false, reason: 'blockedByBollard' };
+  if (obstacle.kind === 'wrongWay') return { ok: false, reason: 'wrongWay' };
   const blocker = s.vehicles.find((v) => v.id === obstacle.vehicleId)!;
   if (blocker.locked) return { ok: false, reason: 'blockerLocked' };
 
-  const pathKeys = new Set(pathToEdge(honker, s.grid).map(([x, y]) => cellKey(x, y)));
+  const pathKeys = new Set(exitPath(honker, s.grid).path.map(([x, y]) => cellKey(x, y)));
   const shift = findShift(s, blocker, pathKeys);
   if (shift === null) return { ok: false, reason: 'cannotYield' };
 

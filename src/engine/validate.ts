@@ -1,5 +1,5 @@
 import type { Level, ResolvedRules } from '../schema';
-import { cellKey, inBounds, vehicleCells } from './geometry';
+import { cellKey, exitPath, inBounds, vehicleCells } from './geometry';
 import type { LevelIssue } from './types';
 
 function unsupported(message: string): LevelIssue {
@@ -9,7 +9,7 @@ function unsupported(message: string): LevelIssue {
 /** Regel-Varianten und Zelltypen, die die Engine nicht unterstützt. */
 function unsupportedRules(level: Level, rules: ResolvedRules): LevelIssue[] {
   const issues: LevelIssue[] = [];
-  if (rules.movement.model !== 'straight') {
+  if (rules.movement.model === 'pathfinding') {
     issues.push(unsupported(`movement.model "${rules.movement.model}" wird nicht unterstuetzt`));
   }
   if (rules.movement.exits !== 'edges') {
@@ -25,10 +25,9 @@ function unsupportedRules(level: Level, rules: ResolvedRules): LevelIssue[] {
   if (rules.passengers.mysteryRate > 0) issues.push(unsupported('passengers.mysteryRate'));
   if (rules.vehicles.dualColor) issues.push(unsupported('vehicles.dualColor'));
   if (!rules.vehicles.departOnFull) issues.push(unsupported('vehicles.departOnFull=false'));
-  if (rules.special.oneWay) issues.push(unsupported('special.oneWay'));
   if (rules.special.barriers) issues.push(unsupported('special.barriers'));
   for (const c of level.grid.cells) {
-    if (c.type === 'oneWay' || c.type === 'barrier') {
+    if (c.type === 'barrier' || c.type === 'gate') {
       issues.push(unsupported(`Zelltyp "${c.type}" bei ${c.x},${c.y}`));
     }
   }
@@ -44,7 +43,8 @@ function vehicleIssues(level: Level, rules: ResolvedRules): LevelIssue[] {
   for (const c of level.grid.cells) {
     if (!inBounds(level.grid, c.x, c.y)) {
       issues.push({ code: 'outOfBounds', message: `Zelle ${c.x},${c.y} liegt ausserhalb` });
-    } else if (c.type === 'fixed') {
+    } else if (c.type === 'fixed' || c.type === 'oneWay') {
+      // Auch Pfeilzellen darf kein Fahrzeug belegen (ADR 0002, Regel 1).
       fixed.add(cellKey(c.x, c.y));
     }
   }
@@ -89,7 +89,7 @@ function vehicleIssues(level: Level, rules: ResolvedRules): LevelIssue[] {
         overlapped = true;
         issues.push({
           code: 'overlap',
-          message: `Fahrzeug ${v.id} ueberlappt ${other ?? 'ein festes Feld'} bei ${key}`,
+          message: `Fahrzeug ${v.id} ueberlappt ${other ?? 'ein festes Feld oder einen Pfeil'} bei ${key}`,
           vehicleId: v.id,
         });
       }
@@ -178,12 +178,50 @@ function mysteryIssues(level: Level, rules: ResolvedRules): LevelIssue[] {
     }));
 }
 
+/**
+ * Abbiegepfeile: nur mit `special.oneWay` und `movement.model = turns`; jeder Pfeil braucht `dir`, liegt nicht auf
+ * einer anderen Zelle, und kein Weg bildet eine Schleife. Statische Pruefung: Nach einem Pfeil haengt der Weg nur
+ * von Zelle und Pfeilrichtung ab, also genuegt eine Verfolgung ab jedem Pfeil in seiner Richtung.
+ */
+function oneWayIssues(level: Level, rules: ResolvedRules): LevelIssue[] {
+  const arrows = level.grid.cells.filter((c) => c.type === 'oneWay');
+  if (arrows.length === 0) return [];
+  if (!rules.special.oneWay || rules.movement.model !== 'turns') {
+    return [
+      {
+        code: 'oneWayDisabled',
+        message: 'Pfeilzellen brauchen special.oneWay und movement.model "turns"',
+      },
+    ];
+  }
+  const issues: LevelIssue[] = [];
+  const invalid = (message: string): void => {
+    issues.push({ code: 'oneWayInvalid', message });
+  };
+  const count = new Map<string, number>();
+  for (const c of level.grid.cells) {
+    const key = cellKey(c.x, c.y);
+    count.set(key, (count.get(key) ?? 0) + 1);
+  }
+  for (const c of arrows) {
+    const at = `${c.x},${c.y}`;
+    if (c.dir === undefined) invalid(`Pfeilzelle ${at} ohne dir`);
+    else if (exitPath({ x: c.x, y: c.y, dir: c.dir }, level.grid).loop) {
+      invalid(`Pfeil-Schleife ab ${at}`);
+    }
+    if (count.get(cellKey(c.x, c.y))! > 1)
+      invalid(`Pfeilzelle ${at} liegt auf einer anderen Zelle`);
+  }
+  return issues;
+}
+
 export function validateLevel(level: Level, rules: ResolvedRules): LevelIssue[] {
   return [
     ...vehicleIssues(level, rules),
     ...passengerIssues(level, rules),
     ...keyIssues(level),
     ...mysteryIssues(level, rules),
+    ...oneWayIssues(level, rules),
     ...unsupportedRules(level, rules),
   ];
 }

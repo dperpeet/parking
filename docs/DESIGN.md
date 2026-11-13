@@ -27,7 +27,7 @@ Quelle: `src/content/rulesets/classic.json`.
 - 5 Slots, Füllung `firstFree`, keine gesperrten Slots.
 - Fahrzeugtypen `s`/`m`/`l`: Länge 2/3/4, Kapazität 2/4/6.
 - Farben: `blue`, `orange`, `green`, `yellow`, `pink`, `purple`.
-- Bewegung nur geradeaus (`straight`) zum Rand (`edges`), nicht umkehrbar.
+- Bewegung nur geradeaus (`straight`) zum Rand (`edges`), nicht umkehrbar (Abbiegen mit `turns` siehe Spezialobjekte).
 - Passagiere in strikter Reihenfolge (`strict`), `visible` = 8 (Darstellung und Shuffle-Fenster), `boardPolicy` `firstMatch`, kein Mystery.
 - Weder Zeit- noch Zuglimit.
 - Wertung: `starMode` = `powerupsUsed`. 3 Sterne bei höchstens 0 genutzten Power-Ups, 2 Sterne bei höchstens 2, sonst 1 Stern.
@@ -49,10 +49,10 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 | ------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Queue              | `slots`, `fillPolicy`, `lockedSlots`, `loseOnFull`                                    | -                                                                                         |
 | Fahrzeuge          | `types`, `colors`, `departOnFull = true`                                              | `dualColor`, `departOnFull = false`                                                       |
-| Bewegung           | `model = straight`, `exits = edges`, `reversible = false`                             | `turns`, `pathfinding`, `gates`, `reversible`                                             |
+| Bewegung           | `model` `straight`/`turns`, `exits = edges`, `reversible = false`                     | `pathfinding`, `gates`, `reversible`                                                      |
 | Passagiere         | `order = strict`, `boardPolicy = firstMatch`, `visible`                               | `order` `lookahead`/`free`, `boardPolicy` `largestFree`/`playerChoice`, `mysteryRate > 0` |
 | Limits und Wertung | `limits.moves`, `limits.timeSec` (Aktion `timeUp` der App), `starMode` `powerupsUsed` | -                                                                                         |
-| Spezialobjekte     | `fixed` (Poller), `keyVehicles` (Schloss/Schlüssel), `mysteryVehicles` (`mystery`)    | `oneWay`, `barriers` (auch die Zelltypen `oneWay` und `barrier`)                          |
+| Spezialobjekte     | `fixed`, `keyVehicles`, `mysteryVehicles`, `oneWay` (nur mit `turns`)                 | `barriers` (auch die Zelltypen `barrier` und `gate`)                                      |
 | Power-Ups          | `undo`, `shuffle`, `extraSlot`, `honk`                                                | -                                                                                         |
 
 `starMode` `moves` und `time` sind zulässig, aber nur eingeschränkt umgesetzt: `moves` wertet die rohe Zugzahl ohne Par, `time` liefert in der Engine immer 3 Sterne.
@@ -63,6 +63,7 @@ Das Schema kennt mehr Regeln, als die Engine umsetzt. `createGame` und `validate
 - Schloss/Schlüssel: Ein Fahrzeug mit `locked: true` und `keyId` lässt sich erst antippen, wenn das Fahrzeug `keyId` ausgefahren ist. Schlüsselketten müssen azyklisch sein.
 - Hupe (Power-Up `honk`): Ein Fahrzeug hupt, das erste Fahrzeug auf seinem Weg rutscht entlang seiner Achse so weit wie nötig zur Seite. Poller und gesperrte Fahrzeuge weichen nicht aus, Poller versperren auch die Ausweichstrecke. Zählt nicht als Zug; Undo nimmt sie zurück und gibt die Hupe zurück (Zähler + 1, `powerUpsUsed` − 1; das Undo selbst zählt als Power-Up, im Snapshot als `honk: true` markiert). Regeln im Detail: [INTERFACES.md](INTERFACES.md).
 - Mystery-Fahrzeuge (`mystery: true`, nur mit `special.mysteryVehicles`): Die Farbe ist verdeckt, bis der Weg des Fahrzeugs zum Rand frei ist; dann wird sie aufgedeckt (Event `vehicleRevealed`) und bleibt es, auch nach Undo. Reine Darstellung: Antippen, Einsteigen und Hupe verhalten sich wie bei normalen Fahrzeugen, ein verdecktes Fahrzeug ist daher nie antippbar. Darstellung: graue, schraffierte Fläche mit „?“ statt Farbe und Farbsymbol; beim Aufdecken klappt das Fahrzeug kurz um (Ansage, eigener Klang). Labels und Ansagen sagen „Fahrzeug mit unbekannter Farbe“. Intro-Karte `mystery` (auch in generierten Leveln, sobald eines Mystery-Fahrzeuge hat). Regeln im Detail: [INTERFACES.md](INTERFACES.md).
+- Abbiegepfeile (Zellen `{ type: "oneWay", dir }`, nur mit `special.oneWay` und `movement.model = turns`, sonst `oneWayDisabled`): feste Fahrbahnpfeile, auf denen kein Fahrzeug steht. Der Ausfahrweg (`exitPath` in `src/engine/geometry.ts`) führt geradeaus, bis das Fahrzeug eine Pfeilzelle betritt: Zeigt der Pfeil in Fahrtrichtung oder quer dazu, fährt es in Pfeilrichtung weiter (abbiegen); zeigt er entgegen, ist die Zelle eine Falschfahrt und blockiert wie ein Poller. Das Fahrzeug folgt dem Weg wie ein Zug. Antippen, Mystery-Aufdecken, `legalMoves`, Hupe (Grund `wrongWay` bei Falschfahrt; Pfeilzellen gelten beim Ausweichen als belegt) und die blinden Playouts nutzen den gebogenen Weg; `vehicleExited.exitDir` nennt die Ausfahrrichtung, wenn sie von der Blickrichtung abweicht. Pfeil-Schleifen und Pfeile ohne `dir` meldet `validateLevel` als `oneWayInvalid`. `turns` ohne Pfeile verhält sich exakt wie `straight`; die schnelle Analyse bleibt auf zellfreie, gerade Level beschränkt. Entscheidung: [ADR 0002](adr/0002-einbahn-und-abbiegen.md), Regeln im Detail: [INTERFACES.md](INTERFACES.md).
 - Ruleset `world2` (`src/content/rulesets/world2.json`): wie `classic`, mit `special.fixed`, `special.keyVehicles` und einer Hupe. Die `special`-Flags beschreiben, was ein Ruleset einsetzt (Generator, Editor, UI); die Engine verarbeitet `fixed`-Zellen und `locked`/`keyId` unabhängig davon.
 - Ruleset `world3` (`src/content/rulesets/world3.json`, „Hupe"): wie `world2`, mit 1 Hupe pro Level (`powerups.honk`). `starMode` = `powerupsUsed` mit `three` = 1: Eine Hupe kostet keinen Stern (3 Sterne bei höchstens 1 genutztem Power-Up, 2 Sterne bei höchstens 3). Die Level von Welt 3 sind Pflicht-Hupe-Level (siehe `requireHonk`).
 - Ruleset `world4` (`src/content/rulesets/world4.json`, „Mystery"): wie `world2` (Poller, Schlüssel, eine optionale Hupe, gleiche Wertung), zusätzlich `special.mysteryVehicles`.
@@ -74,7 +75,7 @@ Ein Level (`src/schema/level.ts`) besteht aus `id`, `title`, `ruleset`, optional
 Validierung in zwei Stufen:
 
 1. Schema (zod) beim Laden.
-2. Semantik (`validateLevel`): bekannte Typen und Farben, Fahrzeuge im Raster, keine Überlappungen, eindeutige IDs, Passagiere je Farbe gleich der Kapazität je Farbe (mit `meta.allowSurplus` genügt `<=`), gültige und azyklische Schlüssel, nur unterstützte Regeln.
+2. Semantik (`validateLevel`): bekannte Typen und Farben, Fahrzeuge im Raster, keine Überlappungen, eindeutige IDs, Passagiere je Farbe gleich der Kapazität je Farbe (mit `meta.allowSurplus` genügt `<=`), gültige und azyklische Schlüssel, Abbiegepfeile nur mit `special.oneWay` und `turns`, mit `dir` und ohne Schleife, kein Fahrzeug auf einem Pfeil, nur unterstützte Regeln.
 
 Dazu kommt die Lösbarkeit: Der Solver prüft sie im Editor, beim Import geteilter Level und in `tests/content` für alle ausgelieferten Level.
 
