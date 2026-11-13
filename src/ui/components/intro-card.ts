@@ -10,12 +10,14 @@ const TITLE_KEYS: Record<Mechanic, StringKey> = {
   keys: 'introKeysTitle',
   honk: 'introHonkTitle',
   mystery: 'introMysteryTitle',
+  oneWay: 'introOneWayTitle',
 };
 const TEXT_KEYS: Record<Mechanic, StringKey> = {
   bollards: 'introBollardsText',
   keys: 'introKeysText',
   honk: 'introHonkText',
   mystery: 'introMysteryText',
+  oneWay: 'introOneWayText',
 };
 
 export const mechanicTitle = (mechanic: Mechanic): string => t(TITLE_KEYS[mechanic]);

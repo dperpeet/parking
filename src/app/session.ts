@@ -119,13 +119,14 @@ function keyChainDepth(level: Level): number {
 
 /**
  * Mechaniken, die ein Level einsetzt (Poller als `fixed`-Zellen, Schluessel als gesperrte Fahrzeuge,
- * Mystery als Fahrzeuge mit `mystery`).
+ * Mystery als Fahrzeuge mit `mystery`, Abbiegepfeile als `oneWay`-Zellen).
  */
 export function mechanicsOf(level: Level): Mechanic[] {
   const out: Mechanic[] = [];
   if (level.grid.cells.some((c) => c.type === 'fixed')) out.push('bollards');
   if (level.vehicles.some((v) => v.locked)) out.push('keys');
   if (level.vehicles.some((v) => v.mystery === true)) out.push('mystery');
+  if (level.grid.cells.some((c) => c.type === 'oneWay')) out.push('oneWay');
   return out;
 }
 

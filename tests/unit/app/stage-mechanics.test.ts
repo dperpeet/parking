@@ -307,6 +307,28 @@ describe('Intro-Karten in generierten Leveln', () => {
     expect(mechanicsOf(off)).toEqual([]);
   });
 
+  it('mechanicsOf erkennt Abbiegepfeile (oneWay-Zellen, zuletzt)', () => {
+    const arrows = {
+      ...world2Level,
+      grid: {
+        ...world2Level.grid,
+        cells: [
+          ...world2Level.grid.cells,
+          { x: 0, y: 0, type: 'oneWay' as const, dir: 'N' as const },
+        ],
+      },
+    };
+    expect(mechanicsOf(arrows)).toEqual(['bollards', 'keys', 'oneWay']);
+    const only = {
+      ...classicLevel,
+      grid: {
+        ...classicLevel.grid,
+        cells: [{ x: 0, y: 0, type: 'oneWay' as const, dir: 'E' as const }],
+      },
+    };
+    expect(mechanicsOf(only)).toEqual(['oneWay']);
+  });
+
   it('bereits gesehene Intros erscheinen nicht erneut', async () => {
     const solver = new FakeSolver();
     solver.generateImpl = (p) => Promise.resolve({ ...world2Level, id: p.id ?? 'x' });

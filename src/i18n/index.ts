@@ -154,6 +154,9 @@ const de = {
   introMysteryTitle: 'Mystery-Autos',
   introMysteryText:
     'Graue Autos mit „?“ zeigen ihre Farbe erst, sobald ihr Weg nach draußen frei ist. Mach ihnen Platz und schau, wer drinsitzt!',
+  introOneWayTitle: 'Abbiegepfeile',
+  introOneWayText:
+    'Pfeile auf der Fahrbahn lenken jedes Auto, das darüberfährt, in ihre Richtung. Gegen den Pfeil geht es nicht weiter: Plane den ganzen Weg nach draußen!',
   introStart: 'Los geht’s',
   introReplay: 'Einführung ansehen: {name}',
   noStorage: 'Fortschritt wird in diesem Browser nicht gespeichert',
@@ -425,6 +428,9 @@ const en: Record<StringKey, string> = {
   introMysteryTitle: 'Mystery cars',
   introMysteryText:
     'Grey cars with a “?” show their colour as soon as their way out is free. Clear the way and see what they are!',
+  introOneWayTitle: 'Turn arrows',
+  introOneWayText:
+    'Arrows on the road steer every car that drives over them in their direction. Against an arrow there is no way through: plan the whole route out!',
   introStart: 'Let’s go',
   introReplay: 'Show introduction: {name}',
   noStorage: 'Progress is not saved in this browser',
