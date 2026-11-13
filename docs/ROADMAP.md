@@ -4,12 +4,12 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 
 ## Regeln und Engine
 
-- Einbahnstraßen, Abbiegen (`turns`, `pathfinding`) und Schranken.
+- Schranken (`barrier`, `gates`) und freie Wegsuche (`pathfinding`); Abbiegepfeile (`turns`) gibt es seit Welt 5.
 - Doppelfarb-Fahrzeuge (`vehicles.dualColor`) und `departOnFull = false` (volle Fahrzeuge blockieren).
 - Passagiere: `order` (`lookahead`, `free`), `boardPolicy` (`largestFree`, `playerChoice`) und `mysteryRate`.
-- Die Hupe ist da und in Welt 3 Pflicht. Poller werden spielerisch erst mit Einbahn und Abbiegen richtig interessant, weil Fahrzeuge nur geradeaus fahren; beides ist offen.
 - Pflicht-Hupe in Tageslevel, Endlos und Stufen (dort lösen heute Tipps allein).
 - Mystery-Fahrzeuge in Tageslevel, Endlos und Stufen (heute nur in Welt 4, im Editor und in geteilten Leveln).
+- Abbiegepfeile in Tageslevel, Endlos und Stufen (heute nur in Welt 5, im Editor und in geteilten Leveln).
 - Hupen-Zahl im Editor einstellbar.
 
 ## Wertung
@@ -19,6 +19,7 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 ## Modi
 
 - Hover-Spurvorschau am Desktop.
+- Gebogene Spurvorschau: Die Vorschau (Halten, Blockiert-Anzeige bei `vehicleBlocked`) endet heute auf dem ersten Pfeil, weil der Renderer Pfeile nicht auswertet; dafür braucht es den Weg aus der Engine (z. B. `exitPath` im Event).
 
 ## Editor
 
