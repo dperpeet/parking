@@ -195,9 +195,8 @@ export function mountGameScreen(
     hud.refresh();
     switch (result.kind) {
       case 'vehicle': {
-        const color =
-          controller.getState().vehicles.find((v) => v.id === result.vehicleId)?.color ?? '';
-        const text = hintAnnouncement(color, result.action);
+        const vehicle = controller.getState().vehicles.find((v) => v.id === result.vehicleId);
+        const text = hintAnnouncement(vehicle, result.action);
         hud.announce(text);
         toast(text);
         hud.setHint(result.vehicleId, result.action);

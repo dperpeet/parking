@@ -220,11 +220,11 @@ describe('Tipp mit Hupe', () => {
   });
 
   it('Ansage nennt die Farbe', () => {
-    expect(hintAnnouncement('blue', 'honk')).toBe('Tipp: mit dem blauen Fahrzeug hupen');
-    expect(hintAnnouncement('blue')).toBe('Tipp: das blaue Fahrzeug');
-    expect(hintAnnouncement('purple', 'honk')).toBe('Tipp: mit dem lila Fahrzeug hupen');
+    expect(hintAnnouncement({ color: 'blue' }, 'honk')).toBe('Tipp: mit dem blauen Fahrzeug hupen');
+    expect(hintAnnouncement({ color: 'blue' })).toBe('Tipp: das blaue Fahrzeug');
+    expect(hintAnnouncement({ color: 'purple' }, 'honk')).toBe('Tipp: mit dem lila Fahrzeug hupen');
     setLanguage('en');
-    expect(hintAnnouncement('blue', 'honk')).toBe('Hint: honk with the blue vehicle');
+    expect(hintAnnouncement({ color: 'blue' }, 'honk')).toBe('Hint: honk with the blue vehicle');
   });
 });
 
