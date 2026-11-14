@@ -45,8 +45,3 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 ## PWA und Offline
 
 - Installierbarkeit und Offline-Betrieb.
-
-## Release v1.0.0
-
-- Anleitung.
-- Datenschutzhinweis.
