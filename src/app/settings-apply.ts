@@ -1,7 +1,7 @@
 // Wendet Einstellungen auf Sprache und Bewegung an.
 import { resolveLanguage, setLanguage } from '../i18n';
 import type { Lang } from '../i18n';
-import { setMotionSetting } from '../render';
+import { setMotionSetting } from '../render/tween';
 import type { LanguageSetting, MotionSetting } from './progress';
 
 /** Setzt die UI-Sprache ('auto' = Browser-Sprache) und das lang-Attribut der Seite. */
