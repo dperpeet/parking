@@ -4,14 +4,23 @@ import {
   ENDLESS_LEVELS_PER_STAGE,
   STAGE_COUNT,
   STAGE_KEY_CHAIN_DEPTH,
-  STAGE_SHAPES,
+  STAGE_VARIANTS,
+  STAGE_VARIANT_RULES,
   clampStage,
   dailyStage,
   difficultyRange,
   endlessStage,
   stageForDifficulty,
   stageShape,
+  stageVariant,
+  stageVariants,
 } from '../../../src/app/stages';
+import type { StageVariantId } from '../../../src/app/stages';
+import { localDateKey } from '../../../src/app/progress';
+import { dailySeed, endlessSeed } from '../../../src/app/seed';
+
+const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => i + 1);
+const baseShapes = STAGES.map((s) => stageShape(s));
 
 describe('stageForDifficulty', () => {
   it('entspricht clamp(1..6, ceil((d - 1) / 0.75))', () => {
@@ -65,11 +74,11 @@ describe('Zielbereiche und Formen', () => {
   });
 
   it('jede Stufe hat eine Form, die mit der Stufe waechst', () => {
-    expect(STAGE_SHAPES).toHaveLength(STAGE_COUNT);
+    expect(STAGE_VARIANTS).toHaveLength(STAGE_COUNT);
     for (let s = 2; s <= STAGE_COUNT; s++) {
       expect(stageShape(s).vehicleCount).toBeGreaterThanOrEqual(stageShape(s - 1).vehicleCount);
     }
-    for (const shape of STAGE_SHAPES)
+    for (const shape of STAGES.flatMap((s) => stageVariants(s)))
       expect(shape.colorCount).toBeLessThanOrEqual(shape.vehicleCount);
   });
 
@@ -104,7 +113,7 @@ describe('Stufen-Mechaniken', () => {
   const count = (c: number | [number, number]): [number, number] => (Array.isArray(c) ? c : [c, c]);
 
   it('Stufe 1-2 classic ohne Mechaniken, ab Stufe 3 world2', () => {
-    expect(STAGE_SHAPES.map((s) => s.ruleset)).toEqual([
+    expect(baseShapes.map((s) => s.ruleset)).toEqual([
       'classic',
       'classic',
       'world2',
@@ -133,7 +142,68 @@ describe('Stufen-Mechaniken', () => {
   });
 
   it('Fahrzeugzahl waechst nicht ueber die Stufen hinweg rueckwaerts', () => {
-    const counts = STAGE_SHAPES.map((s) => s.vehicleCount);
+    const counts = baseShapes.map((s) => s.vehicleCount);
     expect(counts).toEqual([...counts].sort((a, b) => a - b));
+  });
+});
+
+describe('Mechanik-Varianten', () => {
+  const seeds = Array.from({ length: 400 }, (_, i) => endlessSeed(0xabc, i + 1));
+  const picked = (stage: number): Set<StageVariantId> =>
+    new Set(seeds.map((seed) => stageVariant(stage, seed).variant));
+
+  it('Stufe 1-2 bleiben classic ohne neue Mechanik', () => {
+    for (const stage of [1, 2]) {
+      expect(stageVariants(stage).map((v) => v.variant)).toEqual(['classic']);
+      expect(picked(stage)).toEqual(new Set(['classic']));
+      const v = stageVariant(stage, 42);
+      expect(v.requireHonk ?? v.mystery ?? v.oneWay).toBeUndefined();
+    }
+  });
+
+  it('ab Stufe 3 kommen Pflicht-Hupe, Mystery und Abbiegepfeile vor', () => {
+    for (const stage of [3, 4, 5, 6]) {
+      expect(picked(stage)).toEqual(new Set(['world2', 'honk', 'mystery', 'turns']));
+    }
+  });
+
+  it('die Grundvariante ist die erste und entspricht der alten Stufenform', () => {
+    for (const stage of STAGES) {
+      expect(stageVariants(stage)[0]).toEqual(stageShape(stage));
+      expect(stageShape(stage).ruleset).toBe(stage <= 2 ? 'classic' : 'world2');
+    }
+  });
+
+  it('Ruleset und Mechanik passen zur Variante', () => {
+    for (const v of STAGES.flatMap((s) => stageVariants(s))) {
+      expect(v.ruleset).toBe(STAGE_VARIANT_RULES[v.variant].ruleset);
+      expect(v.requireHonk === true).toBe(v.variant === 'honk');
+      expect(v.mystery !== undefined).toBe(v.variant === 'mystery');
+      expect(v.oneWay !== undefined).toBe(v.variant === 'turns');
+      expect(v.weight).toBeGreaterThan(0);
+    }
+    expect(stageVariants(3).find((v) => v.variant === 'honk')?.ruleset).toBe('world3');
+    expect(stageVariants(3).find((v) => v.variant === 'mystery')?.ruleset).toBe('world4');
+    expect(stageVariants(3).find((v) => v.variant === 'turns')?.ruleset).toBe('world5');
+  });
+
+  it('die Wahl ist deterministisch und folgt den Gewichten', () => {
+    for (const stage of STAGES) {
+      for (const seed of seeds.slice(0, 20))
+        expect(stageVariant(stage, seed)).toEqual(stageVariant(stage, seed));
+    }
+    const share = seeds.filter((seed) => stageVariant(3, seed).variant === 'world2').length;
+    // Stufe 3: Grundvariante mit Gewicht 2 von 5.
+    expect(share / seeds.length).toBeGreaterThan(0.3);
+    expect(share / seeds.length).toBeLessThan(0.5);
+  });
+
+  it('Tageslevel: die Variante wechselt von Woche zu Woche', () => {
+    // 52 Sonntage (Stufe 6) ab dem 3. Januar 2027.
+    const sundays = Array.from({ length: 52 }, (_, w) => {
+      const d = new Date(2027, 0, 3 + 7 * w);
+      return localDateKey(d);
+    });
+    expect(new Set(sundays.map((k) => stageVariant(6, dailySeed(k)).variant)).size).toBe(4);
   });
 });

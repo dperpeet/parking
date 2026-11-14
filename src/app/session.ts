@@ -23,8 +23,8 @@ import {
   STAGE_KEY_CHAIN_DEPTH,
   clampStage,
   dailyStage,
-  difficultyRange,
   endlessStage,
+  stageParams,
   stageShape,
 } from './stages';
 import { nextCampaignLevel } from './unlock';
@@ -459,26 +459,13 @@ export class GameSession {
 
   // --- Tageslevel ---
 
-  /** Generator-Parameter einer Stufe: Form, Zielbereich, Ruleset sowie Poller und Schluessel. */
+  /** Generator-Parameter einer Stufe (Grundvariante): Form, Zielbereich, Ruleset, Poller und Schluessel. */
   private stageParams(
     stage: number,
     rules: ResolvedRules,
     extra: { seed: number; id: string; title: Level['title'] },
   ): GeneratorOptions {
-    const shape = stageShape(stage);
-    return {
-      ...extra,
-      width: shape.width,
-      height: shape.height,
-      vehicleCount: shape.vehicleCount,
-      colors: rules.vehicles.colors.slice(0, shape.colorCount),
-      targetDifficulty: difficultyRange(stage),
-      maxAttempts: GENERATE_MAX_ATTEMPTS,
-      ruleset: shape.ruleset,
-      bollards: shape.bollards,
-      keys: shape.keys,
-      ...(shape.keys ? { keyChainDepth: STAGE_KEY_CHAIN_DEPTH } : {}),
-    };
+    return stageParams(stage, stageShape(stage), rules.vehicles.colors, extra);
   }
 
   // --- Tageslevel ---
