@@ -34,6 +34,14 @@ describe('Anleitung (Inhalt)', () => {
     }
   });
 
+  it('deckt auch Mystery-Autos und Abbiegepfeile ab', () => {
+    setLanguage('de');
+    const terms = guideSections(FACTS).find((s) => s.id === 'mechanics')?.terms ?? [];
+    expect(terms.map((d) => d.term)).toEqual(
+      expect.arrayContaining([mechanicTitle('mystery'), mechanicTitle('oneWay')]),
+    );
+  });
+
   it('nimmt den levelbezogenen Satz der Hupen-Karte nicht in die Anleitung', () => {
     setLanguage('de');
     const honk = guideSections(FACTS)

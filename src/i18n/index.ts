@@ -168,7 +168,7 @@ const de = {
   infoHeading: 'Info',
   guideLoopTitle: 'So geht’s',
   guideLoop1:
-    'Tippe ein Fahrzeug an. Es fährt geradeaus in Blickrichtung bis zum Rand und parkt auf dem nächsten freien Halteplatz. Ist der Weg versperrt, wackelt es nur. Das kostet keinen Zug.',
+    'Tippe ein Fahrzeug an. Es fährt in Blickrichtung bis zum Rand (Abbiegepfeile können es umlenken) und parkt auf dem nächsten freien Halteplatz. Ist der Weg versperrt, wackelt es nur. Das kostet keinen Zug.',
   guideLoop2:
     'Der vorderste Fahrgast steigt von selbst in ein geparktes Fahrzeug seiner Farbe, solange dort Platz ist. Jede Farbe hat zusätzlich ein eigenes Symbol.',
   guideLoop3: 'Volle Fahrzeuge fahren ab und machen ihren Halteplatz wieder frei.',
@@ -504,7 +504,7 @@ const en: Record<StringKey, string> = {
   infoHeading: 'Info',
   guideLoopTitle: 'The basics',
   guideLoop1:
-    'Tap a vehicle. It drives straight ahead to the edge and parks in the next free spot. If its way is blocked, it only wiggles. That costs no move.',
+    'Tap a vehicle. It drives ahead to the edge (turn arrows can steer it) and parks in the next free spot. If its way is blocked, it only wiggles. That costs no move.',
   guideLoop2:
     'The front passenger gets into a parked vehicle of the same color by themselves, as long as there is room. Every color also has its own symbol.',
   guideLoop3: 'Full vehicles drive off and free their spot again.',

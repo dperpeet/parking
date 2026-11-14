@@ -10,6 +10,8 @@ test('Anleitung: ?-Knopf oeffnet sie, Escape schliesst und gibt den Fokus zuruec
   await expect(dialog.getByRole('heading', { name: 'Anleitung' })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'So geht’s' })).toBeVisible();
   await expect(dialog.getByText('Poller', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Mystery-Autos', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Abbiegepfeile', { exact: true })).toBeVisible();
   await expect(dialog.getByText('Pro Level gibt es 3 Tipps.')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
