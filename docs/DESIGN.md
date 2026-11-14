@@ -173,7 +173,7 @@ Die Schnittstellen zwischen den Schichten sind in [INTERFACES.md](INTERFACES.md)
 
 - Tests: `tests/unit` (Engine, Solver, App, Renderer), `tests/content` (Schemas, Level gültig und lösbar), `tests/e2e` (Playwright). E2E-Tests nutzen nur ausgelieferte Level; spätere Welten werden per vorbelegtem Spielstand freigeschaltet (`completedSave`/`seedSave` in `tests/e2e/support.ts`).
 - CI (`.github/workflows/ci.yml`, für Pull Requests und `main`): `lint` (ESLint und Prettier), `typecheck`, `test` (Vitest mit Coverage-Gate für `src/engine/**`: mindestens 95 % bei Statements, Branches, Functions und Lines, konfiguriert in `vite.config.ts`; `pnpm test:coverage` läuft statt `pnpm test`), danach `build` und `e2e`.
-- Bundle-Budget: `pnpm size` (`tools/check-bundle.mjs`) läuft im `build`-Job nach dem Build und summiert die gzip-Größe des Initial-JS (Skripte aus `dist/index.html`: `<script type="module">` und `modulepreload`; Lazy-Chunks wie Editor und Solver-Worker zählen nicht). Grenze 250 kB (250 000 Bytes, wie Vite kB zählt); darüber Exit 1.
+- Bundle-Budget: `pnpm size` (`tools/check-bundle.mjs`) läuft im `build`-Job nach dem Build und summiert die gzip-Größe des Initial-JS (Skripte aus `dist/index.html`: `<script type="module">` und `modulepreload`; Lazy-Chunks wie Spielfeld, Editor und Solver-Worker zählen nicht). Grenze 95 kB (95 000 Bytes, wie Vite kB zählt; Ist-Stand etwa 78 kB); darüber Exit 1.
 - Barrierefreiheit: Farbsymbole, Tastaturbedienung (Pfeiltasten, U für Undo, R für Neustart, H für den Hupen-Zielmodus, Esc bricht ihn ab), `aria-live`-Meldungen, `prefers-reduced-motion` mit Schalter in den Einstellungen.
 - Sprachen: Deutsch und Englisch, Auswahl automatisch oder manuell.
 

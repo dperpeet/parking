@@ -1,13 +1,16 @@
 // Bundle-Budget: summiert die gzip-Groesse des Initial-JS (nach `pnpm build`) und bricht bei Ueberschreitung ab.
 // Initial-JS = Skripte, die dist/index.html per <script type="module"> und <link rel="modulepreload"> laedt.
-// Lazy-Chunks (Editor, Solver-Worker, ...) werden nicht mitgezaehlt.
+// Lazy-Chunks (Spielfeld samt PixiJS, Editor, Solver-Worker, ...) werden nicht mitgezaehlt.
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-/** Budget in Bytes: 250 kB = 250 000 Bytes (wie in der Ausgabe von Vite, 1 kB = 1000 Bytes). */
-const BUDGET_BYTES = 250_000;
+/**
+ * Budget in Bytes: 95 kB = 95 000 Bytes (wie in der Ausgabe von Vite, 1 kB = 1000 Bytes).
+ * Ist-Stand etwa 78 kB, seit Spielfeld und PixiJS erst beim Levelstart geladen werden.
+ */
+const BUDGET_BYTES = 95_000;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
