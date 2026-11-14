@@ -21,5 +21,7 @@ export type {
 } from './screens/level-select';
 export { openSettings } from './screens/settings';
 export type { SettingsDialog, SettingsHandlers, SettingsModel } from './screens/settings';
+export { openInfo } from './screens/info';
+export type { InfoDialog, InfoFacts, InfoKind } from './screens/info';
 export { openIntro } from './components/intro-card';
 export type { IntroCard } from './components/intro-card';

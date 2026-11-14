@@ -534,3 +534,84 @@
   border: 2px solid var(--t-outline);
   border-radius: 50%;
 }
+
+.set-info .btn {
+  flex: 1 1 0;
+  min-height: 46px;
+  font-size: 18px;
+}
+
+/* Hilfe-Knopf im Kopf der Levelauswahl */
+.btn-help {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  padding-top: 4px;
+  color: var(--t-ink);
+}
+
+.sel-foot {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.sel-foot-link {
+  padding: 4px 6px 0;
+  color: var(--t-sub);
+}
+
+/* Anleitung und Datenschutz */
+.dialog-info {
+  gap: 10px;
+  text-align: left;
+}
+
+.dialog-info:focus {
+  outline: none;
+}
+
+.info-title {
+  font-size: 28px;
+  text-align: center;
+}
+
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-heading {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.info-text,
+.info-steps,
+.info-terms {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.info-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 22px;
+}
+
+.info-terms dt {
+  margin-top: 4px;
+  font-weight: 800;
+}
+
+.info-terms dd {
+  margin: 0;
+}
+
+.dialog-info .btn {
+  margin-top: 6px;
+}

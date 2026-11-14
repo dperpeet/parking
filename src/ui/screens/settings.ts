@@ -24,6 +24,9 @@ export interface SettingsHandlers {
   /** Spielt den Spielstand ein; gibt zurueck, ob es geklappt hat. */
   onImport(text: string, mode: ImportMode): boolean;
   onReset(): void;
+  /** Anleitung bzw. Datenschutzhinweis oeffnen (der Einstellungsdialog schliesst sich dafuer). */
+  onGuide(): void;
+  onPrivacy(): void;
 }
 
 export interface SettingsDialog {
@@ -244,6 +247,17 @@ export function openSettings(
           confirmingReset = true;
           render();
         }),
+      ),
+      h(
+        'div',
+        { class: 'set-row' },
+        h('div', { class: 'set-label', id: 'set-info' }, t('infoHeading')),
+        h(
+          'div',
+          { class: 'dlg-row set-info', role: 'group', 'aria-labelledby': 'set-info' },
+          action(t('guideTitle'), 'settings-guide', handlers.onGuide),
+          action(t('privacyTitle'), 'settings-privacy', handlers.onPrivacy),
+        ),
       ),
       h('p', { class: 'set-message', role: 'status', 'data-testid': 'settings-message' }, message),
       action(t('close'), 'settings-close', close, 'btn-primary'),

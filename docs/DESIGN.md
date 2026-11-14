@@ -136,6 +136,13 @@ CLI: `pnpm level:analyze [--honk]` analysiert Level-Dateien (`--honk`: mit Hupen
 
 Der Spielstand liegt unter dem `localStorage`-Schlüssel `parking.save.v1` (versioniert, zod-validiert; defekte Teile fallen auf Defaults zurück). Er enthält Level-Ergebnisse, Tageslevel-Verlauf, Endlos-Bestwert, „Stufe halten", gesehene Intros, eigene Level und Einstellungen (Sprache, Bewegung, Ton). Alle Storage-Zugriffe laufen in try/catch; ohne Speicher läuft das Spiel im Arbeitsspeicher weiter. Es gibt keine Cookies und keine externen Requests.
 
+## Anleitung und Datenschutzhinweis
+
+Beide sind Dialoge über der Levelauswahl (`src/ui/screens/info.ts`), ohne eigene Route. Erreichbar sind sie über den „?“-Knopf im Kopf (Anleitung), die Fußzeile der Levelauswahl (beide) und den Bereich „Info“ in den Einstellungen (beide; Schließen führt dorthin zurück). Escape schließt, der Fokus kehrt zum auslösenden Knopf zurück. Die Texte stehen in `src/i18n` (de/en) und werden nur als Text eingefügt.
+
+- Anleitung: Core Loop in vier Schritten (Antippen, Einsteigen, Abfahren, Sieg und Niederlage), dann Besonderheiten, Hilfen, Tipps, Sterne und Fortschritt, weitere Modi und Tastatur. Die Besonderheiten nutzen Titel und Text der Intro-Karten (`mechanicTitle`, `mechanicText`) für alle Mechaniken aus `Mechanic`; der Satz „Hier brauchst du die Hupe“ (`introHonkNeed`) steht nur auf der Karte vor einem Level. Tipp-Zahl, Sterne-Grenze mit Tipp und Speicher-Schlüssel kommen aus den Konstanten der App (`INFO_FACTS` in `src/app/select-screen.ts`). Damit erscheinen Poller, Schlüssel, Hupe, Mystery-Autos und Abbiegepfeile; eine neue Mechanik mit Intro-Karte kommt automatisch dazu.
+- Datenschutzhinweis: keine Werbung, kein Konto, kein Tracking, keine Cookies, keine Anfragen an andere Server als den eigenen (Schrift unter `public/fonts`, Klänge synthetisch, Solver im Worker); Spielstand nur in `parking.save.v1` auf dem Gerät; Löschen über „Fortschritt zurücksetzen“ (Einstellungen bleiben) oder die Website-Daten des Browsers; geteilte Level nur im Fragment, Ergebnis-Text und Export nur auf Nutzeraktion; Hosting auf GitHub Pages (GitHub verarbeitet Zugriffsdaten nach eigener Datenschutzerklärung) oder auf einem eigenen Server (die mitgelieferte Caddy-Konfiguration schreibt keine Zugriffsprotokolle). Ein Betreiber oder eine Anschrift ist nicht angegeben.
+
 ## Architektur
 
 ```
