@@ -146,6 +146,7 @@ ui/ + render/  ->  app/  ->  engine/ + schema/
 - Regeln liegen als Module in `src/engine/rules/`. Level-spezifische Sonderfälle gibt es nicht.
 - Der Renderer berechnet keine Spiellogik, er spielt nur die Events der Engine ab. Eingaben gehen als `Action` an den Game-Controller in `app/`.
 - Import-Grenzen erzwingt ESLint (`pnpm lint`). `engine` und `schema` kennen weder DOM noch Pixi noch höhere Schichten.
+- Laden in Etappen: Das Initial-JS (Levelauswahl, Engine, Kampagne) enthält kein PixiJS. Das Spielfeld (`app/game-screen` samt `render` und Pixi) ist ein eigener Chunk, den `app/lazy.ts` beim Levelstart per `import()` lädt und in der Levelauswahl im Leerlauf (`requestIdleCallback`, sonst nach 1 s) vorlädt. Dauert das Laden länger als 300 ms, erscheint eine Ladeanzeige (`role="status"`); scheitert es (offline, Netzfehler), folgen Meldung, „Erneut versuchen“ (lädt die Seite neu, weil Browser einen gescheiterten Modul-Import nicht wiederholen; das Level startet danach aus dem Hash) und „Zum Menü“. Pixi startet mit `skipExtensionImports`: Pixi-Events, -Accessibility, Filter und DOMContainer bleiben ungeladen, weil Eingabe und Screenreader über die DOM-Buttons laufen. `setMotionSetting` kommt direkt aus `render/tween` (ohne Pixi). Messung (gzip): Initial-JS 235 kB → 78 kB; Spielfeld-Chunks beim ersten Levelstart 159 kB (mit `browserAll` wären es 175 kB). Gedrosselt (150 ms RTT, 1,6 Mbit/s) dauert der erste Levelstart aus der Levelauswahl ohne Vorladen etwa 1,9 s, mit Vorladen etwa 0,8 s.
 
 Verzeichnisse unter `src`:
 
