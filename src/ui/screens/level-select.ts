@@ -60,6 +60,9 @@ export interface LevelSelectHandlers {
   onHoldStage(stage: number): void;
   onIntro(mechanic: Mechanic): void;
   onEditor?(): void;
+  /** Anleitung und Datenschutzhinweis (Knopf im Kopf bzw. Fusszeile). */
+  onGuide?(): void;
+  onPrivacy?(): void;
   onCustomPlay?(id: string): void;
   onCustomEdit?(id: string): void;
   onCustomDelete?(id: string): void;
@@ -99,12 +102,30 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
     const settings = button('btn-round', 'settings', handlers.onSettings, icon('gear'));
     settings.setAttribute('aria-label', t('settings'));
     settings.setAttribute('data-testid', 'settings');
+    const guide = button('btn-round btn-help', 'guide', () => handlers.onGuide?.(), '?');
+    guide.setAttribute('aria-label', t('guideTitle'));
+    guide.setAttribute('data-testid', 'guide');
     return h(
       'header',
       { class: 'sel-head' },
       h('div', { class: 'logo', 'aria-hidden': 'true' }, 'P'),
       h('h1', { class: 'sel-title' }, t('appName')),
+      guide,
       settings,
+    );
+  };
+
+  const footer = (): HTMLElement => {
+    const link = (name: string, label: string, fn: () => void): HTMLButtonElement => {
+      const b = button('btn-link sel-foot-link', `foot-${name}`, fn, label);
+      b.setAttribute('data-testid', `footer-${name}`);
+      return b;
+    };
+    return h(
+      'footer',
+      { class: 'sel-foot' },
+      link('guide', t('guideTitle'), () => handlers.onGuide?.()),
+      link('privacy', t('privacyTitle'), () => handlers.onPrivacy?.()),
     );
   };
 
@@ -339,6 +360,7 @@ export function createLevelSelect(handlers: LevelSelectHandlers): LevelSelectVie
         holdCard(m),
         ...m.worlds.map(world),
         customList(m),
+        footer(),
       );
       el.querySelector('.notice')?.remove();
       if (!m.persistent && !noticeDismissed) el.append(notice());

@@ -152,8 +152,8 @@ const de = {
   introKeysText:
     'Ein Fahrzeug mit Schloss rührt sich nicht, bis sein Schlüssel-Fahrzeug das Feld verlassen hat. Gleiche Nummern gehören zusammen.',
   introHonkTitle: 'Hupe',
-  introHonkText:
-    'Steckt ein Auto fest? Lass es hupen! Dann macht das Auto davor Platz. Hier brauchst du die Hupe.',
+  introHonkText: 'Steckt ein Auto fest? Lass es hupen! Dann macht das Auto davor Platz.',
+  introHonkNeed: 'Hier brauchst du die Hupe.',
   introMysteryTitle: 'Mystery-Autos',
   introMysteryText:
     'Graue Autos mit „?“ zeigen ihre Farbe erst, sobald ihr Weg nach draußen frei ist. Mach ihnen Platz und schau, wer drinsitzt!',
@@ -162,6 +162,57 @@ const de = {
     'Pfeile auf der Fahrbahn lenken jedes Auto, das darüberfährt, in ihre Richtung. Gegen den Pfeil geht es nicht weiter: Plane den ganzen Weg nach draußen!',
   introStart: 'Los geht’s',
   introReplay: 'Einführung ansehen: {name}',
+  // Anleitung und Datenschutz
+  guideTitle: 'Anleitung',
+  privacyTitle: 'Datenschutz',
+  infoHeading: 'Info',
+  guideLoopTitle: 'So geht’s',
+  guideLoop1:
+    'Tippe ein Fahrzeug an. Es fährt geradeaus in Blickrichtung bis zum Rand und parkt auf dem nächsten freien Halteplatz. Ist der Weg versperrt, wackelt es nur. Das kostet keinen Zug.',
+  guideLoop2:
+    'Der vorderste Fahrgast steigt von selbst in ein geparktes Fahrzeug seiner Farbe, solange dort Platz ist. Jede Farbe hat zusätzlich ein eigenes Symbol.',
+  guideLoop3: 'Volle Fahrzeuge fahren ab und machen ihren Halteplatz wieder frei.',
+  guideLoop4:
+    'Gewonnen hast du, wenn alle Fahrgäste eingestiegen sind. Verloren ist das Level, wenn alle Halteplätze belegt sind und der vorderste Fahrgast nirgends passt oder wenn kein Fahrzeug mehr fahren kann.',
+  guideMechanicsTitle: 'Besonderheiten',
+  guideMechanicsText:
+    'In späteren Welten kommen neue Teile dazu. Vor dem ersten Level damit erklärt eine Karte sie kurz; mit dem „?“ bei der Welt siehst du sie noch einmal.',
+  guideHonkHow:
+    'Tippe auf „Hupe“ und dann auf das Auto, das feststeckt. Poller und abgeschlossene Autos weichen nicht aus.',
+  guidePowerupsTitle: 'Hilfen',
+  guidePowerupsText:
+    'Wie oft du eine Hilfe nutzen kannst, steht am Knopf. Jede genutzte Hilfe kann einen Stern kosten.',
+  guidePuUndo: 'nimmt den letzten Zug zurück (auch nach einer Niederlage).',
+  guidePuShuffle: 'mischt die sichtbaren wartenden Fahrgäste.',
+  guidePuExtraSlot: 'gibt dir einen zusätzlichen Halteplatz.',
+  guidePuHonk: 'lässt ein Fahrzeug hupen, damit das Auto davor Platz macht.',
+  guideHintsTitle: 'Tipps',
+  guideHintsText:
+    'Der Knopf „Tipp“ zeigt dir den nächsten guten Zug. Pro Level gibt es {n} Tipps. Mit Tipp gibt es höchstens {cap} Sterne.',
+  guideStarsTitle: 'Sterne und Fortschritt',
+  guideStarsText:
+    'Ein geschafftes Level bringt 1 bis 3 Sterne: Je weniger Hilfen du brauchst, desto mehr. In der Welt „Hupe“ kostet eine Hupe keinen Stern. Schon 1 Stern schaltet das nächste Level frei. Sind alle Level einer Welt geschafft, öffnet sich die nächste.',
+  guideModesTitle: 'Weitere Modi',
+  guideModesText:
+    'Das Tageslevel ist jeden Tag neu und für alle gleich. In Endlos werden die Level alle zwei Siege schwerer, bis du eines verlierst. Im Editor baust du eigene Level und teilst sie per Link.',
+  guideKeysTitle: 'Tastatur',
+  guideKeysText:
+    'Pfeiltasten wählen ein Fahrzeug, Enter oder Leertaste tippt es an. U nimmt einen Zug zurück, R startet neu, H wählt die Hupe, Esc bricht ab.',
+  privacyShortTitle: 'Kurz gesagt',
+  privacyShortText:
+    'ParKing zeigt keine Werbung, braucht kein Konto und sammelt keine Daten über dich. Es gibt kein Tracking, keine Analyse-Werkzeuge, keine Cookies und keine Anfragen an andere Server als den, von dem das Spiel geladen wird. Schrift, Klänge und Level-Generator laufen vollständig in deinem Browser.',
+  privacyStoreTitle: 'Was gespeichert wird',
+  privacyStoreText:
+    'Fortschritt und Einstellungen (Level-Ergebnisse, Tageslevel-Serie, Endlos-Rekord, eigene Level, Sprache, Bewegung, Ton) liegen nur auf diesem Gerät im lokalen Speicher des Browsers (localStorage, Schlüssel {key}). Sie werden nirgendwohin übertragen.',
+  privacyDeleteTitle: 'Löschen',
+  privacyDeleteText:
+    '„Fortschritt zurücksetzen“ in den Einstellungen löscht deinen Fortschritt samt eigener Level; Sprache, Bewegung und Ton bleiben. Ganz entfernen kannst du alles, indem du in deinem Browser die Website-Daten dieser Seite löschst.',
+  privacyShareTitle: 'Teilen und Export',
+  privacyShareText:
+    'Ein geteiltes Level steckt vollständig im Link hinter dem „#“; dieser Teil wird nicht an den Server geschickt. Ergebnis-Texte und exportierte Spielstände gibst du nur selbst weiter, über Zwischenablage, Teilen-Menü oder Datei.',
+  privacyHostTitle: 'Hosting',
+  privacyHostText:
+    'Die öffentliche Version liegt auf GitHub Pages. Beim Laden der Seite verarbeitet GitHub technisch nötige Daten wie deine IP-Adresse und kann Zugriffe protokollieren; dafür gilt die Datenschutzerklärung von GitHub. Läuft ParKing auf einem eigenen Server, ist dessen Betreiber verantwortlich; die mitgelieferte Server-Konfiguration schreibt keine Zugriffsprotokolle.',
   noStorage: 'Fortschritt wird in diesem Browser nicht gespeichert',
   dismiss: 'Schließen',
   // Einstellungen
@@ -438,8 +489,8 @@ const en: Record<StringKey, string> = {
   introKeysText:
     'A locked vehicle will not budge until its key vehicle has left the board. Matching numbers belong together.',
   introHonkTitle: 'Honk',
-  introHonkText:
-    'Is a car stuck? Let it honk! The car in front makes room. You need the horn here.',
+  introHonkText: 'Is a car stuck? Let it honk! The car in front makes room.',
+  introHonkNeed: 'You need the horn here.',
   introMysteryTitle: 'Mystery cars',
   introMysteryText:
     'Grey cars with a “?” show their colour as soon as their way out is free. Clear the way and see what they are!',
@@ -448,6 +499,56 @@ const en: Record<StringKey, string> = {
     'Arrows on the road steer every car that drives over them in their direction. Against an arrow there is no way through: plan the whole route out!',
   introStart: 'Let’s go',
   introReplay: 'Show introduction: {name}',
+  guideTitle: 'How to play',
+  privacyTitle: 'Privacy',
+  infoHeading: 'Info',
+  guideLoopTitle: 'The basics',
+  guideLoop1:
+    'Tap a vehicle. It drives straight ahead to the edge and parks in the next free spot. If its way is blocked, it only wiggles. That costs no move.',
+  guideLoop2:
+    'The front passenger gets into a parked vehicle of the same color by themselves, as long as there is room. Every color also has its own symbol.',
+  guideLoop3: 'Full vehicles drive off and free their spot again.',
+  guideLoop4:
+    'You win when every passenger has boarded. You lose when all spots are taken and the front passenger fits nowhere, or when no vehicle can move any more.',
+  guideMechanicsTitle: 'Special pieces',
+  guideMechanicsText:
+    'Later worlds add new pieces. A card explains each one before its first level; tap the “?” at the world to see it again.',
+  guideHonkHow:
+    'Tap “Honk”, then tap the car that is stuck. Bollards and locked cars do not move aside.',
+  guidePowerupsTitle: 'Helpers',
+  guidePowerupsText:
+    'The button shows how often you can use a helper. Every helper you use may cost a star.',
+  guidePuUndo: 'takes back your last move (even after losing).',
+  guidePuShuffle: 'shuffles the visible waiting passengers.',
+  guidePuExtraSlot: 'gives you one extra parking spot.',
+  guidePuHonk: 'lets a vehicle honk so the car in front makes room.',
+  guideHintsTitle: 'Hints',
+  guideHintsText:
+    'The “Hint” button shows you a good next move. There are {n} hints per level. Using a hint caps the level at {cap} stars.',
+  guideStarsTitle: 'Stars and progress',
+  guideStarsText:
+    'A cleared level earns 1 to 3 stars: the fewer helpers you need, the more. In the world “Honk”, one honk costs no star. A single star unlocks the next level. Clear every level of a world to open the next one.',
+  guideModesTitle: 'More modes',
+  guideModesText:
+    'The daily level is new every day and the same for everyone. In Endless, levels get harder every two wins until you lose one. In the editor you build your own levels and share them by link.',
+  guideKeysTitle: 'Keyboard',
+  guideKeysText:
+    'Arrow keys pick a vehicle, Enter or Space taps it. U undoes a move, R restarts, H picks the horn, Esc cancels.',
+  privacyShortTitle: 'In short',
+  privacyShortText:
+    'ParKing shows no ads, needs no account and collects no data about you. There is no tracking, no analytics, no cookies and no requests to any server other than the one the game is loaded from. Font, sounds and the level generator run entirely in your browser.',
+  privacyStoreTitle: 'What is stored',
+  privacyStoreText:
+    'Progress and settings (level results, daily streak, endless record, your own levels, language, motion, sound) stay on this device only, in your browser’s local storage (localStorage, key {key}). They are never sent anywhere.',
+  privacyDeleteTitle: 'Deleting',
+  privacyDeleteText:
+    '“Reset progress” in the settings deletes your progress, including your own levels; language, motion and sound stay. To remove everything, clear this site’s data in your browser.',
+  privacyShareTitle: 'Sharing and export',
+  privacyShareText:
+    'A shared level lives entirely in the link after the “#”; that part is never sent to the server. Result texts and exported saves only go where you send them, via clipboard, share menu or file.',
+  privacyHostTitle: 'Hosting',
+  privacyHostText:
+    'The public version is hosted on GitHub Pages. When the page loads, GitHub processes technically necessary data such as your IP address and may log access; GitHub’s privacy statement applies. If ParKing runs on its own server, that server’s operator is responsible; the bundled server configuration writes no access logs.',
   noStorage: 'Progress is not saved in this browser',
   dismiss: 'Dismiss',
   settingsTitle: 'Settings',

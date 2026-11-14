@@ -21,7 +21,17 @@ const TEXT_KEYS: Record<Mechanic, StringKey> = {
   oneWay: 'introOneWayText',
 };
 
+/** Satz, der nur auf der Karte vor einem Level steht (nicht in der Anleitung). */
+const LEVEL_NOTE_KEYS: Partial<Record<Mechanic, StringKey>> = { honk: 'introHonkNeed' };
+
 export const mechanicTitle = (mechanic: Mechanic): string => t(TITLE_KEYS[mechanic]);
+/** Allgemeine Erklaerung der Mechanik (Intro-Karte und Anleitung). */
+export const mechanicText = (mechanic: Mechanic): string => t(TEXT_KEYS[mechanic]);
+
+function introText(mechanic: Mechanic): string {
+  const note = LEVEL_NOTE_KEYS[mechanic];
+  return note ? `${mechanicText(mechanic)} ${t(note)}` : mechanicText(mechanic);
+}
 
 export interface IntroCard {
   close(): void;
@@ -199,7 +209,7 @@ export function openIntro(
     },
     art(mechanic),
     h('h2', { id: 'intro-title', class: 'dlg-title' }, mechanicTitle(mechanic)),
-    h('p', { id: 'intro-text', class: 'dlg-sub intro-text' }, t(TEXT_KEYS[mechanic])),
+    h('p', { id: 'intro-text', class: 'dlg-sub intro-text' }, introText(mechanic)),
     start,
   );
   layer.replaceChildren(
