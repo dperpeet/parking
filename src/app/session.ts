@@ -19,6 +19,8 @@ import { makeSimilarLevel } from './similar-level';
 import type { SolverPort } from './solver-port';
 import {
   GENERATE_MAX_ATTEMPTS,
+  HONK_CHECK_MAX_STATES,
+  HONK_MAX_ATTEMPTS,
   SIMILAR_DIFFICULTY_TOLERANCE,
   STAGE_KEY_CHAIN_DEPTH,
   clampStage,
@@ -26,7 +28,9 @@ import {
   endlessStage,
   stageParams,
   stageShape,
+  stageVariant,
 } from './stages';
+import type { StageVariant } from './stages';
 import { nextCampaignLevel } from './unlock';
 
 /** Hoechste Schwierigkeit auf der 0-10-Skala. */
@@ -53,6 +57,13 @@ interface EndlessRun {
   score: number;
   stage: number;
   previousBest: number;
+}
+
+/** Erzeugtes Level samt Regeln; `requiredHonk`: mit Pflicht-Hupe erzeugt. */
+interface GeneratedLevel {
+  level: Level;
+  rules: ResolvedRules;
+  requiredHonk: boolean;
 }
 
 type Mode =
@@ -119,12 +130,14 @@ function keyChainDepth(level: Level): number {
 
 /**
  * Mechaniken, die ein Level einsetzt (Poller als `fixed`-Zellen, Schluessel als gesperrte Fahrzeuge,
- * Mystery als Fahrzeuge mit `mystery`, Abbiegepfeile als `oneWay`-Zellen).
+ * Mystery als Fahrzeuge mit `mystery`, Abbiegepfeile als `oneWay`-Zellen). Die Pflicht-Hupe steht nicht
+ * im Level; `honk` gilt, wenn das Level mit `requireHonk` erzeugt wurde.
  */
-export function mechanicsOf(level: Level): Mechanic[] {
+export function mechanicsOf(level: Level, requiredHonk = false): Mechanic[] {
   const out: Mechanic[] = [];
   if (level.grid.cells.some((c) => c.type === 'fixed')) out.push('bollards');
   if (level.vehicles.some((v) => v.locked)) out.push('keys');
+  if (requiredHonk) out.push('honk');
   if (level.vehicles.some((v) => v.mystery === true)) out.push('mystery');
   if (level.grid.cells.some((c) => c.type === 'oneWay')) out.push('oneWay');
   return out;
@@ -138,6 +151,10 @@ export class GameSession {
   private mode: Mode | null = null;
   private status: SessionStatus = 'loading';
   private recorded = false;
+  /** Das aktuelle Level wurde mit Pflicht-Hupe erzeugt (Tageslevel, Endlos, Aehnliches Level). */
+  private requiredHonk = false;
+  /** Generiertes Pflicht-Hupe-Level, dessen Intro noch ungesehen war: Hupen-Tipp wie in Welt 3, Level 1. */
+  private guided = false;
   private shareError: SharedError | null = null;
   private disposed = false;
   private readonly abort = new AbortController();
@@ -194,8 +211,8 @@ export class GameSession {
         case 'daily': {
           const date = localDateKey(this.deps.now());
           this.mode = { kind: 'daily', date };
-          const { level, rules } = await this.generateDaily(date);
-          this.install(level, rules, true);
+          const { level, rules, requiredHonk } = await this.generateDaily(date);
+          this.install(level, rules, true, requiredHonk);
           break;
         }
         case 'endless':
@@ -258,8 +275,10 @@ export class GameSession {
 
   // --- Level installieren ---
 
-  private install(level: Level, rules: ResolvedRules, fresh: boolean): void {
+  private install(level: Level, rules: ResolvedRules, fresh: boolean, requiredHonk = false): void {
     this.recorded = false;
+    this.requiredHonk = requiredHonk;
+    this.guided = requiredHonk && !this.deps.progress.hasSeenIntro('honk');
     this.hints.begin(level.id, fresh);
     this.honkGuide.begin(level.id);
     if (this.controllerRef) {
@@ -354,15 +373,20 @@ export class GameSession {
     if (mode?.kind === 'daily' || mode?.kind === 'endless' || mode?.kind === 'similar') {
       const level = this.controllerRef?.getLevel();
       return level
-        ? (mechanicsOf(level).find((m) => !this.deps.progress.hasSeenIntro(m)) ?? null)
+        ? (mechanicsOf(level, this.requiredHonk).find((m) => !this.deps.progress.hasSeenIntro(m)) ??
+            null)
         : null;
     }
     return null;
   }
 
-  /** Das Level fuehrt die Hupe ein (Intro `honk`): der Hupen-Tipp erscheint dort von selbst. */
+  /**
+   * Das Level fuehrt die Hupe ein (Intro `honk` in der Kampagne oder erstes generiertes Pflicht-Hupe-Level):
+   * der Hupen-Tipp erscheint dort von selbst.
+   */
   guidedHonk(): boolean {
-    return this.mode?.kind === 'campaign' && this.mode.entry.intro === 'honk';
+    if (this.mode?.kind === 'campaign') return this.mode.entry.intro === 'honk';
+    return this.guided;
   }
 
   /** Fahrzeuge, deren Hupe die Engine annehmen wuerde (Probe auf dem unveraenderten Zustand). */
@@ -407,22 +431,37 @@ export class GameSession {
     let params: GeneratorOptions;
     let rules = this.controller.getRules();
     let overrides = cur.overrides;
+    let requiredHonk: boolean;
+    // Pflicht-Hupe des Ausgangslevels (gilt auch fuer seine gespiegelte Variante).
+    let curHonk = this.requiredHonk;
     if (hold.enabled) {
-      const shape = stageShape(hold.stage);
-      // Wechselt die Stufe das Ruleset, gelten dessen Regeln ohne die Overrides des Ausgangslevels.
-      if (shape.ruleset !== cur.ruleset) {
-        rules = this.deps.campaign.rulesOf(shape.ruleset);
+      const stage = clampStage(hold.stage);
+      const seed = similarSeed(cur.id, counter);
+      const variant = stageVariant(stage, seed);
+      // Wechselt die Variante das Ruleset, gelten dessen Regeln ohne die Overrides des Ausgangslevels.
+      if (variant.ruleset !== cur.ruleset) {
+        rules = this.deps.campaign.rulesOf(variant.ruleset);
         overrides = undefined;
       }
-      params = this.stageParams(clampStage(hold.stage), rules, {
-        seed: similarSeed(cur.id, counter),
+      requiredHonk = variant.requireHonk === true;
+      params = stageParams(stage, variant, rules.vehicles.colors, {
+        seed,
         id: `${baseId(cur.id)}-s${counter}`,
         title: cur.title,
       });
     } else {
-      // Mechanik und Ruleset des Ausgangslevels bleiben erhalten (Anzahl Poller/Schluessel wie dort).
+      // Mechanik und Ruleset des Ausgangslevels bleiben erhalten (Anzahl Poller, Schluessel, Mystery und
+      // Pfeile wie dort, Pflicht-Hupe wenn das Ausgangslevel sie braucht).
       const bollards = cur.grid.cells.filter((c) => c.type === 'fixed').length;
       const keys = cur.vehicles.filter((v) => v.locked).length;
+      const mystery = cur.vehicles.filter((v) => v.mystery === true).length;
+      const arrows = cur.grid.cells.filter((c) => c.type === 'oneWay').length;
+      // Pfeile und Pflicht-Hupe kombiniert der Generator nicht.
+      const honkAvailable = rules.powerups.honk.enabled && rules.powerups.honk.uses > 0;
+      if (arrows > 0 || !honkAvailable) curHonk = false;
+      else if (!curHonk) curHonk = await this.needsHonk(cur, rules);
+      if (this.disposed) return;
+      requiredHonk = curHonk;
       params = {
         seed: similarSeed(cur.id, counter),
         width: cur.grid.width,
@@ -433,13 +472,16 @@ export class GameSession {
           Math.max(0, difficulty - SIMILAR_DIFFICULTY_TOLERANCE),
           Math.min(MAX_DIFFICULTY, difficulty + SIMILAR_DIFFICULTY_TOLERANCE),
         ],
-        maxAttempts: GENERATE_MAX_ATTEMPTS,
+        maxAttempts: requiredHonk ? HONK_MAX_ATTEMPTS : GENERATE_MAX_ATTEMPTS,
         id: `${baseId(cur.id)}-s${counter}`,
         ruleset: cur.ruleset,
         title: cur.title,
         bollards,
         keys,
         ...(keys > 0 ? { keyChainDepth: keyChainDepth(cur) } : {}),
+        ...(requiredHonk && { requireHonk: true }),
+        ...(mystery > 0 && { mystery }),
+        ...(arrows > 0 && { oneWay: arrows }),
       };
     }
     let level: Level;
@@ -450,40 +492,62 @@ export class GameSession {
       if (this.disposed) return;
       rules = this.controller.getRules();
       level = makeSimilarLevel(cur, rules.vehicles.colors, counter);
+      requiredHonk = curHonk;
     }
     if (this.disposed) return;
     const origin = mode.kind === 'campaign' ? mode.entry : mode.origin;
     this.mode = { kind: 'similar', origin };
-    this.install(level, rules, true);
+    this.install(level, rules, true, requiredHonk);
   }
 
-  // --- Tageslevel ---
+  /** Pflicht-Hupe: mit Tipps allein unloesbar, und die Analyse hat ihr Zustandslimit nicht erreicht. */
+  private async needsHonk(level: Level, rules: ResolvedRules): Promise<boolean> {
+    try {
+      const tapOnly = await this.deps.solver.analyze(level, rules, {
+        maxStates: HONK_CHECK_MAX_STATES,
+        signal: this.abort.signal,
+      });
+      return !tapOnly.solvable && !tapOnly.truncated;
+    } catch {
+      return false;
+    }
+  }
 
-  /** Generator-Parameter einer Stufe (Grundvariante): Form, Zielbereich, Ruleset, Poller und Schluessel. */
-  private stageParams(
+  // --- Stufen ---
+
+  /**
+   * Level einer Stufe: Die Variante waehlt der Seed. Findet sie kein Level, folgt die Grundvariante der
+   * Stufe mit demselben Seed (beides deterministisch, das Ergebnis haengt also weiter nur vom Seed ab).
+   */
+  private async generateStage(
     stage: number,
-    rules: ResolvedRules,
     extra: { seed: number; id: string; title: Level['title'] },
-  ): GeneratorOptions {
-    return stageParams(stage, stageShape(stage), rules.vehicles.colors, extra);
+  ): Promise<GeneratedLevel> {
+    const run = async (variant: StageVariant): Promise<GeneratedLevel> => {
+      const rules = this.deps.campaign.rulesOf(variant.ruleset);
+      const params = stageParams(stage, variant, rules.vehicles.colors, extra);
+      const res = await this.deps.solver.generate(params, rules, { signal: this.abort.signal });
+      return { level: res.level, rules, requiredHonk: variant.requireHonk === true };
+    };
+    const variant = stageVariant(stage, extra.seed);
+    const base = stageShape(stage);
+    try {
+      return await run(variant);
+    } catch (err) {
+      if (this.disposed || variant.variant === base.variant) throw err;
+      return run(base);
+    }
   }
 
   // --- Tageslevel ---
 
-  private async generateDaily(date: string): Promise<{ level: Level; rules: ResolvedRules }> {
+  private generateDaily(date: string): Promise<GeneratedLevel> {
     const [y, m, d] = date.split('-').map(Number) as [number, number, number];
-    const stage = dailyStage(new Date(y, m - 1, d));
-    const rules = this.deps.campaign.rulesOf(stageShape(stage).ruleset);
-    const res = await this.deps.solver.generate(
-      this.stageParams(stage, rules, {
-        seed: dailySeed(date),
-        id: `daily-${date.replaceAll('-', '')}`,
-        title: { de: `Tageslevel ${date}`, en: `Daily level ${date}` },
-      }),
-      rules,
-      { signal: this.abort.signal },
-    );
-    return { level: res.level, rules };
+    return this.generateStage(dailyStage(new Date(y, m - 1, d)), {
+      seed: dailySeed(date),
+      id: `daily-${date.replaceAll('-', '')}`,
+      title: { de: `Tageslevel ${date}`, en: `Daily level ${date}` },
+    });
   }
 
   // --- Endlos ---
@@ -498,49 +562,44 @@ export class GameSession {
       previousBest: this.deps.progress.get().endless.best,
     };
     this.mode = { kind: 'endless', run };
-    const { level, rules } = await this.generateEndless(run, null);
+    const { level, rules, requiredHonk } = await this.generateEndless(run, null);
     if (this.disposed) return;
-    this.install(level, rules, true);
+    this.install(level, rules, true, requiredHonk);
   }
 
   private async nextEndless(run: EndlessRun): Promise<void> {
     run.number += 1;
-    const { level, rules } = await this.generateEndless(run, {
+    const { level, rules, requiredHonk } = await this.generateEndless(run, {
       level: this.controller.getLevel(),
       rules: this.controller.getRules(),
+      requiredHonk: this.requiredHonk,
     });
     if (this.disposed) return;
-    this.install(level, rules, true);
+    this.install(level, rules, true, requiredHonk);
   }
 
   /**
-   * Das Ruleset folgt der Stufe. Ohne `fallbackFrom` wirft ein Fehler; sonst wird eine Variante des
-   * Vorgaengers (mit dessen Regeln) gespielt.
+   * Ruleset und Mechanik folgen Stufe und Variante. Ohne `fallbackFrom` wirft ein Fehler; sonst wird eine
+   * Variante des Vorgaengers (mit dessen Regeln) gespielt.
    */
   private async generateEndless(
     run: EndlessRun,
-    fallbackFrom: { level: Level; rules: ResolvedRules } | null,
-  ): Promise<{ level: Level; rules: ResolvedRules }> {
+    fallbackFrom: GeneratedLevel | null,
+  ): Promise<GeneratedLevel> {
     const hold = this.deps.progress.get().hold;
     const stage = hold.enabled ? clampStage(hold.stage) : endlessStage(run.number);
     run.stage = stage;
-    const rules = this.deps.campaign.rulesOf(stageShape(stage).ruleset);
     try {
-      const res = await this.deps.solver.generate(
-        this.stageParams(stage, rules, {
-          seed: endlessSeed(run.seed, run.number),
-          id: `e-${run.seed.toString(36)}-${run.number}`,
-          title: { de: `Endlos ${run.number}`, en: `Endless ${run.number}` },
-        }),
-        rules,
-        { signal: this.abort.signal },
-      );
-      return { level: res.level, rules };
+      return await this.generateStage(stage, {
+        seed: endlessSeed(run.seed, run.number),
+        id: `e-${run.seed.toString(36)}-${run.number}`,
+        title: { de: `Endlos ${run.number}`, en: `Endless ${run.number}` },
+      });
     } catch (err) {
       if (!fallbackFrom || this.disposed) throw err;
       return {
+        ...fallbackFrom,
         level: makeSimilarLevel(fallbackFrom.level, fallbackFrom.rules.vehicles.colors, run.number),
-        rules: fallbackFrom.rules,
       };
     }
   }

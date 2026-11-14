@@ -66,6 +66,12 @@ export interface StageVariantRules {
  */
 export const HONK_MAX_ATTEMPTS = 800;
 
+/**
+ * Zustandslimit der Pruefung, ob ein Ausgangslevel ("Aehnliches Level") die Hupe braucht. Welt-3-Level
+ * kommen mit Hupe auf hoechstens 5300 Zustaende; abgebrochene Pruefungen zaehlen als "ohne Pflicht-Hupe".
+ */
+export const HONK_CHECK_MAX_STATES = 50_000;
+
 export const STAGE_VARIANT_RULES: Readonly<Record<StageVariantId, StageVariantRules>> = {
   classic: { ruleset: 'classic' },
   world2: { ruleset: 'world2' },

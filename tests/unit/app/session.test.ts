@@ -6,7 +6,7 @@ import type { PlayRoute, Route } from '../../../src/app/router';
 import { dailySeed, similarSeed } from '../../../src/app/seed';
 import { GameSession } from '../../../src/app/session';
 import { encodeLevel } from '../../../src/app/share';
-import { difficultyRange, stageShape } from '../../../src/app/stages';
+import { difficultyRange, stageShape, stageVariant } from '../../../src/app/stages';
 import { analyze } from '../../../src/solver';
 import type { LevelAnalysis } from '../../../src/solver/types';
 import { LOSE_ORDER, WIN_ORDER, level, rules } from '../helpers';
@@ -213,7 +213,7 @@ describe('Session: Aehnliches Level', () => {
     await s.start();
     await s.similar();
     const p = h.solver.generateCalls[0]?.params;
-    const shape = stageShape(4);
+    const shape = stageVariant(4, p?.seed ?? 0);
     expect(p).toMatchObject({
       width: shape.width,
       vehicleCount: shape.vehicleCount,
@@ -267,7 +267,8 @@ describe('Session: Tageslevel', () => {
     const sunday = new Date(2026, 10, 8, 10);
     await h.make({ name: 'daily' }, sunday).start();
     const p = h.solver.generateCalls[0]?.params;
-    expect(p?.vehicleCount).toBe(stageShape(6).vehicleCount);
+    expect(p?.vehicleCount).toBe(stageVariant(6, dailySeed('2026-11-08')).vehicleCount);
+    expect(p?.targetDifficulty).toEqual(difficultyRange(6));
   });
 
   it('Seed ist stabil und vom Datum abhaengig', () => {
@@ -337,7 +338,7 @@ describe('Session: Endlos', () => {
     await s.next();
     await s.next();
     for (const c of h.solver.generateCalls) {
-      expect(c.params.vehicleCount).toBe(stageShape(3).vehicleCount);
+      expect(c.params.vehicleCount).toBe(stageVariant(3, c.params.seed).vehicleCount);
       expect(c.params.targetDifficulty).toEqual(difficultyRange(3));
     }
     expect(s.title().world).toBe('Endlos · Stufe 3');

@@ -1,6 +1,7 @@
 // Echter Generator je Stufen-Variante: gueltige, loesbare Level mit der verlangten Mechanik.
 import { describe, expect, it } from 'vitest';
 import { getCampaign } from '../../../src/app/levels';
+import { mechanicsOf } from '../../../src/app/session';
 import { hashString } from '../../../src/app/seed';
 import { STAGE_COUNT, stageParams, stageVariants } from '../../../src/app/stages';
 import type { StageVariant } from '../../../src/app/stages';
@@ -41,6 +42,7 @@ function check(stage: number, variant: StageVariant, seed: number): void {
     expect(rules.powerups.honk.uses).toBe(1);
     expect(tapOnly.solvable || tapOnly.truncated).toBe(false);
     expect(analyze(level, rules, { allowHonk: true }).solvable).toBe(true);
+    expect(mechanicsOf(level, true)).toContain('honk');
   } else {
     expect(tapOnly.solvable).toBe(true);
   }

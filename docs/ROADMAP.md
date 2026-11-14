@@ -7,9 +7,6 @@ Offene Punkte, nach Themen gruppiert. Was das Spiel heute kann, steht in [DESIGN
 - Schranken (`barrier`, `gates`) und freie Wegsuche (`pathfinding`); Abbiegepfeile (`turns`) gibt es seit Welt 5.
 - Doppelfarb-Fahrzeuge (`vehicles.dualColor`) und `departOnFull = false` (volle Fahrzeuge blockieren).
 - Passagiere: `order` (`lookahead`, `free`), `boardPolicy` (`largestFree`, `playerChoice`) und `mysteryRate`.
-- Pflicht-Hupe in Tageslevel, Endlos und Stufen (dort lösen heute Tipps allein).
-- Mystery-Fahrzeuge in Tageslevel, Endlos und Stufen (heute nur in Welt 4, im Editor und in geteilten Leveln).
-- Abbiegepfeile in Tageslevel, Endlos und Stufen (heute nur in Welt 5, im Editor und in geteilten Leveln).
 - Hupen-Zahl im Editor einstellbar.
 
 ## Wertung
