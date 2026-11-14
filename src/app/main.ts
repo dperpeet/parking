@@ -2,7 +2,7 @@ import { createSound } from '../audio';
 import { createGame, step } from '../engine';
 import { applyThemeVars } from '../ui';
 import type { EngineApi } from './engine-port';
-import { mountGameScreen } from './game-screen';
+import { lazyModule, mountChunkPending, whenIdle } from './lazy';
 import { getCampaign } from './levels';
 import { Progress } from './progress';
 import { createRouter } from './router';
@@ -14,6 +14,11 @@ import { createSolverPort } from './solver-port';
 
 // Einzige Stelle, an der die Engine gewaehlt wird: die echte Engine.
 const engine: EngineApi = { createGame, step };
+
+// Spielfeld samt PixiJS als eigener Chunk: die Levelauswahl startet ohne Pixi.
+const gameScreen = lazyModule(() => import('./game-screen'));
+/** Ab dieser Ladezeit des Spielfeld-Chunks erscheint die Ladeanzeige. */
+const CHUNK_LOADING_DELAY_MS = 300;
 
 function boot(): void {
   const root = document.getElementById('app');
@@ -43,7 +48,15 @@ function boot(): void {
     showId += 1;
     if (!(route.name === 'shared' && route.code === editorReturn)) editorReturn = null;
     if (route.name === 'select') {
-      current = mountSelectScreen(root, { progress, campaign, router, now, sound });
+      const screen = mountSelectScreen(root, { progress, campaign, router, now, sound });
+      // Spielfeld im Leerlauf vorladen, damit der erste Levelstart ohne Wartezeit beginnt.
+      const cancelPrefetch = whenIdle(window, gameScreen.prefetch);
+      current = {
+        dispose: () => {
+          cancelPrefetch();
+          screen.dispose();
+        },
+      };
       return;
     }
     if (route.name === 'editor') {
@@ -78,23 +91,42 @@ function boot(): void {
         router.navigate({ name: 'select' });
       }
     };
-    const session = new GameSession(
-      {
-        engine,
-        solver,
-        progress,
-        campaign,
-        now,
-        syncRoute: (r) => router.replace(r),
-        exit: leave,
-      },
-      route,
-    );
-    current = mountGameScreen(root, session, {
+    const id = showId;
+    const pending = mountChunkPending(root, {
+      delayMs: CHUNK_LOADING_DELAY_MS,
+      // Browser merken sich einen gescheiterten Modul-Import; erst ein Neuladen holt den Chunk neu.
+      // Die Route steht im Hash, das Level startet danach direkt.
+      retry: () => window.location.reload(),
       back: leave,
-      retry: () => show(route),
-      sound,
     });
+    current = pending;
+    gameScreen.load().then(
+      ({ mountGameScreen }) => {
+        if (id !== showId) return;
+        pending.dispose();
+        const session = new GameSession(
+          {
+            engine,
+            solver,
+            progress,
+            campaign,
+            now,
+            syncRoute: (r) => router.replace(r),
+            exit: leave,
+          },
+          route,
+        );
+        current = mountGameScreen(root, session, {
+          back: leave,
+          retry: () => show(route),
+          sound,
+        });
+      },
+      () => {
+        // Chunk nicht ladbar (offline ohne Cache, Netzfehler): Meldung mit Wiederholen und Rueckweg.
+        if (id === showId) pending.fail();
+      },
+    );
   };
 
   show(router.current());

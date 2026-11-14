@@ -153,6 +153,7 @@ ui/ + render/  ->  app/  ->  engine/ + schema/
 - Regeln liegen als Module in `src/engine/rules/`. Level-spezifische Sonderfälle gibt es nicht.
 - Der Renderer berechnet keine Spiellogik, er spielt nur die Events der Engine ab. Eingaben gehen als `Action` an den Game-Controller in `app/`.
 - Import-Grenzen erzwingt ESLint (`pnpm lint`). `engine` und `schema` kennen weder DOM noch Pixi noch höhere Schichten.
+- Laden in Etappen: Das Initial-JS (Levelauswahl, Engine, Kampagne) enthält kein PixiJS. Das Spielfeld (`app/game-screen` samt `render` und Pixi) ist ein eigener Chunk, den `app/lazy.ts` beim Levelstart per `import()` lädt und in der Levelauswahl im Leerlauf (`requestIdleCallback`, sonst nach 1 s) vorlädt. Dauert das Laden länger als 300 ms, erscheint eine Ladeanzeige (`role="status"`); scheitert es (offline, Netzfehler), folgen Meldung, „Erneut versuchen“ (lädt die Seite neu, weil Browser einen gescheiterten Modul-Import nicht wiederholen; das Level startet danach aus dem Hash) und „Zum Menü“. Pixi startet mit `skipExtensionImports`: Pixi-Events, -Accessibility, Filter und DOMContainer bleiben ungeladen, weil Eingabe und Screenreader über die DOM-Buttons laufen. `setMotionSetting` kommt direkt aus `render/tween` (ohne Pixi). Messung (gzip): Initial-JS 235 kB → 78 kB; Spielfeld-Chunks beim ersten Levelstart 159 kB (mit `browserAll` wären es 175 kB). Gedrosselt (150 ms RTT, 1,6 Mbit/s) dauert der erste Levelstart aus der Levelauswahl ohne Vorladen etwa 1,9 s, mit Vorladen etwa 0,8 s.
 
 Verzeichnisse unter `src`:
 
@@ -180,7 +181,7 @@ Die Schnittstellen zwischen den Schichten sind in [INTERFACES.md](INTERFACES.md)
 
 - Tests: `tests/unit` (Engine, Solver, App, Renderer), `tests/content` (Schemas, Level gültig und lösbar), `tests/e2e` (Playwright). E2E-Tests nutzen nur ausgelieferte Level; spätere Welten werden per vorbelegtem Spielstand freigeschaltet (`completedSave`/`seedSave` in `tests/e2e/support.ts`).
 - CI (`.github/workflows/ci.yml`, für Pull Requests und `main`): `lint` (ESLint und Prettier), `typecheck`, `test` (Vitest mit Coverage-Gate für `src/engine/**`: mindestens 95 % bei Statements, Branches, Functions und Lines, konfiguriert in `vite.config.ts`; `pnpm test:coverage` läuft statt `pnpm test`), danach `build` und `e2e`.
-- Bundle-Budget: `pnpm size` (`tools/check-bundle.mjs`) läuft im `build`-Job nach dem Build und summiert die gzip-Größe des Initial-JS (Skripte aus `dist/index.html`: `<script type="module">` und `modulepreload`; Lazy-Chunks wie Editor und Solver-Worker zählen nicht). Grenze 250 kB (250 000 Bytes, wie Vite kB zählt); darüber Exit 1.
+- Bundle-Budget: `pnpm size` (`tools/check-bundle.mjs`) läuft im `build`-Job nach dem Build und summiert die gzip-Größe des Initial-JS (Skripte aus `dist/index.html`: `<script type="module">` und `modulepreload`; Lazy-Chunks wie Spielfeld, Editor und Solver-Worker zählen nicht). Grenze 95 kB (95 000 Bytes, wie Vite kB zählt; Ist-Stand etwa 78 kB); darüber Exit 1.
 - Barrierefreiheit: Farbsymbole, Tastaturbedienung (Pfeiltasten, U für Undo, R für Neustart, H für den Hupen-Zielmodus, Esc bricht ihn ab), `aria-live`-Meldungen, `prefers-reduced-motion` mit Schalter in den Einstellungen.
 - Sprachen: Deutsch und Englisch, Auswahl automatisch oder manuell.
 

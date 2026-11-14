@@ -35,6 +35,9 @@ export async function createPixiApp(host: HTMLElement): Promise<PixiHandle> {
     autoDensity: true,
     resolution: dpr(),
     autoStart: false,
+    // Keine Browser-Erweiterungen (browserAll: Pixi-Events, -Accessibility, Filter, DOMContainer) nachladen:
+    // Eingabe und Screenreader laufen ueber die DOM-Buttons, das Brett nutzt nur Graphics und Text.
+    skipExtensionImports: true,
   });
   app.ticker.stop();
   host.append(app.canvas);

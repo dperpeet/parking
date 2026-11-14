@@ -71,6 +71,7 @@ const de = {
   // Laden / Fehler
   loading: 'Level wird erstellt …',
   loadFailed: 'Das Level konnte nicht erstellt werden.',
+  gameLoadFailed: 'Das Spielfeld konnte nicht geladen werden. Bist du offline?',
   retry: 'Erneut versuchen',
   // Tipps
   hintVehicle: 'Tipp: das {color} Fahrzeug',
@@ -411,6 +412,7 @@ const en: Record<StringKey, string> = {
   stageLabel: 'Stage {n}',
   loading: 'Creating level …',
   loadFailed: 'The level could not be created.',
+  gameLoadFailed: 'The game board could not be loaded. Are you offline?',
   retry: 'Try again',
   hintVehicle: 'Hint: the {color} vehicle',
   hintNone: 'No way to win any more – take back a move.',
