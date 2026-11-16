@@ -60,6 +60,15 @@ export function exitTrack(
   };
 }
 
+/**
+ * Knickt der Weg? `exitDir` fehlt im Event auch dann, wenn das Fahrzeug nach zwei Knicken wieder in `dir`
+ * hinausfaehrt (z. B. S -> E -> S); deshalb entscheidet der Weg selbst, nicht nur `exitDir`.
+ */
+export function pathBends(head: Point, dir: Dir, path: readonly Point[]): boolean {
+  const [dx, dy] = DIR_VECTOR[dir];
+  return path.some(([x, y], i) => x !== head[0] + dx * (i + 1) || y !== head[1] + dy * (i + 1));
+}
+
 /** Punkt bei Bogenlaenge `s`; ausserhalb des Zugs wird das erste bzw. letzte Stueck verlaengert. */
 export function sampleTrack(points: readonly Point[], s: number): Point {
   const first = points[0];
