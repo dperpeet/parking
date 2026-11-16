@@ -288,3 +288,34 @@ describe('EventPlayer: Abbiegepfeile', () => {
     ]);
   });
 });
+
+describe('EventPlayer: Ton bei Abbiegepfeilen', () => {
+  it('meldet einen Knick auch ohne exitDir (S -> E -> S), gerade Wege ohne Knick', async () => {
+    const hints: unknown[] = [];
+    const board: BoardAnimator = {
+      shake: () => Promise.resolve(),
+      exit: () => Promise.resolve(),
+      sync: () => undefined,
+    };
+    const hud: HudSink = { onEvent: () => undefined, render: () => undefined };
+    const s = structuredClone(state);
+    const [a, b] = s.vehicles;
+    Object.assign(a!, { x: 1, y: 2, dir: 'S' });
+    Object.assign(b!, { x: 5, y: 2, dir: 'S' });
+    const bent: Array<[number, number]> = [
+      [1, 3],
+      [2, 3],
+      [2, 4],
+    ];
+    const player = new EventPlayer(board, hud, { cue: (_e, hint) => hints.push(hint) });
+    await player.play(
+      [
+        { type: 'vehicleExited', vehicleId: a!.id, slotIndex: 0, path: bent },
+        { type: 'vehicleExited', vehicleId: b!.id, slotIndex: 1, path: [[5, 3]] },
+        { type: 'won', moves: 2, stars: 3 },
+      ],
+      s,
+    );
+    expect(hints).toEqual([{ turning: true }, { turning: false }, undefined]);
+  });
+});

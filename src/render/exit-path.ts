@@ -69,6 +69,18 @@ export function pathBends(head: Point, dir: Dir, path: readonly Point[]): boolea
   return path.some(([x, y], i) => x !== head[0] + dx * (i + 1) || y !== head[1] + dy * (i + 1));
 }
 
+/** Faehrt das Fahrzeug mit Knick aus (Animation und Klang)? `exitDir` allein reicht nicht, siehe `pathBends`. */
+export function exitTurns(
+  vehicle: { x: number; y: number; dir: Dir },
+  path: readonly Point[],
+  exitDir?: Dir,
+): boolean {
+  return (
+    (exitDir !== undefined && exitDir !== vehicle.dir) ||
+    pathBends([vehicle.x, vehicle.y], vehicle.dir, path)
+  );
+}
+
 /** Punkt bei Bogenlaenge `s`; ausserhalb des Zugs wird das erste bzw. letzte Stueck verlaengert. */
 export function sampleTrack(points: readonly Point[], s: number): Point {
   const first = points[0];
