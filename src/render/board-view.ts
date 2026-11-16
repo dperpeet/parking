@@ -6,7 +6,7 @@ import { dashSegments, laneCells } from './direction';
 import { DIR_VECTOR, cellRect, computeBoardLayout, vehicleRect } from './layout';
 import type { BoardLayout, Rect } from './layout';
 import { computeLockMarks } from './lock-marks';
-import { dirAngle, exitDistance, exitPose, exitTrack, pathBends } from './exit-path';
+import { dirAngle, exitDistance, exitPose, exitTrack, exitTurns } from './exit-path';
 import { ROAD_RADIUS, roadArrowPoints } from './road-arrow';
 import type { LockMarks } from './lock-marks';
 import { THEME } from './theme';
@@ -375,10 +375,7 @@ export class BoardView implements BoardAnimator {
     const veh = this.state?.vehicles.find((v) => v.id === vehicleId);
     const layout = this.layout;
     if (!view || !veh || !layout) return Promise.resolve();
-    if (
-      (exitDir !== undefined && exitDir !== veh.dir) ||
-      pathBends([veh.x, veh.y], veh.dir, path)
-    ) {
+    if (exitTurns(veh, path, exitDir)) {
       return this.exitTurning(view, veh, layout, path, exitDir ?? veh.dir);
     }
     // Das Fahrzeug ist fertig, wenn der Heck den Rand passiert hat: letzte Pfadzelle + Laenge.

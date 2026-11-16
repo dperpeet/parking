@@ -70,6 +70,9 @@ const boarded = (filled: number): GameEvent => ({
 describe('cueFor', () => {
   it('ordnet Events Klaengen zu, Verwaltungs-Events bleiben still', () => {
     expect(cueFor(exited)?.id).toBe('exit');
+    expect(cueFor(exited, { turning: false })?.id).toBe('exit');
+    expect(cueFor(exited, { turning: true })?.id).toBe('exitTurn');
+    expect(cueFor({ ...exited, exitDir: 'S' } as GameEvent)?.id).toBe('exitTurn');
     expect(
       cueFor({ type: 'vehicleBlocked', vehicleId: 'v1', reason: 'path', blockerId: null })?.id,
     ).toBe('bump');

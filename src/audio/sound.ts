@@ -1,7 +1,7 @@
 // Spielt Klaenge per Web Audio. Alles ist optional: ohne Web Audio bleibt das Spiel still.
 import type { GameEvent } from '../engine/types';
 import { cueFor } from './cues';
-import type { CueId } from './cues';
+import type { CueHint, CueId } from './cues';
 import { RECIPES } from './recipes';
 
 /** Der Teil von AudioContext, den der Sound braucht (in Tests ersetzbar). */
@@ -19,7 +19,7 @@ export interface Sound {
   setEnabled(on: boolean): void;
   isEnabled(): boolean;
   /** Spielt den Klang zu einem Engine-Event (falls es einen gibt). */
-  cue(event: GameEvent): void;
+  cue(event: GameEvent, hint?: CueHint): void;
   play(id: CueId, step?: number): void;
 }
 
@@ -102,8 +102,8 @@ export function createSound(opts: SoundOptions = {}): Sound {
       enabled = on;
     },
     isEnabled: () => enabled,
-    cue(event) {
-      const c = cueFor(event);
+    cue(event, hint) {
+      const c = cueFor(event, hint);
       if (c) play(c.id, c.step);
     },
     play,

@@ -1,5 +1,7 @@
 import type { GameEvent, GameState } from '../engine/types';
 import type { Dir } from '../schema';
+import type { CueHint } from '../audio/cues';
+import { exitTurns } from './exit-path';
 
 /** Was der Event-Player vom Pixi-Brett braucht (in Tests ersetzbar). */
 export interface BoardAnimator {
@@ -33,7 +35,7 @@ export interface HudSink {
 
 /** Optionaler Ton: bekommt jedes Event in dem Moment, in dem es abgespielt wird. */
 export interface SoundSink {
-  cue(event: GameEvent): void;
+  cue(event: GameEvent, hint?: CueHint): void;
 }
 
 /**
@@ -63,9 +65,16 @@ export class EventPlayer {
     return this.chain;
   }
 
+  /** Ausfahrt mit Knick? Das Event allein verraet es nicht immer (S -> E -> S ohne `exitDir`). */
+  private cueHint(event: GameEvent, state: GameState): CueHint | undefined {
+    if (event.type !== 'vehicleExited') return undefined;
+    const v = state.vehicles.find((x) => x.id === event.vehicleId);
+    return { turning: v !== undefined && exitTurns(v, event.path, event.exitDir) };
+  }
+
   private async run(events: GameEvent[], state: GameState): Promise<void> {
     for (const event of events) {
-      this.sound?.cue(event);
+      this.sound?.cue(event, this.cueHint(event, state));
       switch (event.type) {
         case 'vehicleBlocked':
           this.hud.onEvent(event, state);

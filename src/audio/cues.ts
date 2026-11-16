@@ -22,14 +22,20 @@ export interface Cue {
   step: number;
 }
 
+/** Zusatzwissen des Abspielers, das nicht im Event steht. */
+export interface CueHint {
+  /** Ausfahrt mit Knick (auch wenn `exitDir` fehlt, weil das Fahrzeug wieder in `dir` hinausfaehrt). */
+  turning?: boolean;
+}
+
 const cue = (id: CueId, step = 0): Cue => ({ id, step });
 
 /** Klang zu einem Event oder `null`, wenn das Event still bleibt. */
-export function cueFor(event: GameEvent): Cue | null {
+export function cueFor(event: GameEvent, hint?: CueHint): Cue | null {
   switch (event.type) {
     case 'vehicleExited':
       // Abbiegen (Abbiegepfeile): eigener Klang; gerade Ausfahrten klingen wie bisher.
-      return cue(event.exitDir === undefined ? 'exit' : 'exitTurn');
+      return cue(event.exitDir !== undefined || hint?.turning === true ? 'exitTurn' : 'exit');
     case 'vehicleBlocked':
     case 'invalidAction':
       return cue('bump');

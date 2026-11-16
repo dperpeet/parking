@@ -4,6 +4,7 @@ import {
   exitDistance,
   exitPose,
   exitTrack,
+  exitTurns,
   pathBends,
   sampleTrack,
 } from '../../../src/render/exit-path';
@@ -175,5 +176,21 @@ describe('pathBends', () => {
       [4, 5],
     ];
     expect(pathBends([1, 2], 'S', path)).toBe(true);
+  });
+});
+
+describe('exitTurns', () => {
+  it('knickt bei abweichender exitDir oder geknicktem Weg, sonst nicht', () => {
+    const v = { x: 1, y: 2, dir: 'S' as const };
+    expect(exitTurns(v, [[1, 3]])).toBe(false);
+    expect(exitTurns(v, [[1, 3]], 'S')).toBe(false);
+    expect(exitTurns(v, [[2, 2]], 'E')).toBe(true);
+    expect(
+      exitTurns(v, [
+        [1, 3],
+        [2, 3],
+        [2, 4],
+      ]),
+    ).toBe(true);
   });
 });
