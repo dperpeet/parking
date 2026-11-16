@@ -4,6 +4,7 @@ import {
   exitDistance,
   exitPose,
   exitTrack,
+  pathBends,
   sampleTrack,
 } from '../../../src/render/exit-path';
 import { roadArrowPoints } from '../../../src/render/road-arrow';
@@ -149,5 +150,30 @@ describe('roadArrowPoints', () => {
     const pts = roadArrowPoints('E', r);
     expect(pts[1]![1] - 40).toBeCloseTo(-(pts[6]![1] - 40));
     expect(pts[1]![0]).toBeCloseTo(pts[6]![0]);
+  });
+});
+
+describe('pathBends', () => {
+  it('erkennt einen geraden Weg', () => {
+    expect(
+      pathBends([1, 2], 'S', [
+        [1, 3],
+        [1, 4],
+        [1, 5],
+      ]),
+    ).toBe(false);
+    expect(pathBends([1, 2], 'S', [])).toBe(false);
+  });
+
+  it('erkennt Knicke, auch wenn die Ausfahrrichtung wieder dir ist (S -> E -> S)', () => {
+    const path: Cell[] = [
+      [1, 3],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [4, 4],
+      [4, 5],
+    ];
+    expect(pathBends([1, 2], 'S', path)).toBe(true);
   });
 });
